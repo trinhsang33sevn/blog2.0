@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <a href="/projects" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+    <div>
+      <h4 class="fw-bold mb-0">{{ project.name }}</h4>
+      <span class="badge status-{{ project.status }} mt-1">
+        {% if project.status == 'running' %}🟢 Đang chạy
+        {% elif project.status == 'paused' %}🟡 Tạm dừng
+        {% elif project.status == 'completed' %}✅ Hoàn thành
+        {% else %}⏳ Chờ khởi động{% endif %}
+      </span>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if project.status == 'pending' %}
+    <form method="post" action="/projects/{{ project.id }}/start">
+      <button class="btn btn-success"><i class="bi bi-play-fill me-1"></i>Bắt đầu</button>
+    </form>
+    {% elif project.status == 'running' %}
+    <form method="post" action="/projects/{{ project.id }}/pause">
+      <button class="btn btn-warning"><i class="bi bi-pause-fill me-1"></i>Tạm dừng</button>
+    </form>
+    {% elif project.status == 'paused' %}
+    <form method="post" action="/projects/{{ project.id }}/resume">
+      <button class="btn btn-success"><i class="bi bi-play-fill me-1"></i>Tiếp tục</button>
+    </form>
+    {% endif %}
+    <a href="/projects/{{ project.id }}/edit" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i>Chỉnh sửa
+    </a>
+    <form method="post" action="/projects/{{ project.id }}/delete" onsubmit="return confirm('Xóa dự án này?')">
+      <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+    </form>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card mini">
+      <div class="stat-value text-primary">{{ total_articles }}</div>
+      <div class="stat-label">Tổng bài viết</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card mini">
+      <div class="stat-value text-success">{{ published }}</div>
+      <div class="stat-label">Đã đăng</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card mini">
+      <div class="stat-value text-warning">{{ pending_count + writing_count }}</div>
+      <div class="stat-label">Đang xử lý</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card mini">
+      <div class="stat-value text-danger">{{ failed_count }}</div>
+      <div class="stat-label">Lỗi</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left: Config & Keywords -->
+  <div class="col-md-5">
+    <!-- Config -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold"><i class="bi bi-gear me-1"></i>Cấu hình</div>
+      <div class="card-body small">
+        <div class="row g-2">
+          <div class="col-6"><span class="text-muted">Bài/ngày:</span> <strong>{{ project.articles_per_day }}</strong></div>
+          <div class="col-6"><span class="text-muted">Khoảng cách:</span> <strong>{{ project.min_interval_minutes }}–{{ project.max_interval_minutes }} phút</strong></div>
+          <div class="col-12"><span class="text-muted">Model AI:</span> <code class="small">{{ project.ai_model | model_display }}</code></div>
+        </div>
+        {% if backlinks %}
+        <hr class="my-2">
+        <div class="fw-semibold mb-1">Backlinks:</div>
+        {% for bl in backlinks %}
+        <div class="small mb-1">
+          <span class="text-muted">{{ bl.anchor }}</span> → <a href="{{ bl.url }}" target="_blank" class="text-decoration-none">{{ bl.url }}</a>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sites -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold"><i class="bi bi-globe2 me-1"></i>Website ({{ project.project_sites|length }})</div>
+      <ul class="list-group list-group-flush">
+        {% for ps in project.project_sites %}
+        <li class="list-group-item d-flex justify-content-between align-items-center small">
+          <div>
+            <div class="fw-semibold">{{ ps.site.blog_name }}</div>
+            <div class="text-muted">{{ ps.site.blog_url }}</div>
+          </div>
+          <div class="text-end">
+            <div class="badge bg-light text-dark">{{ ps.language }}</div>
+            <div class="text-muted">{{ ps.articles_today }} bài hôm nay</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Add Keywords -->
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold"><i class="bi bi-plus-circle me-1"></i>Thêm từ khóa</div>
+      <div class="card-body">
+        <form method="post" action="/projects/{{ project.id }}/add-keywords">
+          <textarea name="keywords_text" class="form-control font-monospace mb-2" rows="4" placeholder="Nhập mỗi từ khóa một dòng..."></textarea>
+          <button type="submit" class="btn btn-sm btn-primary w-100">
+            <i class="bi bi-plus me-1"></i>Thêm từ khóa
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Clusters & Articles -->
+  <div class="col-md-7">
+    <!-- Keyword Clusters -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold d-flex justify-content-between">
+        <span><i class="bi bi-diagram-3 me-1"></i>Cụm từ khóa ({{ clusters|length }})</span>
+        <span class="text-muted small">{{ keywords|length }} từ khóa tổng</span>
+      </div>
+      <div class="card-body p-0" style="max-height:300px;overflow-y:auto">
+        {% if clusters %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light sticky-top">
+              <tr><th>Cụm</th><th>Từ khóa</th><th>Trạng thái</th></tr>
+            </thead>
+            <tbody>
+              {% for c in clusters %}
+              <tr>
+                <td class="fw-semibold small">{{ c.cluster_name }}</td>
+                <td class="small text-muted">{{ c.keywords|map(attribute='keyword')|join(', ')|truncate(60) }}</td>
+                <td>
+                  <span class="badge {{ 'bg-success' if c.status=='completed' else 'bg-warning text-dark' if c.status=='writing' else 'bg-secondary' }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">
+          <i class="bi bi-info-circle me-1"></i>Chưa có cụm từ khóa. Bắt đầu dự án để AI phân cụm.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Published Articles -->
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold d-flex justify-content-between">
+        <span><i class="bi bi-check-circle me-1 text-success"></i>Bài đã đăng gần đây</span>
+        <a href="/articles?project_id={{ project.id }}" class="small text-decoration-none">Xem tất cả</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_articles %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <tbody>
+              {% for a in recent_articles %}
+              <tr>
+                <td class="py-2 small">
+                  <div class="fw-semibold text-truncate" style="max-width:250px">{{ a.title }}</div>
+                  <div class="text-muted">{{ a.site.blog_name }} · {{ a.published_at.strftime('%d/%m %H:%M') if a.published_at else '' }}</div>
+                </td>
+                <td class="py-2">
+                  {% if a.url %}
+                  <a href="{{ a.url }}" target="_blank" class="btn btn-xs btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                  </a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">Chưa có bài viết nào được đăng</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

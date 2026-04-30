@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+{% block title %}Cài đặt — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-gear me-2"></i>Cài đặt</h4>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshModels()" id="refreshBtn">
+      <i class="bi bi-arrow-clockwise me-1"></i>Cập nhật Free Models
+    </button>
+    <button type="submit" form="settingsForm" class="btn btn-primary btn-sm px-4">
+      <i class="bi bi-floppy me-1"></i>Lưu tất cả
+    </button>
+  </div>
+</div>
+
+<!-- Priority Banner -->
+<div class="alert alert-primary border-0 py-2 mb-3 small">
+  <i class="bi bi-info-circle-fill me-1"></i>
+  <strong>Ưu tiên model AI:</strong>
+  <span class="ms-1">
+    <span class="badge {{ 'bg-success' if gemini_configured else 'bg-secondary' }}">1. Gemini</span>
+    <span class="badge {{ 'bg-success' if claude_configured else 'bg-secondary' }} ms-1">2. Claude</span>
+    <span class="badge {{ 'bg-success' if openai_configured else 'bg-secondary' }} ms-1">3. OpenAI</span>
+    <span class="badge {{ 'bg-success' if groq_configured else 'bg-secondary' }} ms-1">4. Groq</span>
+    <span class="badge bg-secondary ms-1">5. OpenRouter (fallback)</span>
+  </span>
+  — Hệ thống dùng provider đầu tiên đã cấu hình. Nếu lỗi, tự fallback về OpenRouter.
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-0" id="settingsTabs">
+  <li class="nav-item">
+    <a class="nav-link active" data-bs-toggle="tab" href="#tab-ai">
+      <i class="bi bi-cpu me-1"></i>AI Models
+      {% if gemini_configured or claude_configured or openai_configured or groq_configured %}
+      <span class="badge bg-success ms-1" style="font-size:.65rem">Đã cấu hình</span>
+      {% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#tab-services">
+      <i class="bi bi-tools me-1"></i>Dịch vụ
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#tab-oauth">
+      <i class="bi bi-key me-1"></i>OAuth / Đăng nhập Blog
+    </a>
+  </li>
+</ul>
+
+<form method="post" action="/settings" id="settingsForm">
+<div class="tab-content border border-top-0 rounded-bottom p-4 bg-white shadow-sm">
+
+  <!-- ═══════════════════ TAB AI MODELS ═══════════════════ -->
+  <div class="tab-pane fade show active" id="tab-ai">
+    <div class="row g-4">
+
+      <!-- Gemini (Google) -->
+      <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-left:4px solid #4285F4 !important;">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:linear-gradient(135deg,#4285F4,#0F9D58,#F4B400,#DB4437)">
+                  <i class="bi bi-google text-white fw-bold"></i>
+                </div>
+                <div>
+                  <div class="fw-bold">Google Gemini</div>
+                  <div class="text-muted small">Miễn phí · 1.500 req/ngày/key · Khuyến nghị</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                {% if gemini_key_count > 0 %}
+                <span class="badge bg-success">{{ gemini_key_count }} key đã cấu hình</span>
+                {% else %}
+                <span class="badge bg-secondary">Chưa cấu hình</span>
+                {% endif %}
+                <span class="badge bg-warning text-dark">Ưu tiên 1</span>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label fw-semibold small mb-1">
+                API Keys
+                <span class="text-muted fw-normal">(nhiều keys = nhiều quota, mỗi key 1 dòng)</span>
+              </label>
+              <textarea name="gemini_api_keys" id="gemini_api_keys" class="form-control font-monospace small" rows="4"
+                placeholder="AIzaSy...key1&#10;AIzaSy...key2&#10;AIzaSy...key3&#10;(thêm bao nhiêu key tùy ý)">{{ gemini_api_keys or '' }}</textarea>
+              <div class="form-text">
+                Lấy API key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> —
+                Mỗi key: 15 req/phút, 1.500 req/ngày. Thêm nhiều key để tăng quota.
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mt-2">
+              <input type="password" id="gemini_test_input" class="form-control form-control-sm w-auto flex-grow-1"
+                placeholder="Dán 1 key để test kết nối...">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="testApi('gemini','gemini_test_input','gemini_test_result')">
+                <i class="bi bi-plug me-1"></i>Test
+              </button>
+              <span id="gemini_test_result" class="small"></span>
+            </div>
+
+            <div class="alert alert-success small mt-3 mb-0 py-2">
+              <strong>Models:</strong> Gemini 2.0 Flash · Gemini 2.5 Flash · Gemini 1.5 Flash · Gemini 2.5 Pro · Gemini 1.5 Pro<br>
+              Khi 1 key bị rate limit → <strong>tự động chuyển sang key tiếp theo</strong> trong danh sách.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Groq -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #F55036 !important;">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#F55036">
+                  <i class="bi bi-lightning-fill text-white"></i>
+                </div>
+                <div>
+                  <div class="fw-bold">Groq</div>
+                  <div class="text-muted small">Miễn phí · Siêu nhanh · Llama</div>
+                </div>
+              </div>
+              <div class="d-flex gap-1">
+                <span class="badge {{ 'bg-success' if groq_configured else 'bg-secondary' }}">
+                  {{ 'Đã cấu hình' if groq_configured else 'Chưa' }}
+                </span>
+                <span class="badge bg-light text-dark border">Ưu tiên 4</span>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="groq_api_key" id="groq_api_key" class="form-control"
+                value="{{ groq_api_key }}" placeholder="gsk_...">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-2">Lấy key tại <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="testApi('groq','groq_api_key','groq_result')">
+                <i class="bi bi-plug me-1"></i>Test
+              </button>
+              <span id="groq_result" class="small"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Claude -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #D4A017 !important;">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#D4A017">
+                  <i class="bi bi-stars text-white"></i>
+                </div>
+                <div>
+                  <div class="fw-bold">Anthropic Claude</div>
+                  <div class="text-muted small">Trả phí · Chất lượng cao</div>
+                </div>
+              </div>
+              <div class="d-flex gap-1">
+                <span class="badge {{ 'bg-success' if claude_configured else 'bg-secondary' }}">
+                  {{ 'Đã cấu hình' if claude_configured else 'Chưa' }}
+                </span>
+                <span class="badge bg-light text-dark border">Ưu tiên 2</span>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="claude_api_key" id="claude_api_key" class="form-control"
+                value="{{ claude_api_key }}" placeholder="sk-ant-api03-...">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-2">Lấy key tại <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="testApi('claude','claude_api_key','claude_result')">
+                <i class="bi bi-plug me-1"></i>Test
+              </button>
+              <span id="claude_result" class="small"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OpenAI -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #10A37F !important;">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#10A37F">
+                  <i class="bi bi-cpu text-white"></i>
+                </div>
+                <div>
+                  <div class="fw-bold">OpenAI (ChatGPT)</div>
+                  <div class="text-muted small">Trả phí · GPT-4o</div>
+                </div>
+              </div>
+              <div class="d-flex gap-1">
+                <span class="badge {{ 'bg-success' if openai_configured else 'bg-secondary' }}">
+                  {{ 'Đã cấu hình' if openai_configured else 'Chưa' }}
+                </span>
+                <span class="badge bg-light text-dark border">Ưu tiên 3</span>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="openai_api_key" id="openai_api_key" class="form-control"
+                value="{{ openai_api_key }}" placeholder="sk-...">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-2">Lấy key tại <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="testApi('openai','openai_api_key','openai_result')">
+                <i class="bi bi-plug me-1"></i>Test
+              </button>
+              <span id="openai_result" class="small"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OpenRouter -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #6366F1 !important;">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#6366F1">
+                  <i class="bi bi-shuffle text-white"></i>
+                </div>
+                <div>
+                  <div class="fw-bold">OpenRouter</div>
+                  <div class="text-muted small">Free fallback · Auto-rotate models</div>
+                </div>
+              </div>
+              <span class="badge bg-secondary">Fallback</span>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold mb-1">API Key <span class="text-danger">*</span></label>
+              <div class="input-group input-group-sm">
+                <input type="password" name="openrouter_api_key" class="form-control"
+                  value="{{ openrouter_api_key }}" placeholder="sk-or-v1-...">
+                <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+              </div>
+              <div class="form-text">Lấy key tại <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold mb-1">Model mặc định
+                <span class="badge {{ 'bg-success' if models_cached else 'bg-secondary' }} fw-normal ms-1">{{ models_count }} models</span>
+              </label>
+              <select name="openrouter_model" class="form-select form-select-sm">
+                {% for m in models %}
+                <option value="{{ m.id }}" {{ 'selected' if openrouter_model == m.id }}>{{ m.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB SERVICES ═══════════════════ -->
+  <div class="tab-pane fade" id="tab-services">
+    <div class="row g-4">
+
+      <!-- Sinbyte -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning" style="width:36px;height:36px">
+                <i class="bi bi-lightning-charge-fill text-dark"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Sinbyte</div>
+                <div class="text-muted small">Ép index Google — tuỳ chọn</div>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="sinbyte_api_key" class="form-control"
+                value="{{ sinbyte_api_key }}" placeholder="Sinbyte API Key">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-3">Lấy key tại <a href="https://app.sinbyte.com" target="_blank">app.sinbyte.com</a></div>
+            <div class="alert alert-info small mb-0 py-2">
+              <strong>Có key:</strong> URL bài đăng tự động gửi Sinbyte để ép index.<br>
+              <strong>Không có:</strong> Bài vẫn đăng bình thường.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pixabay -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center bg-success" style="width:36px;height:36px">
+                <i class="bi bi-images text-white"></i>
+              </div>
+              <div>
+                <div class="fw-bold">Pixabay</div>
+                <div class="text-muted small">Ảnh miễn phí trong bài viết</div>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="pixabay_api_key" class="form-control"
+                value="{{ pixabay_api_key }}" placeholder="Pixabay API Key">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-3">Lấy key miễn phí tại <a href="https://pixabay.com/api/docs/" target="_blank">pixabay.com/api</a></div>
+            <div class="alert alert-info small mb-0 py-2">
+              <i class="bi bi-image me-1"></i>
+              <strong>Ảnh đầu bài:</strong> Luôn dùng Pollinations.ai (AI sinh ảnh, không cần key)<br>
+              <strong>Ảnh trong bài:</strong> Dùng Pixabay nếu có key
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB OAUTH ═══════════════════ -->
+  <div class="tab-pane fade" id="tab-oauth">
+    <div class="alert alert-info small py-2 mb-4">
+      <i class="bi bi-info-circle me-1"></i>
+      Mỗi tài khoản tự tạo OAuth App riêng. Thông tin này chỉ dùng để xác thực blog của bạn.
+    </div>
+    <div class="row g-4">
+
+      <!-- Google / Blogger -->
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-transparent fw-semibold d-flex align-items-center justify-content-between py-3">
+            <span><i class="bi bi-google me-2 text-danger"></i>Google OAuth (Kết nối Blogspot)</span>
+            <span class="badge {{ 'bg-success' if google_configured else 'bg-secondary' }}">
+              {{ 'Đã cấu hình' if google_configured else 'Chưa cấu hình' }}
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Client ID</label>
+                <input type="text" name="google_client_id" class="form-control form-control-sm"
+                  value="{{ google_client_id }}" placeholder="xxxxx.apps.googleusercontent.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Client Secret</label>
+                <div class="input-group input-group-sm">
+                  <input type="password" name="google_client_secret" class="form-control"
+                    value="{{ google_client_secret }}" placeholder="GOCSPX-...">
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 p-3 bg-light rounded small">
+              <div class="alert alert-warning py-2 mb-2 small">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Blogger API v3 đã bị gỡ khỏi API Library. Phần mềm dùng <strong>Blogger GData/AtomPub</strong> — không cần enable API.
+              </div>
+              <strong>Hướng dẫn:</strong>
+              <ol class="mb-0 mt-1 ps-3">
+                <li>Vào <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> → <strong>APIs &amp; Services → Credentials → Create OAuth 2.0 Client ID</strong></li>
+                <li>Application type: <strong>Web application</strong></li>
+                <li>Authorized redirect URI: <code>http://localhost:8000/accounts/oauth/callback</code></li>
+                <li>OAuth consent screen → scope: <code>https://www.googleapis.com/auth/blogger</code></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WordPress -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent fw-semibold d-flex align-items-center justify-content-between py-3">
+            <span><i class="bi bi-wordpress me-2 text-primary"></i>WordPress.com OAuth</span>
+            <span class="badge {{ 'bg-success' if wp_configured else 'bg-secondary' }}">
+              {{ 'Đã cấu hình' if wp_configured else 'Chưa' }}
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Client ID</label>
+              <input type="text" name="wp_client_id" class="form-control form-control-sm"
+                value="{{ wp_client_id }}" placeholder="123456">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Client Secret</label>
+              <div class="input-group input-group-sm">
+                <input type="password" name="wp_client_secret" class="form-control"
+                  value="{{ wp_client_secret }}" placeholder="Client Secret">
+                <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="alert alert-info small mb-0 py-2">
+              Tạo app tại <a href="https://developer.wordpress.com/apps" target="_blank">developer.wordpress.com/apps</a><br>
+              Redirect URI: <code>http://localhost:8000/accounts/wordpress/callback</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tumblr -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent fw-semibold d-flex align-items-center justify-content-between py-3">
+            <span><i class="bi bi-journal-text me-2" style="color:#35465c"></i>Tumblr OAuth</span>
+            <span class="badge {{ 'bg-success' if tumblr_configured else 'bg-secondary' }}">
+              {{ 'Đã cấu hình' if tumblr_configured else 'Chưa' }}
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Consumer Key</label>
+              <input type="text" name="tumblr_consumer_key" class="form-control form-control-sm"
+                value="{{ tumblr_consumer_key }}" placeholder="Consumer Key">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Consumer Secret</label>
+              <div class="input-group input-group-sm">
+                <input type="password" name="tumblr_consumer_secret" class="form-control"
+                  value="{{ tumblr_consumer_secret }}" placeholder="Consumer Secret">
+                <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="alert alert-info small mb-0 py-2">
+              Tạo app tại <a href="https://www.tumblr.com/oauth/apps" target="_blank">tumblr.com/oauth/apps</a><br>
+              Redirect URI: <code>http://localhost:8000/accounts/tumblr/callback</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- tab-content -->
+</form>
+
+<form id="refreshForm" method="post" action="/settings/refresh-models" style="display:none"></form>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Khôi phục tab đang active từ URL hash hoặc query param
+(function(){
+  const params = new URLSearchParams(location.search);
+  const tab = params.get('tab');
+  if (tab) {
+    const el = document.querySelector(`[href="#tab-${tab}"]`);
+    if (el) bootstrap.Tab.getOrCreateInstance(el).show();
+  }
+})();
+
+function refreshModels() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang cập nhật...';
+  document.getElementById('refreshForm').submit();
+}
+
+async function testApi(provider, inputId, resultId) {
+  const key = document.getElementById(inputId).value.trim();
+  const el  = document.getElementById(resultId);
+  if (!key) { el.innerHTML = '<span class="text-danger">Vui lòng nhập API key</span>'; return; }
+  el.innerHTML = '<span class="text-muted"><span class="spinner-border spinner-border-sm me-1"></span>Đang kiểm tra...</span>';
+  try {
+    const fd = new FormData(); fd.append('api_key', key);
+    const r  = await fetch(`/settings/test-api/${provider}`, { method: 'POST', body: fd });
+    const d  = await r.json();
+    el.innerHTML = d.ok
+      ? `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${d.message}</span>`
+      : `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${d.message}</span>`;
+  } catch(e) {
+    el.innerHTML = `<span class="text-danger">Lỗi: ${e.message}</span>`;
+  }
+}
+
+function togglePwd(btn) {
+  const input = btn.previousElementSibling;
+  const icon  = btn.querySelector('i');
+  if (input.type === 'password') { input.type = 'text';     icon.className = 'bi bi-eye-slash'; }
+  else                           { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+</script>
+{% endblock %}

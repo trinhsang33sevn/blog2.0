@@ -1,0 +1,604 @@
+{% extends "base.html" %}
+{% block title %}Tài khoản & Website — AutoBlogspot{% endblock %}
+{% block content %}
+
+{% set tab = request.query_params.get('tab', 'blogspot') %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-globe2 me-2"></i>Tài khoản & Website</h4>
+</div>
+
+<!-- Platform tabs -->
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'blogspot' %}active{% endif %}" href="/accounts?tab=blogspot">
+      <i class="bi bi-google me-1 text-danger"></i>Blogspot
+      {% if accounts %}<span class="badge bg-secondary ms-1">{{ accounts|length }}</span>{% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'wordpress' %}active{% endif %}" href="/accounts?tab=wordpress">
+      <i class="bi bi-wordpress me-1 text-primary"></i>WordPress.com
+      {% if wp_accounts %}<span class="badge bg-secondary ms-1">{{ wp_accounts|length }}</span>{% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'tumblr' %}active{% endif %}" href="/accounts?tab=tumblr">
+      <i class="bi bi-journal-text me-1" style="color:#35465c"></i>Tumblr
+      {% if tumblr_accounts %}<span class="badge bg-secondary ms-1">{{ tumblr_accounts|length }}</span>{% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'hashnode' %}active{% endif %}" href="/accounts?tab=hashnode">
+      <i class="bi bi-hash me-1 text-warning"></i>Hashnode
+      {% if hashnode_accounts %}<span class="badge bg-secondary ms-1">{{ hashnode_accounts|length }}</span>{% endif %}
+    </a>
+  </li>
+</ul>
+
+{# ══════════ TAB: BLOGSPOT ══════════ #}
+{% if tab == 'blogspot' %}
+
+<div class="d-flex justify-content-end mb-3">
+  <a href="/accounts/oauth/start" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Kết nối tài khoản Google
+  </a>
+</div>
+
+{% if not accounts %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-google fs-1 text-muted d-block mb-3"></i>
+    <h5>Chưa có tài khoản Google nào</h5>
+    <p class="text-muted mb-3">Vào <a href="/settings">Cài đặt</a> điền Google OAuth credentials trước, sau đó kết nối.</p>
+    <a href="/accounts/oauth/start" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Kết nối Google</a>
+  </div>
+</div>
+{% endif %}
+
+{% for account in accounts %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <div class="avatar-circle">{{ account.name[0].upper() if account.name else 'G' }}</div>
+      <div>
+        <div class="fw-semibold">{{ account.name }}</div>
+        <div class="text-muted small">{{ account.email }}</div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <form method="post" action="/accounts/{{ account.id }}/sync-blogs">
+        <button type="submit" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-arrow-clockwise me-1"></i>Đồng bộ Blog
+        </button>
+      </form>
+      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addBlog{{ account.id }}">
+        <i class="bi bi-plus-lg me-1"></i>Thêm thủ công
+      </button>
+      <form method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm('Xóa tài khoản này?')">
+        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal thêm blog -->
+  <div class="modal fade" id="addBlog{{ account.id }}" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Thêm Blog thủ công</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/accounts/{{ account.id }}/add-blog">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">URL Blog <span class="text-danger">*</span></label>
+            <input type="text" name="blog_url" class="form-control" required placeholder="https://tenblog.blogspot.com">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tên Blog (tuỳ chọn)</label>
+            <input type="text" name="blog_name" class="form-control" placeholder="Để trống sẽ tự lấy từ API">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Thêm Blog</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="card-body p-0">
+    {% if account.sites %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Tên Blog</th><th>URL</th><th>Danh mục</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>
+          {% for site in account.sites %}
+          <tr>
+            <td class="fw-semibold">{{ site.blog_name }}</td>
+            <td><a href="{{ site.blog_url }}" target="_blank" class="text-decoration-none small">{{ site.blog_url }}</a></td>
+            <td>{{ site.category or "—" }}</td>
+            <td>
+              {% set lang_map = {"vi":"🇻🇳 Việt","en":"🇺🇸 Anh","de":"🇩🇪 Đức","fr":"🇫🇷 Pháp","ko":"🇰🇷 Hàn","ja":"🇯🇵 Nhật","es":"🇪🇸 Tây Ban Nha"} %}
+              {{ lang_map.get(site.default_language, site.default_language) }}
+            </td>
+            <td><span class="badge {{ 'bg-success' if site.is_active else 'bg-secondary' }}">{{ 'Hoạt động' if site.is_active else 'Tắt' }}</span></td>
+            <td>
+              <button class="btn btn-xs btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSite{{ site.id }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+          <!-- Edit Modal -->
+          <div class="modal fade" id="editSite{{ site.id }}" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa: {{ site.blog_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post" action="/accounts/sites/{{ site.id }}/update">
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Danh mục</label>
+                    <input type="text" name="category" class="form-control" value="{{ site.category or '' }}" placeholder="VD: Sức khỏe...">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Ngôn ngữ mặc định</label>
+                    <select name="default_language" class="form-select">
+                      {% for code, label in languages %}
+                      <option value="{{ code }}" {{ 'selected' if site.default_language == code }}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="active{{ site.id }}" {{ 'checked' if site.is_active }}>
+                    <label class="form-check-label" for="active{{ site.id }}">Đang hoạt động</label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                  <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-3">Chưa có blog nào. Nhấn "Đồng bộ Blog" để tải.</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<!-- Hướng dẫn -->
+<div class="card shadow-sm border-info mt-3">
+  <div class="card-body">
+    <h6 class="fw-bold"><i class="bi bi-info-circle text-info me-2"></i>Hướng dẫn kết nối Google</h6>
+    <ol class="mb-0 small text-muted">
+      <li>Vào <a href="/settings">Cài đặt</a> và điền Google Client ID &amp; Client Secret.</li>
+      <li>Tạo credentials tại <strong>Google Cloud Console → APIs &amp; Services → Credentials</strong>.</li>
+      <li>Chọn <strong>OAuth 2.0 Client ID</strong> (Web application).</li>
+      <li>Thêm Authorized redirect URI: <code>http://localhost:8000/accounts/oauth/callback</code></li>
+      <li>Scope: <code>https://www.googleapis.com/auth/blogger</code></li>
+    </ol>
+  </div>
+</div>
+
+{# ══════════ TAB: WORDPRESS ══════════ #}
+{% elif tab == 'wordpress' %}
+
+<div class="d-flex justify-content-end mb-3">
+  {% if wp_configured %}
+  <a href="/accounts/wordpress/start" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Kết nối WordPress.com
+  </a>
+  {% else %}
+  <a href="/settings" class="btn btn-warning">
+    <i class="bi bi-gear me-1"></i>Cài đặt OAuth trước
+  </a>
+  {% endif %}
+</div>
+
+{% if not wp_configured %}
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-3">
+  <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+  <div>
+    <strong>Chưa cấu hình WordPress.com OAuth.</strong>
+    Bạn cần tạo app và nhập <strong>Client ID + Client Secret</strong> vào
+    <a href="/settings" class="alert-link">Cài đặt</a> trước khi kết nối.
+    <div class="mt-1 small">
+      Tạo app tại: <a href="https://developer.wordpress.com/apps/" target="_blank" class="alert-link">developer.wordpress.com/apps</a>
+      → Redirect URL: <code>http://localhost:8000/accounts/wordpress/callback</code>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not wp_accounts %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-wordpress fs-1 text-muted d-block mb-3"></i>
+    <h5>Chưa có tài khoản WordPress.com nào</h5>
+    {% if wp_configured %}
+    <p class="text-muted mb-3">Nhấn nút bên phải để kết nối tài khoản WordPress.com qua OAuth.</p>
+    <a href="/accounts/wordpress/start" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Kết nối WordPress.com</a>
+    {% else %}
+    <p class="text-muted mb-3">Hoàn thành cấu hình ở trên trước, sau đó quay lại kết nối.</p>
+    <a href="/settings" class="btn btn-warning"><i class="bi bi-gear me-1"></i>Vào Cài đặt ngay</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% for pa in wp_accounts %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <div class="avatar-circle" style="background:linear-gradient(135deg,#0073aa,#00a0d2)">W</div>
+      <div>
+        <div class="fw-semibold">{{ pa.name }}</div>
+        <div class="text-muted small">WordPress.com</div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <form method="post" action="/accounts/wordpress/{{ pa.id }}/sync-sites">
+        <button type="submit" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-arrow-clockwise me-1"></i>Đồng bộ Sites
+        </button>
+      </form>
+      <form method="post" action="/accounts/platform/{{ pa.id }}/delete" onsubmit="return confirm('Xóa tài khoản này?')">
+        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% set pa_sites = pa.sites %}
+    {% if pa_sites %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Tên Site</th><th>URL</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>
+          {% for site in pa_sites %}
+          <tr>
+            <td class="fw-semibold">{{ site.blog_name }}</td>
+            <td><a href="{{ site.blog_url }}" target="_blank" class="text-decoration-none small">{{ site.blog_url }}</a></td>
+            <td>{{ site.default_language | upper }}</td>
+            <td><span class="badge {{ 'bg-success' if site.is_active else 'bg-secondary' }}">{{ 'Hoạt động' if site.is_active else 'Tắt' }}</span></td>
+            <td>
+              <button class="btn btn-xs btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSite{{ site.id }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+          {% include "_site_edit_modal.html" ignore missing %}
+          <div class="modal fade" id="editSite{{ site.id }}" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa: {{ site.blog_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post" action="/accounts/sites/{{ site.id }}/update">
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Danh mục</label>
+                    <input type="text" name="category" class="form-control" value="{{ site.category or '' }}">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Ngôn ngữ</label>
+                    <select name="default_language" class="form-select">
+                      {% for code, label in languages %}
+                      <option value="{{ code }}" {{ 'selected' if site.default_language == code }}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="wpact{{ site.id }}" {{ 'checked' if site.is_active }}>
+                    <label class="form-check-label" for="wpact{{ site.id }}">Đang hoạt động</label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                  <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-3">Chưa có site nào. Nhấn "Đồng bộ Sites" để tải.</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="card shadow-sm border-primary mt-3">
+  <div class="card-body">
+    <h6 class="fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Hướng dẫn kết nối WordPress.com</h6>
+    <ol class="mb-0 small text-muted">
+      <li>Vào <a href="https://developer.wordpress.com/apps/" target="_blank">developer.wordpress.com/apps</a> → Create New Application.</li>
+      <li>Redirect URL: <code>http://localhost:8000/accounts/wordpress/callback</code></li>
+      <li>Vào <a href="/settings">Cài đặt</a> nhập <strong>Client ID</strong> và <strong>Client Secret</strong>.</li>
+      <li>Quay lại đây và nhấn "Kết nối WordPress.com".</li>
+    </ol>
+  </div>
+</div>
+
+{# ══════════ TAB: TUMBLR ══════════ #}
+{% elif tab == 'tumblr' %}
+
+<div class="d-flex justify-content-end mb-3">
+  {% if tumblr_configured %}
+  <a href="/accounts/tumblr/start" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Kết nối Tumblr
+  </a>
+  {% else %}
+  <a href="/settings" class="btn btn-warning">
+    <i class="bi bi-gear me-1"></i>Cài đặt OAuth trước
+  </a>
+  {% endif %}
+</div>
+
+{% if not tumblr_configured %}
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-3">
+  <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+  <div>
+    <strong>Chưa cấu hình Tumblr OAuth.</strong>
+    Bạn cần nhập <strong>Consumer Key + Consumer Secret</strong> vào
+    <a href="/settings" class="alert-link">Cài đặt</a> trước khi kết nối.
+    <div class="mt-1 small">
+      Tạo app tại: <a href="https://www.tumblr.com/oauth/apps" target="_blank" class="alert-link">tumblr.com/oauth/apps</a>
+      → Default callback URL: <code>http://localhost:8000/accounts/tumblr/callback</code>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if not tumblr_accounts %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-journal-text fs-1 text-muted d-block mb-3"></i>
+    <h5>Chưa có tài khoản Tumblr nào</h5>
+    {% if tumblr_configured %}
+    <p class="text-muted mb-3">Nhấn nút bên phải để kết nối tài khoản Tumblr qua OAuth.</p>
+    <a href="/accounts/tumblr/start" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Kết nối Tumblr</a>
+    {% else %}
+    <p class="text-muted mb-3">Hoàn thành cấu hình ở trên trước, sau đó quay lại kết nối.</p>
+    <a href="/settings" class="btn btn-warning"><i class="bi bi-gear me-1"></i>Vào Cài đặt ngay</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% for pa in tumblr_accounts %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <div class="avatar-circle" style="background:#35465c">T</div>
+      <div>
+        <div class="fw-semibold">{{ pa.name }}</div>
+        <div class="text-muted small">Tumblr</div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <form method="post" action="/accounts/tumblr/{{ pa.id }}/sync-blogs">
+        <button type="submit" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-arrow-clockwise me-1"></i>Đồng bộ Blogs
+        </button>
+      </form>
+      <form method="post" action="/accounts/platform/{{ pa.id }}/delete" onsubmit="return confirm('Xóa tài khoản này?')">
+        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% set pa_sites = pa.sites %}
+    {% if pa_sites %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Tên Blog</th><th>URL</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>
+          {% for site in pa_sites %}
+          <tr>
+            <td class="fw-semibold">{{ site.blog_name }}</td>
+            <td><a href="{{ site.blog_url }}" target="_blank" class="text-decoration-none small">{{ site.blog_url }}</a></td>
+            <td>{{ site.default_language | upper }}</td>
+            <td><span class="badge {{ 'bg-success' if site.is_active else 'bg-secondary' }}">{{ 'Hoạt động' if site.is_active else 'Tắt' }}</span></td>
+            <td>
+              <button class="btn btn-xs btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSiteTu{{ site.id }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+          <div class="modal fade" id="editSiteTu{{ site.id }}" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa: {{ site.blog_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post" action="/accounts/sites/{{ site.id }}/update">
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Danh mục</label>
+                    <input type="text" name="category" class="form-control" value="{{ site.category or '' }}">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Ngôn ngữ</label>
+                    <select name="default_language" class="form-select">
+                      {% for code, label in languages %}
+                      <option value="{{ code }}" {{ 'selected' if site.default_language == code }}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="tuact{{ site.id }}" {{ 'checked' if site.is_active }}>
+                    <label class="form-check-label" for="tuact{{ site.id }}">Đang hoạt động</label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                  <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-3">Chưa có blog nào. Nhấn "Đồng bộ Blogs".</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="card shadow-sm border-dark mt-3">
+  <div class="card-body">
+    <h6 class="fw-bold"><i class="bi bi-info-circle me-2"></i>Hướng dẫn kết nối Tumblr</h6>
+    <ol class="mb-0 small text-muted">
+      <li>Vào <a href="https://www.tumblr.com/oauth/apps" target="_blank">tumblr.com/oauth/apps</a> → Register application.</li>
+      <li>Default callback URL: <code>http://localhost:8000/accounts/tumblr/callback</code></li>
+      <li>Vào <a href="/settings">Cài đặt</a> nhập <strong>Consumer Key</strong> và <strong>Consumer Secret</strong>.</li>
+      <li>Quay lại đây và nhấn "Kết nối Tumblr".</li>
+    </ol>
+  </div>
+</div>
+
+{# ══════════ TAB: HASHNODE ══════════ #}
+{% elif tab == 'hashnode' %}
+
+<!-- Connect form -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-semibold"><i class="bi bi-hash text-warning me-1"></i>Kết nối Hashnode bằng API Key</div>
+  <div class="card-body">
+    <form method="post" action="/accounts/hashnode/connect">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-8">
+          <label class="form-label fw-semibold">Personal Access Token <span class="text-danger">*</span></label>
+          <input type="password" name="api_key" class="form-control" required
+            placeholder="Hashnode Personal Access Token...">
+          <div class="form-text">Lấy token tại <a href="https://hashnode.com/settings/developer" target="_blank">hashnode.com/settings/developer</a></div>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-warning w-100">
+            <i class="bi bi-plug me-1"></i>Kết nối & Sync Publications
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if hashnode_accounts %}
+{% for pa in hashnode_accounts %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <div class="avatar-circle" style="background:#f7c948;color:#1a1a1a">H</div>
+      <div>
+        <div class="fw-semibold">{{ pa.name }}</div>
+        <div class="text-muted small">Hashnode</div>
+      </div>
+    </div>
+    <form method="post" action="/accounts/platform/{{ pa.id }}/delete" onsubmit="return confirm('Xóa tài khoản này?')">
+      <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    {% set pa_sites = pa.sites %}
+    {% if pa_sites %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Publication</th><th>URL</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>
+          {% for site in pa_sites %}
+          <tr>
+            <td class="fw-semibold">{{ site.blog_name }}</td>
+            <td><a href="{{ site.blog_url }}" target="_blank" class="text-decoration-none small">{{ site.blog_url }}</a></td>
+            <td>{{ site.default_language | upper }}</td>
+            <td><span class="badge {{ 'bg-success' if site.is_active else 'bg-secondary' }}">{{ 'Hoạt động' if site.is_active else 'Tắt' }}</span></td>
+            <td>
+              <button class="btn btn-xs btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSiteHn{{ site.id }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+          <div class="modal fade" id="editSiteHn{{ site.id }}" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa: {{ site.blog_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post" action="/accounts/sites/{{ site.id }}/update">
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Danh mục</label>
+                    <input type="text" name="category" class="form-control" value="{{ site.category or '' }}">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Ngôn ngữ</label>
+                    <select name="default_language" class="form-select">
+                      {% for code, label in languages %}
+                      <option value="{{ code }}" {{ 'selected' if site.default_language == code }}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="hnact{{ site.id }}" {{ 'checked' if site.is_active }}>
+                    <label class="form-check-label" for="hnact{{ site.id }}">Đang hoạt động</label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                  <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-3">Không tìm thấy publication nào.</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card shadow-sm border-warning mt-3">
+  <div class="card-body">
+    <h6 class="fw-bold"><i class="bi bi-info-circle text-warning me-2"></i>Về Hashnode</h6>
+    <ul class="mb-0 small text-muted">
+      <li>Hashnode dùng <strong>Personal Access Token</strong> thay vì OAuth — không cần setup app.</li>
+      <li>Lấy token tại: <a href="https://hashnode.com/settings/developer" target="_blank">hashnode.com/settings/developer</a> → New Token.</li>
+      <li>Nội dung bài viết được gửi dưới dạng <strong>Markdown</strong> (HTML inline được chấp nhận).</li>
+    </ul>
+  </div>
+</div>
+
+{% endif %}{# end tab #}
+
+<!-- Blogspot tab: site table (reuse for Blogspot only) -->
+{% if tab == 'blogspot' %}
+<script>
+// Re-render Blogspot site tables inline
+</script>
+{% endif %}
+
+{% endblock %}

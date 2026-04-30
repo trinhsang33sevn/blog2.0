@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Dự án — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-folder2-open me-2"></i>Danh sách Dự án</h4>
+  <a href="/projects/new" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Tạo dự án mới
+  </a>
+</div>
+
+{% if not projects %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-folder2 fs-1 text-muted d-block mb-3"></i>
+    <h5>Chưa có dự án nào</h5>
+    <a href="/projects/new" class="btn btn-primary mt-2">Tạo dự án đầu tiên</a>
+  </div>
+</div>
+{% else %}
+<div class="row g-3">
+  {% for p in projects %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h6 class="fw-bold mb-0">{{ p.name }}</h6>
+          <span class="badge status-{{ p.status }}">
+            {% if p.status == 'running' %}🟢 Đang chạy
+            {% elif p.status == 'paused' %}🟡 Tạm dừng
+            {% elif p.status == 'completed' %}✅ Hoàn thành
+            {% else %}⏳ Chờ{% endif %}
+          </span>
+        </div>
+        {% if p.description %}
+        <p class="text-muted small mb-2">{{ p.description }}</p>
+        {% endif %}
+        <div class="small text-muted mb-3">
+          <span class="me-3"><i class="bi bi-globe2 me-1"></i>{{ p.project_sites|length }} website</span>
+          <span class="me-3"><i class="bi bi-key me-1"></i>{{ p.keywords|length }} từ khóa</span>
+          <span><i class="bi bi-calendar-day me-1"></i>{{ p.articles_per_day }} bài/ngày</span>
+        </div>
+
+        <!-- Article progress -->
+        {% set pub = p.articles|selectattr("status","eq","published")|list|length %}
+        {% set total = p.articles|length %}
+        {% if total > 0 %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Tiến trình bài viết</span>
+            <span>{{ pub }}/{{ total }}</span>
+          </div>
+          <div class="progress" style="height:6px">
+            <div class="progress-bar bg-success" style="width:{{ (pub/total*100)|int }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-footer bg-transparent d-flex gap-2">
+        <a href="/projects/{{ p.id }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+          <i class="bi bi-eye me-1"></i>Chi tiết
+        </a>
+        {% if p.status == 'pending' %}
+        <form method="post" action="/projects/{{ p.id }}/start">
+          <button class="btn btn-sm btn-success"><i class="bi bi-play-fill"></i></button>
+        </form>
+        {% elif p.status == 'running' %}
+        <form method="post" action="/projects/{{ p.id }}/pause">
+          <button class="btn btn-sm btn-warning"><i class="bi bi-pause-fill"></i></button>
+        </form>
+        {% elif p.status == 'paused' %}
+        <form method="post" action="/projects/{{ p.id }}/resume">
+          <button class="btn btn-sm btn-success"><i class="bi bi-play-fill"></i></button>
+        </form>
+        {% endif %}
+        <form method="post" action="/projects/{{ p.id }}/delete" onsubmit="return confirm('Xóa dự án này?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

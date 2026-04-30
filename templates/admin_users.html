@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Quản trị người dùng — AutoBlogspot{% endblock %}
+{% block content %}
+<h4 class="mb-4 fw-bold"><i class="bi bi-shield-check me-2"></i>Quản trị người dùng</h4>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success alert-dismissible fade show">
+  <i class="bi bi-check-circle me-2"></i>{{ request.query_params.get('success') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="card shadow-sm border-0">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Tên / Email</th>
+            <th>Gói</th>
+            <th>Trạng thái</th>
+            <th>Hết hạn</th>
+            <th>Tạo lúc</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="text-muted small">{{ u.id }}</td>
+            <td>
+              <div class="fw-semibold">{{ u.full_name or '(chưa đặt tên)' }}</div>
+              <div class="text-muted small">{{ u.email }}</div>
+              {% if u.is_admin %}<span class="badge bg-danger-subtle text-danger">Admin</span>{% endif %}
+            </td>
+            <td>
+              {% if u.subscription %}
+                {% if u.subscription.plan == 'business' %}
+                  <span class="badge bg-warning text-dark">Business</span>
+                {% elif u.subscription.plan == 'pro' %}
+                  <span class="badge bg-primary">Pro</span>
+                {% else %}
+                  <span class="badge bg-secondary">Free</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.subscription %}
+                {% if u.subscription.is_active_plan %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Hoạt động</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Hết hạn</span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td class="small">
+              {% if u.subscription %}
+                {% if u.subscription.expires_at %}
+                  {{ u.subscription.expires_at.strftime('%d/%m/%Y') }}
+                {% else %}
+                  <span class="text-success">Vĩnh viễn</span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="small text-muted">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                data-bs-target="#upgradeModal{{ u.id }}">
+                <i class="bi bi-arrow-up-circle me-1"></i>Nâng cấp
+              </button>
+
+              <!-- Upgrade Modal -->
+              <div class="modal fade" id="upgradeModal{{ u.id }}" tabindex="-1">
+                <div class="modal-dialog modal-sm">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h6 class="modal-title">Nâng cấp: {{ u.email }}</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post" action="/admin/users/{{ u.id }}/upgrade">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Gói</label>
+                          <select name="plan" class="form-select">
+                            <option value="free">Free</option>
+                            <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro</option>
+                            <option value="business" {% if u.subscription and u.subscription.plan == 'business' %}selected{% endif %}>Business</option>
+                          </select>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Số tháng</label>
+                          <input type="number" name="months" class="form-control" value="1" min="1" max="24">
+                          <div class="form-text">Business: nhập 0 để không giới hạn thời gian</div>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Xác nhận</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

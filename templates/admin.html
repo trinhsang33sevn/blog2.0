@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-shield-check me-2"></i>Admin Dashboard</h4>
+  <span class="text-muted small">{{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}</span>
+</div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success alert-dismissible fade show py-2">
+  <i class="bi bi-check-circle me-2"></i>{{ request.query_params.get('success') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="adminTabs">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'overview' %}active{% endif %}" href="/admin?tab=overview">
+      <i class="bi bi-speedometer2 me-1"></i>Tổng quan
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'members' %}active{% endif %}" href="/admin?tab=members">
+      <i class="bi bi-people me-1"></i>Thành viên
+      <span class="badge bg-secondary ms-1">{{ user_stats.total }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'revenue' %}active{% endif %}" href="/admin?tab=revenue">
+      <i class="bi bi-cash-stack me-1"></i>Doanh thu
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'system' %}active{% endif %}" href="/admin?tab=system">
+      <i class="bi bi-hdd-rack me-1"></i>Hệ thống
+    </a>
+  </li>
+</ul>
+
+<!-- ══════════════════════ TAB: OVERVIEW ══════════════════════ -->
+{% if tab == 'overview' %}
+
+<!-- Member cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary-soft"><i class="bi bi-people text-primary"></i></div>
+      <div class="stat-value">{{ user_stats.total }}</div>
+      <div class="stat-label">Tổng thành viên</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-success-soft"><i class="bi bi-person-check text-success"></i></div>
+      <div class="stat-value">{{ user_stats.active }}</div>
+      <div class="stat-label">Đang trả phí</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-warning-soft"><i class="bi bi-hourglass-split text-warning"></i></div>
+      <div class="stat-value">{{ user_stats.trial }}</div>
+      <div class="stat-label">Đang dùng thử</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-info-soft"><i class="bi bi-person-plus text-info"></i></div>
+      <div class="stat-value">{{ user_stats.new_this_month }}</div>
+      <div class="stat-label">Mới trong 30 ngày</div>
+    </div>
+  </div>
+</div>
+
+<!-- Content + Revenue cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-success-soft"><i class="bi bi-file-earmark-check text-success"></i></div>
+      <div class="stat-value">{{ revenue_stats.total_published }}</div>
+      <div class="stat-label">Bài đã đăng</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary-soft"><i class="bi bi-calendar-check text-primary"></i></div>
+      <div class="stat-value">{{ revenue_stats.published_today }}</div>
+      <div class="stat-label">Bài đăng hôm nay</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-danger-soft"><i class="bi bi-exclamation-triangle text-danger"></i></div>
+      <div class="stat-value">{{ revenue_stats.total_failed }}</div>
+      <div class="stat-label">Bài lỗi</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon bg-success-soft"><i class="bi bi-currency-dollar text-success"></i></div>
+      <div class="stat-value">{{ "{:,}".format(revenue_stats.mrr) }}₫</div>
+      <div class="stat-label">Doanh thu/tháng</div>
+    </div>
+  </div>
+</div>
+
+<!-- Plan distribution + Recent users -->
+<div class="row g-4">
+  <div class="col-md-5">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-pie-chart me-1"></i>Phân bổ gói</div>
+      <div class="card-body">
+        {% set total_sub = user_stats.total if user_stats.total > 0 else 1 %}
+        {% for plan, count in user_stats.by_plan.items() %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold text-capitalize">{{ plan }}</span>
+            <span class="text-muted">{{ count }} người</span>
+          </div>
+          <div class="progress" style="height:8px">
+            <div class="progress-bar {% if plan == 'business' %}bg-warning{% elif plan == 'pro' %}bg-primary{% else %}bg-secondary{% endif %}"
+              style="width:{{ (count / total_sub * 100)|round|int }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+        <hr class="my-3">
+        <div class="d-flex justify-content-between small">
+          <span class="text-muted">Đang hoạt động</span>
+          <span class="fw-semibold text-success">{{ user_stats.active + user_stats.trial }}</span>
+        </div>
+        <div class="d-flex justify-content-between small">
+          <span class="text-muted">Hết hạn</span>
+          <span class="fw-semibold text-danger">{{ user_stats.expired }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-clock-history me-1"></i>Thành viên mới nhất</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr><th>Tên / Email</th><th>Gói</th><th>Trạng thái</th><th>Ngày tạo</th></tr>
+            </thead>
+            <tbody>
+              {% for u in users[:10] %}
+              <tr>
+                <td>
+                  <div class="fw-semibold small">{{ u.full_name or '—' }}</div>
+                  <div class="text-muted" style="font-size:.75rem">{{ u.email }}</div>
+                </td>
+                <td>
+                  {% if u.subscription %}
+                    {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
+                    {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
+                    {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if u.subscription and u.subscription.is_active_plan %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:.7rem">Hoạt động</span>
+                  {% elif u.subscription %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size:.7rem">Hết hạn</span>
+                  {% else %}—{% endif %}
+                </td>
+                <td class="small text-muted">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB: MEMBERS ══════════════════════ -->
+{% elif tab == 'members' %}
+
+<!-- Stats header -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold">{{ user_stats.total }}</div>
+      <div class="text-muted small">Tổng</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-secondary">{{ user_stats.by_plan.free }}</div>
+      <div class="text-muted small">Free</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-primary">{{ user_stats.by_plan.pro }}</div>
+      <div class="text-muted small">Pro</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-warning">{{ user_stats.by_plan.business }}</div>
+      <div class="text-muted small">Business</div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th><th>Tên / Email</th><th>Gói</th>
+            <th>Trạng thái</th><th>Hết hạn</th><th>Tạo lúc</th><th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr class="{% if not u.is_active %}table-secondary{% endif %}">
+            <td class="text-muted small">{{ u.id }}</td>
+            <td>
+              <div class="fw-semibold">{{ u.full_name or '(chưa đặt)' }}
+                {% if u.is_admin %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
+                {% if not u.is_active %}<span class="badge bg-secondary ms-1">Bị khoá</span>{% endif %}
+              </div>
+              <div class="text-muted small">{{ u.email }}</div>
+            </td>
+            <td>
+              {% if u.subscription %}
+                {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
+                {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
+                {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
+              {% else %}<span class="text-muted small">—</span>{% endif %}
+            </td>
+            <td>
+              {% if u.subscription %}
+                {% if u.subscription.is_active_plan %}
+                  {% if u.subscription.status == 'trial' %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Dùng thử</span>
+                  {% else %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Hoạt động</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Hết hạn</span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="small">
+              {% if u.subscription %}
+                {% if u.subscription.expires_at %} {{ u.subscription.expires_at.strftime('%d/%m/%Y') }}
+                {% else %}<span class="text-success">Vĩnh viễn</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="small text-muted">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+            <td>
+              <div class="d-flex gap-1 flex-wrap">
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                  data-bs-target="#upgradeModal{{ u.id }}">
+                  <i class="bi bi-arrow-up-circle"></i>
+                </button>
+                <form method="post" action="/admin/users/{{ u.id }}/toggle-active" class="d-inline">
+                  <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}"
+                    title="{{ 'Khoá tài khoản' if u.is_active else 'Mở khoá' }}">
+                    <i class="bi {{ 'bi-lock' if u.is_active else 'bi-unlock' }}"></i>
+                  </button>
+                </form>
+              </div>
+              <!-- Upgrade Modal -->
+              <div class="modal fade" id="upgradeModal{{ u.id }}" tabindex="-1">
+                <div class="modal-dialog modal-sm">
+                  <div class="modal-content">
+                    <div class="modal-header py-2">
+                      <h6 class="modal-title">Nâng cấp: {{ u.email }}</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="post" action="/admin/users/{{ u.id }}/upgrade">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Gói</label>
+                          <select name="plan" class="form-select">
+                            <option value="free">Free</option>
+                            <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro — 300.000₫/tháng</option>
+                            <option value="business" {% if u.subscription and u.subscription.plan == 'business' %}selected{% endif %}>Business — 1.000.000₫/tháng</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label class="form-label fw-semibold">Số tháng</label>
+                          <input type="number" name="months" class="form-control" value="1" min="1" max="24">
+                          <div class="form-text">Business nhập 0 = không giới hạn</div>
+                        </div>
+                      </div>
+                      <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Xác nhận</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB: REVENUE ══════════════════════ -->
+{% elif tab == 'revenue' %}
+
+<div class="row g-4">
+  <!-- MRR Summary -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-graph-up-arrow me-1 text-success"></i>Doanh thu dự kiến</div>
+      <div class="card-body">
+        <div class="text-center py-3">
+          <div class="display-5 fw-bold text-success">{{ "{:,}".format(revenue_stats.mrr) }}₫</div>
+          <div class="text-muted">Doanh thu hàng tháng (MRR)</div>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between py-1">
+          <span><span class="badge bg-primary me-2">Pro</span>{{ user_stats.by_plan.pro }} người × 300.000₫</span>
+          <strong>{{ "{:,}".format(user_stats.by_plan.pro * 300000) }}₫</strong>
+        </div>
+        <div class="d-flex justify-content-between py-1">
+          <span><span class="badge bg-warning text-dark me-2">Business</span>{{ user_stats.by_plan.business }} người × 1.000.000₫</span>
+          <strong>{{ "{:,}".format(user_stats.by_plan.business * 1000000) }}₫</strong>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">Tổng MRR</span>
+          <strong class="text-success">{{ "{:,}".format(revenue_stats.mrr) }}₫</strong>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <span class="text-muted small">Dự kiến năm</span>
+          <span class="text-muted small">{{ "{:,}".format(revenue_stats.mrr * 12) }}₫</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Stats -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold"><i class="bi bi-file-earmark-text me-1 text-primary"></i>Thống kê nội dung</div>
+      <div class="card-body">
+        <div class="row g-3 text-center mb-3">
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-success">{{ revenue_stats.total_published }}</div>
+            <div class="text-muted small">Đã đăng</div>
+          </div>
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-primary">{{ revenue_stats.published_today }}</div>
+            <div class="text-muted small">Hôm nay</div>
+          </div>
+          <div class="col-4">
+            <div class="fs-3 fw-bold text-danger">{{ revenue_stats.total_failed }}</div>
+            <div class="text-muted small">Lỗi</div>
+          </div>
+        </div>
+        {% if revenue_stats.total_published + revenue_stats.total_failed > 0 %}
+        {% set total_art = revenue_stats.total_published + revenue_stats.total_failed %}
+        <div class="mb-1 small d-flex justify-content-between">
+          <span>Tỷ lệ thành công</span>
+          <span class="fw-semibold text-success">{{ (revenue_stats.total_published / total_art * 100)|round|int }}%</span>
+        </div>
+        <div class="progress mb-3" style="height:8px">
+          <div class="progress-bar bg-success"
+            style="width:{{ (revenue_stats.total_published / total_art * 100)|round|int }}%"></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Config -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold"><i class="bi bi-bank me-1"></i>Cấu hình thông tin thanh toán
+        <span class="text-muted fw-normal small ms-2">— hiển thị trên trang Gói dịch vụ của người dùng</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/admin/payment-config">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Ngân hàng</label>
+              <input type="text" name="payment_bank_name" class="form-control"
+                value="{{ payment_config.payment_bank_name }}" placeholder="Vietcombank (VCB)">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Số tài khoản</label>
+              <input type="text" name="payment_account_number" class="form-control"
+                value="{{ payment_config.payment_account_number }}" placeholder="1234567890">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Chủ tài khoản</label>
+              <input type="text" name="payment_account_holder" class="form-control"
+                value="{{ payment_config.payment_account_holder }}" placeholder="NGUYEN VAN A">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Nội dung chuyển khoản</label>
+              <input type="text" name="payment_transfer_note" class="form-control"
+                value="{{ payment_config.payment_transfer_note }}"
+                placeholder="AUTOBLOG [email] [tên gói]">
+              <div class="form-text">Hướng dẫn nội dung CK cho người dùng</div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-floppy me-1"></i>Lưu thông tin thanh toán
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ TAB: SYSTEM ══════════════════════ -->
+{% elif tab == 'system' %}
+
+<div class="row g-4">
+  <!-- Resource Usage -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold"><i class="bi bi-cpu me-1 text-primary"></i>Tài nguyên hệ thống</div>
+      <div class="card-body">
+        <!-- CPU -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold">CPU</span>
+            <span class="fw-bold {% if system_stats.cpu_pct > 80 %}text-danger{% elif system_stats.cpu_pct > 50 %}text-warning{% else %}text-success{% endif %}">
+              {{ system_stats.cpu_pct }}%
+            </span>
+          </div>
+          <div class="progress" style="height:10px">
+            <div class="progress-bar {% if system_stats.cpu_pct > 80 %}bg-danger{% elif system_stats.cpu_pct > 50 %}bg-warning{% else %}bg-success{% endif %}"
+              style="width:{{ system_stats.cpu_pct }}%"></div>
+          </div>
+          <div class="text-muted small mt-1">{{ system_stats.cpu_cores }} nhân</div>
+        </div>
+        <!-- RAM -->
+        <div class="mb-4">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold">RAM</span>
+            <span class="fw-bold {% if system_stats.mem_pct > 80 %}text-danger{% elif system_stats.mem_pct > 60 %}text-warning{% else %}text-success{% endif %}">
+              {{ system_stats.mem_pct }}%
+            </span>
+          </div>
+          <div class="progress" style="height:10px">
+            <div class="progress-bar {% if system_stats.mem_pct > 80 %}bg-danger{% elif system_stats.mem_pct > 60 %}bg-warning{% else %}bg-primary{% endif %}"
+              style="width:{{ system_stats.mem_pct }}%"></div>
+          </div>
+          <div class="text-muted small mt-1">{{ system_stats.mem_used_gb }} GB / {{ system_stats.mem_total_gb }} GB</div>
+        </div>
+        <!-- Disk -->
+        <div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold">Ổ cứng</span>
+            <span class="fw-bold {% if system_stats.disk_pct > 90 %}text-danger{% elif system_stats.disk_pct > 70 %}text-warning{% else %}text-success{% endif %}">
+              {{ system_stats.disk_pct }}%
+            </span>
+          </div>
+          <div class="progress" style="height:10px">
+            <div class="progress-bar {% if system_stats.disk_pct > 90 %}bg-danger{% elif system_stats.disk_pct > 70 %}bg-warning{% else %}bg-info{% endif %}"
+              style="width:{{ system_stats.disk_pct }}%"></div>
+          </div>
+          <div class="text-muted small mt-1">{{ system_stats.disk_used_gb }} GB / {{ system_stats.disk_total_gb }} GB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Info -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold"><i class="bi bi-info-circle me-1 text-info"></i>Thông tin máy chủ</div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted">Uptime</td>
+              <td class="fw-semibold text-success">{{ system_stats.uptime }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Database SQLite</td>
+              <td class="fw-semibold">{{ system_stats.db_size_mb }} MB</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Python</td>
+              <td class="fw-semibold">{{ system_stats.python_ver }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Hệ điều hành</td>
+              <td class="fw-semibold small">{{ system_stats.os_info }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">CPU nhân</td>
+              <td class="fw-semibold">{{ system_stats.cpu_cores }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Tổng thành viên</td>
+              <td class="fw-semibold">{{ user_stats.total }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Bài đã đăng</td>
+              <td class="fw-semibold">{{ revenue_stats.total_published }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health Summary -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold"><i class="bi bi-heart-pulse me-1 text-danger"></i>Đánh giá tình trạng</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set alerts = [] %}
+          {% if system_stats.cpu_pct > 80 %}{% set _ = alerts.append(('danger', 'CPU quá tải (' ~ system_stats.cpu_pct ~ '%)')) %}{% endif %}
+          {% if system_stats.mem_pct > 80 %}{% set _ = alerts.append(('danger', 'RAM quá tải (' ~ system_stats.mem_pct ~ '%)')) %}{% endif %}
+          {% if system_stats.disk_pct > 90 %}{% set _ = alerts.append(('danger', 'Ổ cứng gần đầy (' ~ system_stats.disk_pct ~ '%)')) %}{% endif %}
+          {% if revenue_stats.total_failed > 50 %}{% set _ = alerts.append(('warning', 'Có nhiều bài lỗi (' ~ revenue_stats.total_failed ~ ' bài)')) %}{% endif %}
+
+          {% if alerts %}
+            {% for level, msg in alerts %}
+            <div class="col-12">
+              <div class="alert alert-{{ level }} py-2 mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ msg }}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="col-12">
+            <div class="alert alert-success py-2 mb-0">
+              <i class="bi bi-check-circle me-2"></i>Hệ thống hoạt động bình thường. Không phát hiện vấn đề nào.
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto refresh button -->
+  <div class="col-12 text-end">
+    <a href="/admin?tab=system" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-clockwise me-1"></i>Làm mới số liệu
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Giữ tab active sau khi submit form
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('success')) {
+  setTimeout(() => {
+    const url = new URL(window.location);
+    url.searchParams.delete('success');
+    window.history.replaceState({}, '', url);
+  }, 3000);
+}
+</script>
+{% endblock %}

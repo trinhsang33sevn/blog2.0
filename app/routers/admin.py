@@ -1,0 +1,190 @@
+import os
+import time
+from datetime import datetime, timedelta
+
+import psutil
+from fastapi import APIRouter, Depends, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from ..database import get_db, engine
+from ..models import User, Subscription, Project, Article, BlogspotSite, AppSetting, PLAN_LIMITS
+from ..services.openrouter import set_setting, get_setting
+from ..services.auth_service import upgrade_plan
+from ..templates import templates
+
+router = APIRouter()
+
+_START_TIME = time.time()
+
+PLAN_PRICES = {"free": 0, "pro": 200_000, "business": 500_000}
+
+
+def _require_admin(request: Request, db: Session):
+    user_id = request.session.get("user_id")
+    user = db.query(User).filter(User.id == user_id, User.is_admin == True).first() if user_id else None
+    return user
+
+
+def _user_stats(db: Session) -> dict:
+    total = db.query(User).count()
+    by_plan = {p: 0 for p in ("free", "pro", "business")}
+    active_count = 0
+    expired_count = 0
+    trial_count = 0
+    now = datetime.utcnow()
+    month_ago = now - timedelta(days=30)
+    new_this_month = db.query(User).filter(User.created_at >= month_ago).count()
+
+    subs = db.query(Subscription).all()
+    for s in subs:
+        plan = s.plan if s.plan in by_plan else "free"
+        by_plan[plan] += 1
+        if s.is_active_plan:
+            if s.status == "trial":
+                trial_count += 1
+            else:
+                active_count += 1
+        else:
+            expired_count += 1
+
+    return {
+        "total": total,
+        "by_plan": by_plan,
+        "active": active_count,
+        "trial": trial_count,
+        "expired": expired_count,
+        "new_this_month": new_this_month,
+    }
+
+
+def _revenue_stats(db: Session) -> dict:
+    now = datetime.utcnow()
+    mrr = 0
+    subs = db.query(Subscription).filter(Subscription.status != "trial").all()
+    for s in subs:
+        if s.is_active_plan and s.plan in PLAN_PRICES:
+            mrr += PLAN_PRICES[s.plan]
+
+    total_published = db.query(Article).filter(Article.status == "published").count()
+    total_failed    = db.query(Article).filter(Article.status == "failed").count()
+    today = now.date()
+    published_today = db.query(Article).filter(
+        Article.status == "published",
+        func.date(Article.published_at) == today,
+    ).count()
+
+    return {
+        "mrr": mrr,
+        "total_published": total_published,
+        "total_failed": total_failed,
+        "published_today": published_today,
+    }
+
+
+def _system_stats(db: Session) -> dict:
+    cpu    = psutil.cpu_percent(interval=0.2)
+    mem    = psutil.virtual_memory()
+    disk   = psutil.disk_usage(".")
+    uptime = int(time.time() - _START_TIME)
+    h, rem = divmod(uptime, 3600)
+    m, s   = divmod(rem, 60)
+
+    db_path = str(engine.url).replace("sqlite:///", "")
+    try:
+        db_size_mb = round(os.path.getsize(db_path) / 1024 / 1024, 2)
+    except OSError:
+        db_size_mb = 0
+
+    import platform, sys
+    return {
+        "cpu_pct":    cpu,
+        "mem_pct":    mem.percent,
+        "mem_used_gb": round(mem.used / 1024**3, 1),
+        "mem_total_gb": round(mem.total / 1024**3, 1),
+        "disk_pct":   disk.percent,
+        "disk_used_gb": round(disk.used / 1024**3, 1),
+        "disk_total_gb": round(disk.total / 1024**3, 1),
+        "uptime":     f"{h}h {m}m {s}s",
+        "db_size_mb": db_size_mb,
+        "python_ver": sys.version.split()[0],
+        "os_info":    platform.platform(terse=True),
+        "cpu_cores":  psutil.cpu_count(),
+    }
+
+
+def _payment_config(db: Session) -> dict:
+    return {
+        "payment_bank_name":      get_setting(db, "payment_bank_name"),
+        "payment_account_number": get_setting(db, "payment_account_number"),
+        "payment_account_holder": get_setting(db, "payment_account_holder"),
+        "payment_transfer_note":  get_setting(db, "payment_transfer_note"),
+    }
+
+
+# ─── Routes ───────────────────────────────────────────────────────────────────
+
+@router.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request, tab: str = "overview", db: Session = Depends(get_db)):
+    admin = _require_admin(request, db)
+    if not admin:
+        return RedirectResponse("/")
+
+    users = db.query(User).order_by(User.created_at.desc()).all()
+
+    return templates.TemplateResponse(request, "admin.html", {
+        "current_user":   admin,
+        "active_page":    "admin",
+        "tab":            tab,
+        "users":          users,
+        "user_stats":     _user_stats(db),
+        "revenue_stats":  _revenue_stats(db),
+        "system_stats":   _system_stats(db),
+        "payment_config": _payment_config(db),
+        "plan_prices":    PLAN_PRICES,
+    })
+
+
+@router.post("/admin/users/{uid}/upgrade")
+def admin_upgrade(
+    uid: int, request: Request,
+    plan: str = Form(...), months: int = Form(1),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    upgrade_plan(db, uid, plan, months)
+    return RedirectResponse("/admin?tab=members&success=Da+nang+cap+plan", status_code=303)
+
+
+@router.post("/admin/payment-config")
+def save_payment_config(
+    request: Request,
+    payment_bank_name:      str = Form(""),
+    payment_account_number: str = Form(""),
+    payment_account_holder: str = Form(""),
+    payment_transfer_note:  str = Form(""),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    for key, val in [
+        ("payment_bank_name",      payment_bank_name),
+        ("payment_account_number", payment_account_number),
+        ("payment_account_holder", payment_account_holder),
+        ("payment_transfer_note",  payment_transfer_note),
+    ]:
+        set_setting(db, key, val.strip())
+    return RedirectResponse("/admin?tab=revenue&success=Da+luu+thong+tin+thanh+toan", status_code=303)
+
+
+@router.post("/admin/users/{uid}/toggle-active")
+def toggle_user_active(uid: int, request: Request, db: Session = Depends(get_db)):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    user = db.query(User).filter(User.id == uid).first()
+    if user:
+        user.is_active = not user.is_active
+        db.commit()
+    return RedirectResponse("/admin?tab=members", status_code=303)

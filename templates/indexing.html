@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Theo dõi Index — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-search me-2"></i>Theo dõi Index Google</h4>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="/indexing" class="stat-card mini text-decoration-none {{ 'border-primary' if not filter_status }}">
+      <div class="stat-value">{{ counts.all }}</div>
+      <div class="stat-label">Tổng cộng</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/indexing?status=submitted" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'submitted' }}">
+      <div class="stat-value text-warning">{{ counts.submitted }}</div>
+      <div class="stat-label">Đang ép index</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/indexing?status=indexed" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'indexed' }}">
+      <div class="stat-value text-success">{{ counts.indexed }}</div>
+      <div class="stat-label">Đã được index</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/indexing?status=pending" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'pending' }}">
+      <div class="stat-value text-secondary">{{ counts.pending }}</div>
+      <div class="stat-label">Chờ gửi Sinbyte</div>
+    </a>
+  </div>
+</div>
+
+<!-- Index Tasks Table -->
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    {% if tasks %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:35%">URL Bài viết</th>
+            <th>Trạng thái</th>
+            <th>Gửi Sinbyte</th>
+            <th>Kiểm tra cuối</th>
+            <th>Kiểm tra tiếp</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <td>
+              <a href="{{ task.url }}" target="_blank" class="text-decoration-none small text-truncate d-block" style="max-width:300px">
+                {{ task.url }}
+              </a>
+              {% if task.article %}
+              <div class="text-muted x-small text-truncate" style="max-width:300px">{{ task.article.title }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if task.status == 'indexed' %}
+                <span class="badge bg-success">✓ Indexed</span>
+              {% elif task.status == 'submitted' %}
+                <span class="badge bg-warning text-dark">⚡ Đang ép</span>
+              {% elif task.status == 'failed' %}
+                <span class="badge bg-danger">✗ Thất bại</span>
+              {% else %}
+                <span class="badge bg-secondary">⏳ Chờ</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">
+              {{ task.sinbyte_submitted_count }}x
+              {% if task.submitted_at %}<br>{{ task.submitted_at.strftime('%d/%m %H:%M') }}{% endif %}
+            </td>
+            <td class="small text-muted">
+              {{ task.last_checked_at.strftime('%d/%m %H:%M') if task.last_checked_at else '—' }}
+              {% if task.check_count %}<br>(lần {{ task.check_count }}){% endif %}
+            </td>
+            <td class="small">
+              {% if task.next_check_at and task.status != 'indexed' %}
+                {% set delta = task.next_check_at - now %}
+                {% if delta.total_seconds() > 0 %}
+                  <span class="text-muted">{{ task.next_check_at.strftime('%d/%m %H:%M') }}</span>
+                {% else %}
+                  <span class="text-danger fw-semibold">Đến hạn!</span>
+                {% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if task.status != 'indexed' %}
+              <form method="post" action="/indexing/{{ task.id }}/resubmit">
+                <button class="btn btn-xs btn-outline-warning" title="Gửi lại Sinbyte">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center py-3">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% for p in range(1, total_pages + 1) %}
+          <li class="page-item {{ 'active' if p == page }}">
+            <a class="page-link" href="?page={{ p }}{% if filter_status %}&status={{ filter_status }}{% endif %}">{{ p }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-search fs-1 d-block mb-2"></i>
+      Chưa có task index nào. Bài viết sau khi đăng sẽ tự động được thêm vào đây.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Info Box -->
+<div class="card border-info mt-3">
+  <div class="card-body small text-muted">
+    <strong><i class="bi bi-info-circle text-info me-1"></i>Quy trình ép index tự động:</strong>
+    <ol class="mb-0 mt-1">
+      <li>Sau khi bài đăng → URL tự động gửi đến Sinbyte.</li>
+      <li>Sau <strong>7 ngày</strong>: kiểm tra xem Google đã index chưa.</li>
+      <li>Chưa index → gửi lại Sinbyte → kiểm tra sau <strong>3 ngày</strong>.</li>
+      <li>Vẫn chưa → AI viết lại bài → ép index lại → kiểm tra sau <strong>7 ngày</strong>. Lặp đến khi index.</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

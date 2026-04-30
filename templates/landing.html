@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoBlogspot — AI tự động viết & đăng bài lên 4 nền tảng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --g-red:   #EA4335;
+      --wp-blue: #0073AA;
+      --tm-dark: #35465C;
+      --hn-gold: #F7C948;
+      --tw-blue: #1DA1F2;
+      --fb-blue: #1877F2;
+      --dark:    #0d1117;
+      --dark2:   #161b22;
+      --dark3:   #21262d;
+      --accent:  #58a6ff;
+      --text-muted-light: #8b949e;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--dark);
+      color: #e6edf3;
+      overflow-x: hidden;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--dark2); }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: rgba(13,17,23,.92);
+      border-bottom: 1px solid #21262d;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar-brand {
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #e6edf3 !important;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--g-red), var(--fb-blue), var(--wp-blue));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .nav-pill {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e !important;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: .875rem;
+      transition: all .2s;
+      text-decoration: none;
+    }
+    .nav-pill:hover { border-color: var(--accent); color: var(--accent) !important; }
+    .nav-cta {
+      background: linear-gradient(135deg, #EA4335 0%, #1877F2 50%, #0073AA 100%);
+      color: #fff !important;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 18px;
+      font-size: .875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: .88; color: #fff !important; }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      background: var(--dark);
+      position: relative;
+      overflow: hidden;
+      padding: 100px 0 80px;
+    }
+
+    /* Animated gradient orbs */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -15%;
+      width: 70vw;
+      height: 70vw;
+      background: radial-gradient(circle, rgba(234,67,53,.12) 0%, rgba(24,119,242,.08) 40%, transparent 70%);
+      animation: orb1 8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      right: -10%;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, rgba(0,115,170,.14) 0%, rgba(247,201,72,.06) 40%, transparent 70%);
+      animation: orb2 10s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes orb1 { from { transform: translate(0,0) scale(1); } to { transform: translate(5%,3%) scale(1.08); } }
+    @keyframes orb2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-4%,-5%) scale(1.06); } }
+
+    /* Grid lines background */
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .hero-content { position: relative; z-index: 2; }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(88,166,255,.08);
+      border: 1px solid rgba(88,166,255,.25);
+      color: var(--accent);
+      border-radius: 50px;
+      padding: 6px 18px;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .hero-eyebrow .pulse {
+      width: 8px; height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); }
+      50% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -.02em;
+      margin-bottom: 20px;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #EA4335, #1877F2, #0073AA, #F7C948, #35465C);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 6s linear infinite;
+    }
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .hero-lead {
+      color: #8b949e;
+      font-size: 1.1rem;
+      line-height: 1.7;
+      max-width: 520px;
+      margin-bottom: 36px;
+    }
+
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+    .btn-hero-primary {
+      background: linear-gradient(135deg, #EA4335 0%, #1877F2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 24px rgba(234,67,53,.3);
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(234,67,53,.4);
+      color: #fff;
+    }
+    .btn-hero-outline {
+      background: transparent;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 13px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color .15s, background .15s;
+    }
+    .btn-hero-outline:hover { border-color: #58a6ff; background: rgba(88,166,255,.06); color: #e6edf3; }
+
+    /* Platform badges */
+    .platform-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 50px;
+      font-size: .78rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .pb-blogspot { background: rgba(234,67,53,.1); border-color: rgba(234,67,53,.3); color: #f87171; }
+    .pb-wordpress { background: rgba(0,115,170,.1); border-color: rgba(0,115,170,.3); color: #60a5fa; }
+    .pb-tumblr { background: rgba(53,70,92,.3); border-color: rgba(53,70,92,.5); color: #94a3b8; }
+    .pb-hashnode { background: rgba(247,201,72,.1); border-color: rgba(247,201,72,.3); color: #fbbf24; }
+
+    /* ===== HERO DASHBOARD CARD ===== */
+    .dash-card {
+      background: var(--dark2);
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .dash-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 17px;
+      background: linear-gradient(135deg, rgba(234,67,53,.3), rgba(24,119,242,.2), rgba(0,115,170,.2), rgba(247,201,72,.15));
+      z-index: -1;
+    }
+    .dash-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #21262d;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #EA4335; }
+    .dot-yellow { background: #F7C948; }
+    .dot-green { background: #10b981; }
+    .dash-title { font-size: .78rem; color: #8b949e; margin-left: auto; margin-right: auto; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-item {
+      background: var(--dark3);
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .stat-val { font-size: 1.4rem; font-weight: 800; }
+    .stat-lbl { font-size: .68rem; color: #8b949e; }
+
+    .project-row {
+      background: var(--dark3);
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .project-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .status-running { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,.5); animation: pulse 2s infinite; }
+    .progress-bar-bg { height: 4px; background: #30363d; border-radius: 2px; }
+    .progress-bar-fill { height: 100%; border-radius: 2px; }
+
+    .site-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .site-badge {
+      font-size: .65rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 50px;
+    }
+
+    /* ===== SECTION HEADERS ===== */
+    .section-eyebrow {
+      display: inline-block;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 50px;
+      margin-bottom: 16px;
+    }
+    .ey-blue { background: rgba(88,166,255,.1); color: var(--accent); border: 1px solid rgba(88,166,255,.2); }
+    .ey-green { background: rgba(16,185,129,.1); color: #10b981; border: 1px solid rgba(16,185,129,.2); }
+    .ey-gold { background: rgba(247,201,72,.1); color: #F7C948; border: 1px solid rgba(247,201,72,.2); }
+    .ey-red { background: rgba(234,67,53,.1); color: #f87171; border: 1px solid rgba(234,67,53,.2); }
+
+    .section-title {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+      color: #e6edf3;
+      margin-bottom: 12px;
+    }
+    .section-sub { color: #8b949e; font-size: 1rem; line-height: 1.6; }
+
+    /* ===== PLATFORM SECTION ===== */
+    .platform-section { background: var(--dark2); border-top: 1px solid #21262d; border-bottom: 1px solid #21262d; padding: 56px 0; }
+
+    .platform-card {
+      background: var(--dark3);
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 28px 24px;
+      height: 100%;
+      transition: transform .2s, border-color .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .platform-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+    .platform-card:hover { transform: translateY(-6px); }
+
+    .pc-blogspot::before { background: var(--g-red); }
+    .pc-blogspot:hover { border-color: rgba(234,67,53,.4); }
+    .pc-wordpress::before { background: var(--wp-blue); }
+    .pc-wordpress:hover { border-color: rgba(0,115,170,.4); }
+    .pc-tumblr::before { background: var(--tm-dark); }
+    .pc-tumblr:hover { border-color: rgba(53,70,92,.6); }
+    .pc-hashnode::before { background: var(--hn-gold); }
+    .pc-hashnode:hover { border-color: rgba(247,201,72,.4); }
+
+    .platform-logo {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+    }
+    .pl-blogspot { background: rgba(234,67,53,.15); color: var(--g-red); }
+    .pl-wordpress { background: rgba(0,115,170,.15); color: #60a5fa; }
+    .pl-tumblr { background: rgba(53,70,92,.4); color: #94a3b8; }
+    .pl-hashnode { background: rgba(247,201,72,.15); color: var(--hn-gold); }
+
+    /* ===== FEATURES ===== */
+    .features-section { padding: 80px 0; }
+    .feature-card {
+      background: var(--dark2);
+      border: 1px solid #21262d;
+      border-radius: 14px;
+      padding: 28px;
+      height: 100%;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: #30363d; transform: translateY(-4px); }
+    .feature-icon-wrap {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+    }
+    .feature-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #e6edf3; }
+    .feature-desc { font-size: .875rem; color: #8b949e; line-height: 1.6; margin: 0; }
+
+    /* ===== STATS BAND ===== */
+    .stats-band {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+      border-top: 1px solid #21262d;
+      border-bottom: 1px solid #21262d;
+      padding: 60px 0;
+    }
+    .stat-big { text-align: center; }
+    .stat-big .num {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #58a6ff, #EA4335);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-big .desc { font-size: .85rem; color: #8b949e; margin-top: 4px; }
+
+    /* ===== HOW IT WORKS ===== */
+    .hiw-section { padding: 80px 0; }
+    .step-card {
+      background: var(--dark2);
+      border: 1px solid #21262d;
+      border-radius: 14px;
+      padding: 32px 28px;
+      height: 100%;
+      position: relative;
+    }
+    .step-number {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+      position: absolute;
+      top: 20px; right: 24px;
+      opacity: .06;
+      color: #fff;
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: .9rem;
+      margin-bottom: 16px;
+    }
+    .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #e6edf3; }
+    .step-desc { font-size: .875rem; color: #8b949e; line-height: 1.6; margin: 0; }
+
+    /* ===== WHY US ===== */
+    .why-section { padding: 80px 0; background: var(--dark2); border-top: 1px solid #21262d; }
+    .why-item { display: flex; gap: 16px; margin-bottom: 28px; }
+    .why-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .why-text h6 { font-size: .95rem; font-weight: 700; color: #e6edf3; margin-bottom: 4px; }
+    .why-text p { font-size: .85rem; color: #8b949e; margin: 0; line-height: 1.6; }
+
+    /* ===== PRICING ===== */
+    .pricing-section { padding: 80px 0; }
+    .plan-wrap {
+      background: var(--dark2);
+      border: 1px solid #21262d;
+      border-radius: 18px;
+      overflow: hidden;
+      height: 100%;
+      transition: transform .2s;
+    }
+    .plan-wrap:hover { transform: translateY(-6px); }
+    .plan-wrap.highlighted {
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 1px #58a6ff, 0 16px 48px rgba(88,166,255,.15);
+    }
+    .plan-header { padding: 28px 28px 20px; border-bottom: 1px solid #21262d; }
+    .plan-badge-top {
+      display: inline-block;
+      background: linear-gradient(135deg, #58a6ff, #1877F2);
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 50px;
+      margin-bottom: 12px;
+    }
+    .plan-badge-top.gold { background: linear-gradient(135deg, #F7C948, #f59e0b); color: #000; }
+    .plan-name { font-size: 1.1rem; font-weight: 800; color: #e6edf3; margin-bottom: 8px; }
+    .plan-price-big { font-size: 2.4rem; font-weight: 900; color: #e6edf3; line-height: 1; }
+    .plan-period { font-size: .85rem; font-weight: 400; color: #8b949e; }
+    .plan-desc { font-size: .82rem; color: #8b949e; margin-top: 8px; }
+    .plan-body { padding: 24px 28px 28px; }
+    .plan-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: .875rem;
+      color: #c9d1d9;
+    }
+    .plan-feature i { flex-shrink: 0; margin-top: 2px; }
+    .btn-plan {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: .95rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      transition: opacity .15s, transform .15s;
+      margin-top: 20px;
+    }
+    .btn-plan:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-plan-outline {
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      background: transparent;
+    }
+    .btn-plan-primary {
+      background: linear-gradient(135deg, #58a6ff, #1877F2);
+      color: #fff;
+      border: none;
+    }
+    .btn-plan-gold {
+      background: linear-gradient(135deg, #F7C948, #f59e0b);
+      color: #000;
+      border: none;
+    }
+
+    /* ===== CTA ===== */
+    .cta-section { padding: 80px 0; }
+    .cta-box {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      border: 1px solid #30363d;
+      border-radius: 24px;
+      padding: 64px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(234,67,53,.08) 0%, rgba(24,119,242,.06) 40%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-box h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 900; color: #e6edf3; margin-bottom: 16px; }
+    .cta-box p { color: #8b949e; font-size: 1.05rem; margin-bottom: 32px; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--dark2);
+      border-top: 1px solid #21262d;
+      padding: 40px 0 24px;
+      color: #8b949e;
+    }
+    footer a { color: #8b949e; text-decoration: none; transition: color .15s; }
+    footer a:hover { color: #e6edf3; }
+    .footer-brand { font-weight: 800; font-size: 1.1rem; color: #e6edf3; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .footer-brand-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--g-red), var(--fb-blue));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem;
+    }
+
+    /* ===== GLOW DIVIDER ===== */
+    .glow-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(234,67,53,.5), rgba(24,119,242,.5), rgba(247,201,72,.3), transparent);
+      margin: 0;
+    }
+
+    /* ===== FLOATING ANIMATION ===== */
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .float-anim { animation: float 4s ease-in-out infinite; }
+
+    /* ===== TERMINAL BOX ===== */
+    .terminal {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: .82rem;
+      line-height: 1.8;
+    }
+    .terminal .t-green { color: #10b981; }
+    .terminal .t-blue { color: #58a6ff; }
+    .terminal .t-yellow { color: #F7C948; }
+    .terminal .t-red { color: #f87171; }
+    .terminal .t-gray { color: #8b949e; }
+    .terminal .t-white { color: #e6edf3; }
+    .cursor { display: inline-block; width: 8px; height: 14px; background: #58a6ff; animation: blink 1s step-end infinite; vertical-align: middle; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .hero { padding: 80px 0 60px; }
+      .cta-box { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- =============================== NAVBAR =============================== -->
+<nav class="navbar">
+  <div class="container d-flex align-items-center justify-content-between py-2">
+    <a href="/" class="navbar-brand">
+      <div class="brand-icon"><i class="bi bi-robot text-white"></i></div>
+      AutoBlogspot
+    </a>
+    <div class="d-none d-md-flex align-items-center gap-3">
+      <a href="#platforms" class="nav-pill">Nền tảng</a>
+      <a href="#features" class="nav-pill">Tính năng</a>
+      <a href="#pricing" class="nav-pill">Bảng giá</a>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/login" class="nav-pill">Đăng nhập</a>
+      <a href="/register" class="nav-cta">Dùng thử miễn phí</a>
+    </div>
+  </div>
+</nav>
+
+<!-- =============================== HERO =============================== -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="container hero-content">
+    <div class="row align-items-center gy-5">
+      <!-- Left copy -->
+      <div class="col-lg-6">
+        <div class="hero-eyebrow">
+          <span class="pulse"></span>
+          AI đang hoạt động 24/7 &mdash; 100% tự động
+        </div>
+        <h1>
+          Một AI viết bài<br>
+          <span class="gradient-text">4 nền tảng</span><br>
+          đều lên bài
+        </h1>
+        <p class="hero-lead">
+          AutoBlogspot tự động <strong style="color:#e6edf3">phân tích từ khóa</strong>,
+          <strong style="color:#e6edf3">viết nội dung chuẩn SEO</strong> và đăng lên
+          <strong style="color:#e6edf3">Blogspot, WordPress.com, Tumblr, Hashnode</strong>
+          cùng lúc — không cần bạn can thiệp thủ công.
+        </p>
+        <div class="hero-actions">
+          <a href="/register" class="btn-hero-primary">
+            <i class="bi bi-rocket-takeoff"></i>Bắt đầu miễn phí
+          </a>
+          <a href="#how-it-works" class="btn-hero-outline">
+            Xem cách hoạt động <i class="bi bi-arrow-down"></i>
+          </a>
+        </div>
+        <div class="platform-row mb-3">
+          <span class="platform-badge pb-blogspot"><i class="bi bi-google"></i>Blogspot</span>
+          <span class="platform-badge pb-wordpress"><i class="bi bi-wordpress"></i>WordPress.com</span>
+          <span class="platform-badge pb-tumblr"><i class="bi bi-journal-text"></i>Tumblr</span>
+          <span class="platform-badge pb-hashnode"><i class="bi bi-hash"></i>Hashnode</span>
+        </div>
+        <p style="font-size:.78rem;color:#8b949e;">
+          <i class="bi bi-check-circle-fill text-success me-1"></i>Dùng thử 3 ngày miễn phí &nbsp;·&nbsp;
+          <i class="bi bi-shield-check text-success me-1"></i>Không cần thẻ tín dụng &nbsp;·&nbsp;
+          <i class="bi bi-infinity text-primary me-1"></i>Hủy bất cứ lúc nào
+        </p>
+      </div>
+
+      <!-- Right dashboard mock -->
+      <div class="col-lg-6">
+        <div class="dash-card float-anim">
+          <div class="dash-topbar">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+            <span class="dash-title"><i class="bi bi-robot me-1"></i>AutoBlogspot — Dashboard</span>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="stat-val" style="color:#10b981">247</div>
+              <div class="stat-lbl">Bài đã đăng</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" style="color:#58a6ff">189</div>
+              <div class="stat-lbl">Đã được index</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" style="color:#F7C948">76%</div>
+              <div class="stat-lbl">Tỷ lệ index</div>
+            </div>
+          </div>
+
+          <!-- Running projects -->
+          <div class="project-row">
+            <div class="project-header">
+              <span class="status-dot status-running"></span>
+              <span style="font-size:.82rem;color:#e6edf3;font-weight:600;">SEO Sức khỏe 2025</span>
+              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">3 bài/ngày</span>
+            </div>
+            <div class="progress-bar-bg mb-1">
+              <div class="progress-bar-fill" style="width:68%;background:linear-gradient(90deg,#EA4335,#1877F2);"></div>
+            </div>
+            <div style="font-size:.7rem;color:#8b949e;">68% từ khóa đã xử lý</div>
+            <div class="site-badges mt-2">
+              <span class="site-badge" style="background:rgba(234,67,53,.15);color:#f87171;">Blogspot ×3</span>
+              <span class="site-badge" style="background:rgba(0,115,170,.15);color:#60a5fa;">WordPress ×2</span>
+            </div>
+          </div>
+
+          <div class="project-row">
+            <div class="project-header">
+              <span class="status-dot status-running"></span>
+              <span style="font-size:.82rem;color:#e6edf3;font-weight:600;">Tech Blog EN</span>
+              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">5 bài/ngày</span>
+            </div>
+            <div class="progress-bar-bg mb-1">
+              <div class="progress-bar-fill" style="width:42%;background:linear-gradient(90deg,#35465C,#F7C948);"></div>
+            </div>
+            <div style="font-size:.7rem;color:#8b949e;">42% từ khóa đã xử lý</div>
+            <div class="site-badges mt-2">
+              <span class="site-badge" style="background:rgba(53,70,92,.3);color:#94a3b8;">Tumblr ×2</span>
+              <span class="site-badge" style="background:rgba(247,201,72,.15);color:#fbbf24;">Hashnode ×1</span>
+            </div>
+          </div>
+
+          <div class="terminal mt-3">
+            <span class="t-green">✓</span> <span class="t-gray">[10:42]</span> <span class="t-white">Đăng thành công:</span> <span class="t-blue">cach-giam-can-hieu-qua.html</span><br>
+            <span class="t-yellow">⚡</span> <span class="t-gray">[10:42]</span> <span class="t-white">Sinbyte submit URL → index queue</span><br>
+            <span class="t-green">✓</span> <span class="t-gray">[10:43]</span> <span class="t-white">AI đang viết bài tiếp theo...</span> <span class="cursor"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="glow-divider"></div>
+
+<!-- =============================== PLATFORMS =============================== -->
+<section id="platforms" class="platform-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-blue">Nền tảng hỗ trợ</div>
+      <h2 class="section-title">Một dự án — đăng lên khắp nơi</h2>
+      <p class="section-sub">Viết một lần, AI tự động phân phối nội dung lên tất cả các nền tảng bạn chọn.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="platform-card pc-blogspot h-100">
+          <div class="platform-logo pl-blogspot"><i class="bi bi-google"></i></div>
+          <div class="number" style="font-size:.7rem;color:#f87171;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">GOOGLE BLOGGER</div>
+          <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Blogspot</h5>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
+            Kết nối Google OAuth an toàn. Đồng bộ tất cả blog trong tài khoản. Đăng bài tự động với label, ảnh và backlink.
+          </p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span style="font-size:.7rem;background:rgba(234,67,53,.1);color:#f87171;padding:2px 8px;border-radius:4px;">OAuth2</span>
+            <span style="font-size:.7rem;background:rgba(234,67,53,.1);color:#f87171;padding:2px 8px;border-radius:4px;">GData API</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="platform-card pc-wordpress h-100">
+          <div class="platform-logo pl-wordpress"><i class="bi bi-wordpress"></i></div>
+          <div class="number" style="font-size:.7rem;color:#60a5fa;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">AUTOMATTIC</div>
+          <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">WordPress.com</h5>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
+            Đăng nhập WordPress.com OAuth2. Quản lý nhiều site, đăng bài với tags, excerpt và status tùy chỉnh.
+          </p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span style="font-size:.7rem;background:rgba(0,115,170,.1);color:#60a5fa;padding:2px 8px;border-radius:4px;">OAuth2</span>
+            <span style="font-size:.7rem;background:rgba(0,115,170,.1);color:#60a5fa;padding:2px 8px;border-radius:4px;">REST API v1.1</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="platform-card pc-tumblr h-100">
+          <div class="platform-logo pl-tumblr"><i class="bi bi-journal-text"></i></div>
+          <div class="number" style="font-size:.7rem;color:#94a3b8;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">TUMBLR / AUTOMATTIC</div>
+          <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Tumblr</h5>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
+            Kết nối Tumblr OAuth2, tự đồng bộ danh sách blog. Đăng nội dung HTML với tag và auto-refresh token.
+          </p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span style="font-size:.7rem;background:rgba(53,70,92,.3);color:#94a3b8;padding:2px 8px;border-radius:4px;">OAuth2</span>
+            <span style="font-size:.7rem;background:rgba(53,70,92,.3);color:#94a3b8;padding:2px 8px;border-radius:4px;">API v2</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="platform-card pc-hashnode h-100">
+          <div class="platform-logo pl-hashnode"><i class="bi bi-hash"></i></div>
+          <div class="number" style="font-size:.7rem;color:#fbbf24;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">HASHNODE</div>
+          <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Hashnode</h5>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
+            Kết nối bằng API key, tự đồng bộ publications. Đăng bài tech/blog chuyên nghiệp với SEO tối ưu.
+          </p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span style="font-size:.7rem;background:rgba(247,201,72,.1);color:#fbbf24;padding:2px 8px;border-radius:4px;">API Key</span>
+            <span style="font-size:.7rem;background:rgba(247,201,72,.1);color:#fbbf24;padding:2px 8px;border-radius:4px;">GraphQL</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== FEATURES =============================== -->
+<section id="features" class="features-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-green">Tính năng</div>
+      <h2 class="section-title">Mạnh mẽ từ lõi đến giao diện</h2>
+      <p class="section-sub">Mọi công cụ bạn cần để xây dựng hệ thống blog tự động, quy mô lớn và hiệu quả.</p>
+    </div>
+    <div class="row g-3">
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(88,166,255,.1);">
+            <i class="bi bi-cpu-fill" style="color:#58a6ff;"></i>
+          </div>
+          <div class="feature-title">AI viết nội dung thông minh</div>
+          <p class="feature-desc">Sử dụng OpenRouter với hàng chục model AI miễn phí (Llama 3.1, Gemma, Mistral…). Auto-fallback sang model khác khi quá tải — không bao giờ dừng giữa chừng.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(16,185,129,.1);">
+            <i class="bi bi-diagram-3-fill" style="color:#10b981;"></i>
+          </div>
+          <div class="feature-title">Phân cụm từ khóa bằng AI</div>
+          <p class="feature-desc">Nhập hàng trăm từ khóa, AI tự phân tích intent và nhóm thành các cluster logic. Mỗi cluster thành một bài hoàn chỉnh, tối ưu SEO theo chiều sâu.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(247,201,72,.1);">
+            <i class="bi bi-clock-history" style="color:#F7C948;"></i>
+          </div>
+          <div class="feature-title">Lịch đăng bài linh hoạt</div>
+          <p class="feature-desc">Đặt số bài/ngày, khoảng cách tối thiểu-tối đa. Hệ thống tự randomize giờ đăng để tự nhiên nhất, tránh bị phát hiện là bot.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(234,67,53,.1);">
+            <i class="bi bi-images" style="color:#f87171;"></i>
+          </div>
+          <div class="feature-title">Hình ảnh tự động kép lớp</div>
+          <p class="feature-desc">Ảnh đầu bài: Pollinations.ai sinh ảnh AI miễn phí không cần API. Ảnh trong bài: Pixabay (miễn bản quyền). Chèn tự nhiên, alt text tự động theo nội dung.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(139,92,246,.1);">
+            <i class="bi bi-search" style="color:#a78bfa;"></i>
+          </div>
+          <div class="feature-title">Theo dõi index Google</div>
+          <p class="feature-desc">Tự động kiểm tra trạng thái index của từng bài qua Google search operator. Gửi URL lên Sinbyte để ép index nhanh ngay sau khi đăng.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(0,115,170,.1);">
+            <i class="bi bi-link-45deg" style="color:#60a5fa;"></i>
+          </div>
+          <div class="feature-title">Backlink chèn tự nhiên</div>
+          <p class="feature-desc">Cài danh sách backlink target, AI tự chèn vào nội dung theo ngữ cảnh, không lộ liễu — bài viết vẫn đọc tự nhiên dù có link.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(16,185,129,.1);">
+            <i class="bi bi-translate" style="color:#10b981;"></i>
+          </div>
+          <div class="feature-title">Đa ngôn ngữ</div>
+          <p class="feature-desc">Viết bài bằng Tiếng Việt, Anh, Hàn, Nhật, Tây Ban Nha và nhiều ngôn ngữ khác. Mỗi site trong dự án có thể dùng ngôn ngữ riêng biệt.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(234,67,53,.1);">
+            <i class="bi bi-people-fill" style="color:#f87171;"></i>
+          </div>
+          <div class="feature-title">Kết nối không giới hạn tài khoản</div>
+          <p class="feature-desc">Kết nối bao nhiêu tài khoản Google/WordPress/Tumblr/Hashnode tùy thích. Giới hạn chỉ là số website theo gói — tài khoản không bị giới hạn.</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(88,166,255,.1);">
+            <i class="bi bi-arrow-repeat" style="color:#58a6ff;"></i>
+          </div>
+          <div class="feature-title">Auto retry &amp; recovery</div>
+          <p class="feature-desc">Đăng bị lỗi API? Hệ thống tự retry theo exponential backoff. Log chi tiết từng bài, dễ debug. Scheduler tiếp tục chạy ngay cả khi một task thất bại.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- =============================== STATS =============================== -->
+<section class="stats-band">
+  <div class="container">
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div class="stat-big">
+          <div class="num">4</div>
+          <div class="desc">Nền tảng hỗ trợ</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-big">
+          <div class="num">50+</div>
+          <div class="desc">AI Models miễn phí</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-big">
+          <div class="num">24/7</div>
+          <div class="desc">Hoạt động liên tục</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-big">
+          <div class="num">∞</div>
+          <div class="desc">Tài khoản kết nối</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== HOW IT WORKS =============================== -->
+<section id="how-it-works" class="hiw-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-gold">Quy trình</div>
+      <h2 class="section-title">Thiết lập một lần, chạy mãi mãi</h2>
+      <p class="section-sub">Chỉ cần 4 bước để hệ thống tự động hoàn toàn — từ từ khóa đến bài đăng trên 4 nền tảng.</p>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-badge" style="background:rgba(234,67,53,.15);color:#f87171;">01</div>
+          <div class="step-title">Kết nối tài khoản</div>
+          <p class="step-desc">Đăng nhập Google, WordPress, Tumblr qua OAuth2 hoặc nhập Hashnode API key. Hệ thống tự đồng bộ danh sách blog/site của bạn.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-badge" style="background:rgba(0,115,170,.15);color:#60a5fa;">02</div>
+          <div class="step-title">Tạo dự án &amp; nhập từ khóa</div>
+          <p class="step-desc">Chọn các site muốn đăng, nhập từ khóa mục tiêu (hỗ trợ 500+ từ khóa), chọn AI model, cài tần suất và ngôn ngữ riêng cho mỗi site.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-badge" style="background:rgba(16,185,129,.15);color:#10b981;">03</div>
+          <div class="step-title">Bấm Start — AI làm hết</div>
+          <p class="step-desc">AI phân cụm từ khóa → viết bài → chèn ảnh → chèn backlink → đăng lên tất cả nền tảng → gửi URL lên Sinbyte ép index tự động.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-badge" style="background:rgba(247,201,72,.15);color:#F7C948;">04</div>
+          <div class="step-title">Theo dõi &amp; tối ưu</div>
+          <p class="step-desc">Dashboard thời gian thực: số bài đăng, tỷ lệ index Google, tiến độ từ khóa, log chi tiết từng bài và status trên từng nền tảng.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== WHY US =============================== -->
+<section class="why-section">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-5">
+        <div class="section-eyebrow ey-red">Điểm khác biệt</div>
+        <h2 class="section-title">Tại sao chọn AutoBlogspot?</h2>
+        <p class="section-sub">Không chỉ là công cụ đăng bài — đây là một robot SEO hoàn chỉnh chạy ngầm 24/7 không mệt mỏi.</p>
+        <div class="mt-4">
+          <a href="/register" class="btn-hero-primary d-inline-flex">
+            <i class="bi bi-play-circle"></i>Bắt đầu ngay hôm nay
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="why-item">
+          <div class="why-icon" style="background:rgba(16,185,129,.1);"><i class="bi bi-shield-check" style="color:#10b981;"></i></div>
+          <div class="why-text">
+            <h6>Nội dung nhân hóa — vượt AI detection</h6>
+            <p>AI được prompt đặc biệt để viết văn phong tự nhiên như người thật, giảm rủi ro bị Google phát hiện là nội dung máy móc.</p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon" style="background:rgba(88,166,255,.1);"><i class="bi bi-cloud-lightning-fill" style="color:#58a6ff;"></i></div>
+          <div class="why-text">
+            <h6>AI Model miễn phí — chi phí gần như bằng 0</h6>
+            <p>OpenRouter cung cấp 50+ model AI miễn phí chất lượng cao. AutoBlogspot tự động chọn và fallback giữa các model để đảm bảo không ngắt quãng.</p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon" style="background:rgba(247,201,72,.1);"><i class="bi bi-lightning-charge-fill" style="color:#F7C948;"></i></div>
+          <div class="why-text">
+            <h6>Index nhanh hơn đối thủ</h6>
+            <p>Tích hợp Sinbyte tự động submit URL ngay sau khi đăng bài. Tăng tốc đáng kể thời gian được Google crawl và index, giúp bài lên top sớm hơn.</p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon" style="background:rgba(234,67,53,.1);"><i class="bi bi-layers-fill" style="color:#f87171;"></i></div>
+          <div class="why-text">
+            <h6>Scale không giới hạn tài khoản</h6>
+            <p>Kết nối bao nhiêu tài khoản Google, WordPress, Tumblr, Hashnode tùy thích. Phân phối rủi ro, tăng khả năng tiếp cận organic traffic từ nhiều nguồn.</p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon" style="background:rgba(139,92,246,.1);"><i class="bi bi-gear-wide-connected" style="color:#a78bfa;"></i></div>
+          <div class="why-text">
+            <h6>Cài một lần — chạy mãi không cần giám sát</h6>
+            <p>APScheduler chạy nền liên tục, tự retry khi lỗi, tự skip bài đã đăng. Bạn chỉ cần bật máy tính — mọi thứ còn lại để AI lo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== PRICING =============================== -->
+<section id="pricing" class="pricing-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-gold">Bảng giá</div>
+      <h2 class="section-title">Gói phù hợp cho mọi nhu cầu</h2>
+      <p class="section-sub">Dùng thử miễn phí 3 ngày. Nâng cấp khi bạn sẵn sàng scale mạnh hơn.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+
+      <!-- Free -->
+      <div class="col-md-6 col-lg-4">
+        <div class="plan-wrap">
+          <div class="plan-header">
+            <div class="plan-name">Free Trial</div>
+            <div class="plan-price-big">0₫</div>
+            <div class="plan-desc">Dùng thử 3 ngày miễn phí</div>
+          </div>
+          <div class="plan-body">
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>1 dự án đang chạy</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>1 website bất kỳ nền tảng</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>5 bài/ngày tối đa</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>AI models miễn phí</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Ảnh tự động (Pollinations)</span></div>
+            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">Theo dõi index Sinbyte</span></div>
+            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">Hỗ trợ ưu tiên</span></div>
+            <a href="/register" class="btn-plan btn-plan-outline">Bắt đầu miễn phí</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro -->
+      <div class="col-md-6 col-lg-4">
+        <div class="plan-wrap highlighted">
+          <div class="plan-header">
+            <div class="plan-badge-top">⭐ Phổ biến nhất</div>
+            <div class="plan-name">Pro</div>
+            <div class="plan-price-big">200.000₫<span class="plan-period">/tháng</span></div>
+            <div class="plan-desc">Dành cho blogger &amp; marketer chuyên nghiệp</div>
+          </div>
+          <div class="plan-body">
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>5 dự án đồng thời</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>10 website (mọi nền tảng)</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>20 bài/ngày/website</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>AI models miễn phí + tùy chọn</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Ảnh Pollinations + Pixabay</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Theo dõi index Sinbyte</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Hỗ trợ ưu tiên</span></div>
+            <a href="/register" class="btn-plan btn-plan-primary">Đăng ký Pro</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business -->
+      <div class="col-md-6 col-lg-4">
+        <div class="plan-wrap">
+          <div class="plan-header">
+            <div class="plan-badge-top gold">🚀 Không giới hạn</div>
+            <div class="plan-name">Business</div>
+            <div class="plan-price-big">500.000₫<span class="plan-period">/tháng</span></div>
+            <div class="plan-desc">Scale không giới hạn — agency &amp; team lớn</div>
+          </div>
+          <div class="plan-body">
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn dự án</span></div>
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn website</span></div>
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn bài/ngày</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Tất cả tính năng Pro</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Multi-user (sắp ra mắt)</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>API access (sắp ra mắt)</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Hỗ trợ 24/7 riêng</span></div>
+            <a href="/register" class="btn-plan btn-plan-gold">Đăng ký Business</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Comparison note -->
+    <div class="text-center mt-4">
+      <p style="font-size:.85rem;color:#8b949e;">
+        <i class="bi bi-info-circle me-1"></i>
+        Tất cả gói đều hỗ trợ đầy đủ 4 nền tảng: Blogspot, WordPress.com, Tumblr, Hashnode.
+        Nâng/hạ cấp bất cứ lúc nào.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="glow-divider"></div>
+
+<!-- =============================== CTA =============================== -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box">
+      <div class="section-eyebrow ey-blue mb-3" style="display:inline-block;">
+        <i class="bi bi-robot me-1"></i>Sẵn sàng chưa?
+      </div>
+      <h2>Để AI làm việc trong khi<br>bạn tập trung vào điều quan trọng hơn</h2>
+      <p>
+        Hàng trăm bài viết chuẩn SEO, đăng lên 4 nền tảng, hình ảnh đẹp, backlink chèn sẵn —<br>
+        tất cả chạy tự động 24/7 mà không tốn một phút thủ công nào của bạn.
+      </p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="/register" class="btn-hero-primary">
+          <i class="bi bi-rocket-takeoff"></i>Dùng thử miễn phí 3 ngày
+        </a>
+        <a href="/login" class="btn-hero-outline">
+          Đã có tài khoản <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      <p class="mt-4" style="font-size:.8rem;color:#8b949e;margin-bottom:0;">
+        <i class="bi bi-lock-fill me-1"></i>Bảo mật OAuth2 chuẩn Google &nbsp;·&nbsp;
+        <i class="bi bi-credit-card-2-back me-1"></i>Không cần thẻ tín dụng &nbsp;·&nbsp;
+        <i class="bi bi-x-circle me-1"></i>Hủy bất cứ lúc nào
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================== FOOTER =============================== -->
+<footer>
+  <div class="container">
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="footer-brand">
+          <div class="footer-brand-icon"><i class="bi bi-robot text-white" style="font-size:.8rem;"></i></div>
+          AutoBlogspot
+        </div>
+        <p style="font-size:.85rem;line-height:1.7;margin-bottom:12px;">
+          Hệ thống tự động viết &amp; đăng bài lên 4 nền tảng bằng AI. Chạy 24/7, không cần giám sát.
+        </p>
+        <div class="platform-row">
+          <span class="platform-badge pb-blogspot" style="font-size:.7rem;"><i class="bi bi-google"></i>Blogspot</span>
+          <span class="platform-badge pb-wordpress" style="font-size:.7rem;"><i class="bi bi-wordpress"></i>WordPress</span>
+          <span class="platform-badge pb-tumblr" style="font-size:.7rem;"><i class="bi bi-journal-text"></i>Tumblr</span>
+          <span class="platform-badge pb-hashnode" style="font-size:.7rem;"><i class="bi bi-hash"></i>Hashnode</span>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Sản phẩm</div>
+        <a href="#features" class="d-block mb-2" style="font-size:.85rem;">Tính năng</a>
+        <a href="#pricing" class="d-block mb-2" style="font-size:.85rem;">Bảng giá</a>
+        <a href="#platforms" class="d-block mb-2" style="font-size:.85rem;">Nền tảng</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Tài khoản</div>
+        <a href="/login" class="d-block mb-2" style="font-size:.85rem;">Đăng nhập</a>
+        <a href="/register" class="d-block mb-2" style="font-size:.85rem;">Đăng ký</a>
+      </div>
+      <div class="col-lg-4">
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Tích hợp AI &amp; API</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">OpenRouter AI</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Pollinations.ai</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Pixabay API</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Sinbyte Index</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Google OAuth2</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">WP.com REST</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Tumblr API v2</span>
+          <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Hashnode GraphQL</span>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid #21262d;padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <span style="font-size:.8rem;">© 2025 AutoBlogspot — Tự động viết &amp; đăng bài AI</span>
+      <span style="font-size:.8rem;">Made with <i class="bi bi-heart-fill" style="color:#EA4335;"></i> for Vietnamese bloggers</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  });
+
+  // Animated counter on scroll
+  function animateCounter(el, target) {
+    let start = 0;
+    const duration = 1200;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { el.textContent = target + (el.dataset.suffix || ''); clearInterval(timer); }
+      else { el.textContent = Math.floor(start) + (el.dataset.suffix || ''); }
+    }, 16);
+  }
+
+  // Observe stat elements
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('[data-count]').forEach(el => {
+          animateCounter(el, parseInt(el.dataset.count));
+        });
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: .3 });
+
+  document.querySelectorAll('.stats-band').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

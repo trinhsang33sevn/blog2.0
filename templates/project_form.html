@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}{% if project %}Chỉnh sửa dự án{% else %}Tạo Dự án{% endif %} — AutoBlogspot{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+  <h4 class="fw-bold mb-0">{% if project %}Chỉnh sửa: {{ project.name }}{% else %}Tạo dự án mới{% endif %}</h4>
+</div>
+
+{% set form_action = '/projects/' ~ project.id ~ '/edit' if project else '/projects/new' %}
+<form method="post" action="{{ form_action }}" id="projectForm">
+  <div class="row g-4">
+    <!-- Left column -->
+    <div class="col-md-7">
+      <!-- Basic Info -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-info-circle me-1"></i>Thông tin dự án</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tên dự án <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" required
+              placeholder="VD: SEO Sức khỏe Q1 2025"
+              value="{{ project.name if project else '' }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Mô tả</label>
+            <textarea name="description" class="form-control" rows="2"
+              placeholder="Mô tả ngắn về dự án...">{{ project.description if project else '' }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Model AI</label>
+            <select name="ai_model" class="form-select">
+              {% if model_groups.gemini %}
+              <optgroup label="🌟 Google Gemini (Miễn phí)">
+                {% for m in model_groups.gemini %}
+                <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+              {% if model_groups.claude %}
+              <optgroup label="✨ Anthropic Claude (Trả phí)">
+                {% for m in model_groups.claude %}
+                <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+              {% if model_groups.openai %}
+              <optgroup label="🤖 OpenAI ChatGPT (Trả phí)">
+                {% for m in model_groups.openai %}
+                <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+              {% if model_groups.groq %}
+              <optgroup label="⚡ Groq (Siêu nhanh / Free)">
+                {% for m in model_groups.groq %}
+                <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+              <optgroup label="🆓 OpenRouter (Fallback miễn phí)">
+                {% for m in model_groups.openrouter %}
+                <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
+            {% if not model_groups.gemini and not model_groups.claude and not model_groups.openai and not model_groups.groq %}
+            <div class="form-text text-warning">
+              <i class="bi bi-lightbulb me-1"></i>Thêm <a href="/settings#tab-ai">Gemini API key miễn phí</a> để viết bài chất lượng tốt hơn.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Settings -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-clock me-1"></i>Lịch đăng bài</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Bài/ngày mỗi website</label>
+              <input type="number" name="articles_per_day" class="form-control"
+                value="{{ project.articles_per_day if project else 3 }}" min="1" max="50">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tối thiểu (phút)</label>
+              <input type="number" name="min_interval" class="form-control"
+                value="{{ project.min_interval_minutes if project else 60 }}" min="5">
+              <div class="form-text">Khoảng cách tối thiểu giữa 2 bài</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tối đa (phút)</label>
+              <input type="number" name="max_interval" class="form-control"
+                value="{{ project.max_interval_minutes if project else 240 }}" min="5">
+              <div class="form-text">Khoảng cách tối đa giữa 2 bài</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Labels -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-tag me-1"></i>Nhãn bài viết (Labels)</div>
+        <div class="card-body">
+          <input type="text" name="custom_labels_text" id="custom_labels_text" class="form-control"
+            placeholder="VD: Sức khỏe, Dinh dưỡng, Thể thao"
+            value="{{ current_labels if current_labels is defined else '' }}">
+          <div class="form-text">
+            Nhập các nhãn cách nhau bằng dấu phẩy. <strong>Nếu để trống</strong> — AI sẽ tự động sinh nhãn phù hợp cho từng bài viết.
+          </div>
+        </div>
+      </div>
+
+      <!-- Keywords (chỉ hiển thị khi tạo mới) -->
+      {% if not project %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-tags me-1"></i>Danh sách từ khóa</span>
+          <span id="kw-badge" class="badge bg-secondary">0 từ khóa</span>
+        </div>
+        <div class="card-body">
+          <label class="form-label">Nhập mỗi từ khóa một dòng</label>
+          <textarea name="keywords_text" id="keywords_text" class="form-control font-monospace" rows="10"
+            placeholder="cách giảm cân nhanh&#10;thực phẩm tốt cho tim&#10;bài tập buổi sáng&#10;..."
+            oninput="countKeywords()"></textarea>
+          <div id="kw-guide" class="mt-2 p-2 rounded small" style="background:#f8f9fa;border:1px solid #dee2e6;">
+            <div class="d-flex gap-3 flex-wrap mb-1">
+              <span><span class="badge bg-success">Tối ưu</span> 10 – 60 từ khóa / lô</span>
+              <span><span class="badge bg-primary">Tốt</span> 60 – 200 từ khóa (tự chia lô)</span>
+              <span><span class="badge bg-warning text-dark">Chấp nhận</span> 200 – 500 từ khóa</span>
+              <span><span class="badge bg-secondary">Không giới hạn</span> > 500 (xử lý lâu hơn)</span>
+            </div>
+            <div class="text-muted" style="font-size:0.78rem;">
+              <i class="bi bi-info-circle me-1"></i>
+              AI tự động chia thành các lô 60 từ khóa để đảm bảo chất lượng phân nhóm.
+              Nên nhập <strong>50–200 từ khóa</strong> mỗi dự án để tối ưu thời gian và chất lượng.
+            </div>
+          </div>
+          <div id="kw-status" class="mt-1 small fw-semibold"></div>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-info small">
+        <i class="bi bi-info-circle me-1"></i>
+        Để thêm từ khóa mới, dùng ô <strong>"Thêm từ khóa"</strong> trong trang chi tiết dự án.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right column -->
+    <div class="col-md-5">
+      <!-- Sites -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-globe2 me-1"></i>Chọn website đăng bài</div>
+        <div class="card-body">
+          {% if sites %}
+          <div class="text-muted small mb-2">Chọn website và ngôn ngữ viết bài cho từng site</div>
+          {% for site in sites %}
+          {% set is_selected = selected_site_ids is defined and site.id in selected_site_ids %}
+          {% set lang_val = site_languages[site.id] if site_languages is defined and site.id in site_languages else site.default_language %}
+          <div class="site-selector mb-3 p-3 border rounded">
+            <div class="form-check mb-2">
+              <input class="form-check-input site-check" type="checkbox" name="site_ids"
+                value="{{ site.id }}" id="site{{ site.id }}"
+                onchange="toggleLang(this)"
+                {{ 'checked' if is_selected }}>
+              <label class="form-check-label fw-semibold" for="site{{ site.id }}">
+                {{ site.blog_name }}
+                {% set plat = site.platform or 'blogspot' %}
+                {% if plat == 'wordpress' %}<span class="badge bg-primary ms-1 small">WP</span>
+                {% elif plat == 'tumblr' %}<span class="badge ms-1 small" style="background:#35465c">Tumblr</span>
+                {% elif plat == 'hashnode' %}<span class="badge bg-warning text-dark ms-1 small">Hashnode</span>
+                {% else %}<span class="badge bg-danger ms-1 small">Blogspot</span>{% endif %}
+                {% if site.category %}<span class="badge bg-secondary ms-1 small">{{ site.category }}</span>{% endif %}
+              </label>
+            </div>
+            <div class="text-muted small mb-2">{{ site.blog_url }}</div>
+            <div class="lang-selector {% if not is_selected %}d-none{% endif %}" id="lang{{ site.id }}">
+              <label class="form-label small fw-semibold mb-1">Ngôn ngữ bài viết:</label>
+              <select name="site_languages" class="form-select form-select-sm">
+                {% for code, label in languages %}
+                <option value="{{ code }}" {{ 'selected' if code == lang_val }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="text-center text-muted py-3">
+            <i class="bi bi-info-circle d-block mb-1"></i>
+            Chưa có website nào. <a href="/accounts">Thêm tài khoản</a> và đồng bộ blog trước.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Backlinks -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-link-45deg me-1"></i>Backlink trong bài viết</span>
+          <button type="button" class="btn btn-xs btn-outline-primary" onclick="addBacklink()">
+            <i class="bi bi-plus"></i> Thêm
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="backlinks-container"></div>
+          <input type="hidden" name="backlinks_json" id="backlinks_json"
+            value="{{ project.backlinks if project else '[]' }}">
+          <div class="form-text">Backlink sẽ được AI chèn tự nhiên vào nội dung bài viết</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-2 mb-4">
+    <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="btn btn-outline-secondary">Hủy</a>
+    <button type="submit" class="btn btn-primary px-5">
+      <i class="bi bi-check2-circle me-1"></i>{% if project %}Lưu thay đổi{% else %}Tạo dự án{% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if not project %}
+function countKeywords() {
+  const ta = document.getElementById('keywords_text');
+  const badge = document.getElementById('kw-badge');
+  const status = document.getElementById('kw-status');
+  const lines = ta.value.split('\n').filter(l => l.trim().length > 0);
+  const n = lines.length;
+  badge.textContent = n + ' từ khóa';
+  if (n === 0) {
+    badge.className = 'badge bg-secondary';
+    status.textContent = '';
+  } else if (n <= 60) {
+    badge.className = 'badge bg-success';
+    status.innerHTML = '<span class="text-success">✓ Tối ưu — AI phân nhóm chất lượng cao nhất</span>';
+  } else if (n <= 200) {
+    const lots = Math.ceil(n / 60);
+    badge.className = 'badge bg-primary';
+    status.innerHTML = `<span class="text-primary">✓ Tốt — tự động chia ${lots} lô × 60 từ khóa</span>`;
+  } else if (n <= 500) {
+    const lots = Math.ceil(n / 60);
+    badge.className = 'badge bg-warning text-dark';
+    status.innerHTML = `<span class="text-warning">⚠ Nhiều — chia ${lots} lô, sẽ mất thêm thời gian xử lý</span>`;
+  } else {
+    const lots = Math.ceil(n / 60);
+    badge.className = 'badge bg-danger';
+    status.innerHTML = `<span class="text-danger">⚠ Rất nhiều — ${lots} lô, thời gian xử lý có thể lâu. Cân nhắc chia thành nhiều dự án.</span>`;
+  }
+}
+{% endif %}
+
+function toggleLang(checkbox) {
+  const langDiv = document.getElementById('lang' + checkbox.value);
+  if (checkbox.checked) {
+    langDiv.classList.remove('d-none');
+  } else {
+    langDiv.classList.add('d-none');
+  }
+}
+
+let backlinkCount = 0;
+
+function renderBacklinks(data) {
+  const container = document.getElementById('backlinks-container');
+  container.innerHTML = '';
+  backlinkCount = 0;
+  data.forEach(bl => {
+    backlinkCount++;
+    const div = document.createElement('div');
+    div.className = 'backlink-row mb-2';
+    div.id = 'bl_' + backlinkCount;
+    div.innerHTML = `
+      <div class="row g-2 align-items-end">
+        <div class="col-5">
+          <input type="text" class="form-control form-control-sm bl-anchor"
+            placeholder="Anchor text" value="${bl.anchor || ''}" oninput="updateBacklinks()">
+        </div>
+        <div class="col-6">
+          <input type="url" class="form-control form-control-sm bl-url"
+            placeholder="https://example.com" value="${bl.url || ''}" oninput="updateBacklinks()">
+        </div>
+        <div class="col-1">
+          <button type="button" class="btn btn-xs btn-outline-danger" onclick="removeBacklink('bl_${backlinkCount}')">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function addBacklink() {
+  backlinkCount++;
+  const container = document.getElementById('backlinks-container');
+  const div = document.createElement('div');
+  div.className = 'backlink-row mb-2';
+  div.id = 'bl_' + backlinkCount;
+  div.innerHTML = `
+    <div class="row g-2 align-items-end">
+      <div class="col-5">
+        <input type="text" class="form-control form-control-sm bl-anchor" placeholder="Anchor text" oninput="updateBacklinks()">
+      </div>
+      <div class="col-6">
+        <input type="url" class="form-control form-control-sm bl-url" placeholder="https://example.com" oninput="updateBacklinks()">
+      </div>
+      <div class="col-1">
+        <button type="button" class="btn btn-xs btn-outline-danger" onclick="removeBacklink('bl_${backlinkCount}')">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    </div>`;
+  container.appendChild(div);
+}
+
+function removeBacklink(id) {
+  document.getElementById(id).remove();
+  updateBacklinks();
+}
+
+function updateBacklinks() {
+  const rows = document.querySelectorAll('.backlink-row');
+  const backlinks = [];
+  rows.forEach(row => {
+    const anchor = row.querySelector('.bl-anchor').value.trim();
+    const url = row.querySelector('.bl-url').value.trim();
+    if (anchor && url) backlinks.push({ anchor, url });
+  });
+  document.getElementById('backlinks_json').value = JSON.stringify(backlinks);
+}
+
+// Khởi tạo backlinks từ dữ liệu hiện có
+(function() {
+  const raw = document.getElementById('backlinks_json').value;
+  try {
+    const data = JSON.parse(raw);
+    if (Array.isArray(data) && data.length > 0) {
+      renderBacklinks(data);
+    }
+  } catch(e) {}
+})();
+</script>
+{% endblock %}

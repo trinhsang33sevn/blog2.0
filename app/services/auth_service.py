@@ -1,0 +1,88 @@
+import hashlib
+import secrets
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+
+from ..models import User, Subscription, PLAN_LIMITS
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(32)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 260000)
+    return f"{salt}:{key.hex()}"
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        salt, key_hex = stored_hash.split(":", 1)
+        key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 260000)
+        return secrets.compare_digest(key.hex(), key_hex)
+    except Exception:
+        return False
+
+
+def create_user(db: Session, email: str, password: str, full_name: str = "") -> User:
+    user = User(
+        email=email.strip().lower(),
+        password_hash=hash_password(password),
+        full_name=full_name.strip(),
+        is_admin=db.query(User).count() == 0,  # first user becomes admin
+    )
+    db.add(user)
+    db.flush()
+
+    limits = PLAN_LIMITS["free"]
+    sub = Subscription(
+        user_id=user.id,
+        plan="free",
+        status="trial",
+        started_at=datetime.utcnow(),
+        expires_at=datetime.utcnow() + timedelta(days=3),
+        projects_limit=limits["projects"],
+        sites_limit=limits["sites"],
+        articles_per_day_limit=limits["articles_per_day"],
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email.strip().lower()).first()
+
+
+def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subscription:
+    sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
+    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
+
+    now = datetime.utcnow()
+    # Extend from current expiry if still active, else from now
+    base = sub.expires_at if (sub and sub.expires_at and sub.expires_at > now) else now
+
+    if plan == "business":
+        expires = None  # business = no expiry
+    else:
+        expires = base + timedelta(days=30 * months)
+
+    if sub:
+        sub.plan = plan
+        sub.status = "active"
+        sub.expires_at = expires
+        sub.projects_limit = limits["projects"]
+        sub.sites_limit = limits["sites"]
+        sub.articles_per_day_limit = limits["articles_per_day"]
+    else:
+        sub = Subscription(
+            user_id=user_id,
+            plan=plan,
+            status="active",
+            expires_at=expires,
+            projects_limit=limits["projects"],
+            sites_limit=limits["sites"],
+            articles_per_day_limit=limits["articles_per_day"],
+        )
+        db.add(sub)
+
+    db.commit()
+    return sub
