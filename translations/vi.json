@@ -32,7 +32,7 @@
   "acct_google_guide_step1": "Vào <a href='/settings'>Cài đặt</a> và điền Google Client ID &amp; Client Secret.",
   "acct_google_guide_step2": "Tạo credentials tại <strong>Google Cloud Console → APIs &amp; Services → Credentials</strong>.",
   "acct_google_guide_step3": "Chọn <strong>OAuth 2.0 Client ID</strong> (Web application).",
-  "acct_google_guide_step4": "Thêm Authorized redirect URI: <code>http://localhost:8000/accounts/oauth/callback</code>",
+  "acct_google_guide_step4": "Thêm Authorized redirect URI:",
   "acct_google_guide_step5": "Scope: <code>https://www.googleapis.com/auth/blogger</code>",
   "acct_google_guide_title": "Hướng dẫn kết nối Google",
   "acct_google_no_config_hint": "Vào <a href='/settings'>Cài đặt</a> điền Google OAuth credentials trước, sau đó kết nối.",

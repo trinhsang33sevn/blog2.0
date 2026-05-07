@@ -32,7 +32,7 @@
   "acct_google_guide_step1": "Accédez aux <a href='/settings'>Paramètres</a> et entrez votre Google Client ID &amp; Client Secret.",
   "acct_google_guide_step2": "Créez des identifiants dans <strong>Google Cloud Console → APIs &amp; Services → Credentials</strong>.",
   "acct_google_guide_step3": "Sélectionnez <strong>OAuth 2.0 Client ID</strong> (Application Web).",
-  "acct_google_guide_step4": "Ajoutez l'URI de redirection autorisée : <code>http://localhost:8000/accounts/oauth/callback</code>",
+  "acct_google_guide_step4": "Ajoutez l'URI de redirection autorisée :",
   "acct_google_guide_step5": "Scope : <code>https://www.googleapis.com/auth/blogger</code>",
   "acct_google_guide_title": "Guide de connexion Google",
   "acct_google_no_config_hint": "Accédez aux <a href='/settings'>Paramètres</a> pour configurer les identifiants Google OAuth d'abord, puis connectez.",
