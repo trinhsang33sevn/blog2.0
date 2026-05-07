@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
+from ..config import get_settings
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..services.openrouter import (
@@ -12,6 +13,7 @@ from ..services.ai_providers import test_connection
 from ..templates import templates
 
 router = APIRouter()
+_BASE = get_settings().BASE_URL.rstrip("/")
 
 
 @router.get("/settings", response_class=HTMLResponse)
@@ -49,6 +51,7 @@ def settings_page(request: Request, db: Session = Depends(get_db)):
         "groq_configured":        bool(get_setting(db, "groq_api_key",        user_id=uid)),
         "current_user":           current_user,
         "active_page":            "settings",
+        "base_url":               _BASE,
     })
 
 

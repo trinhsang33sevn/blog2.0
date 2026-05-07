@@ -49,6 +49,7 @@ def accounts_page(request: Request, db: Session = Depends(get_db)):
         "languages":              LANGUAGES,
         "current_user":           current_user,
         "active_page":            "accounts",
+        "base_url":               _BASE,
     })
 
 

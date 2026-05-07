@@ -231,7 +231,7 @@
     {{ _("acct_wp_connect_hint") }}
     <div class="mt-1 small">
       Tạo app tại: <a href="https://developer.wordpress.com/apps/" target="_blank" class="alert-link">developer.wordpress.com/apps</a>
-      → Redirect URL: <code>http://localhost:8000/accounts/wordpress/callback</code>
+      → Redirect URL: <code>{{ base_url }}/accounts/wordpress/callback</code>
     </div>
   </div>
 </div>
@@ -374,7 +374,7 @@
     {{ _("acct_tumblr_not_configured_desc") | safe }}
     <div class="mt-1 small">
       Tạo app tại: <a href="https://www.tumblr.com/oauth/apps" target="_blank" class="alert-link">tumblr.com/oauth/apps</a>
-      → Default callback URL: <code>http://localhost:8000/accounts/tumblr/callback</code>
+      → Default callback URL: <code>{{ base_url }}/accounts/tumblr/callback</code>
     </div>
   </div>
 </div>
@@ -497,7 +497,7 @@
         <li>Điền thông tin app (tên, website tùy ý)</li>
         <li>
           Ô <strong>"Default callback URL"</strong> điền chính xác:<br>
-          <code class="user-select-all">http://localhost:8000/accounts/tumblr/callback</code>
+          <code class="user-select-all">{{ base_url }}/accounts/tumblr/callback</code>
         </li>
         <li>Tick chọn <strong>OAuth 2.0</strong> (nếu có lựa chọn)</li>
         <li>Nhấn <strong>Register</strong> — Tumblr sẽ cấp Consumer Key và Consumer Secret</li>
