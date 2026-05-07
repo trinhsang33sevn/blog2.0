@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="{{ get_lang() }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ article.title }} — AutoBlogspot Blog</title>
+  <meta name="description" content="{{ article.description }}">
+  <meta name="keywords" content="{{ article.keywords }}">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://autoblogspot.com/blog/{{ article.slug }}">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://autoblogspot.com/blog/{{ article.slug }}">
+  <meta property="og:title" content="{{ article.title }}">
+  <meta property="og:description" content="{{ article.description }}">
+  <meta property="og:image" content="https://autoblogspot.com/blog/image/{{ article.slug }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ article.title }}">
+  <meta name="twitter:description" content="{{ article.description }}">
+  <meta name="twitter:image" content="https://autoblogspot.com/blog/image/{{ article.slug }}">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ article.title }}",
+    "description": "{{ article.description }}",
+    "image": "https://autoblogspot.com/blog/image/{{ article.slug }}",
+    "datePublished": "{{ article.date }}",
+    "author": {"@type": "Organization", "name": "AutoBlogspot"},
+    "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"},
+    "mainEntityOfPage": {"@type": "WebPage", "@id": "https://autoblogspot.com/blog/{{ article.slug }}"}
+  }
+  </script>
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    :root { --dark:#0d1117; --dark2:#161b22; --dark3:#21262d; --accent:#58a6ff; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--dark); color:#e6edf3; min-height:100vh; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+
+    .site-header { background:rgba(13,17,23,.95); border-bottom:1px solid #30363d; padding:14px 0; position:sticky; top:0; z-index:100; }
+    .brand { font-weight:800; font-size:1.15rem; color:#e6edf3; display:flex; align-items:center; gap:8px; }
+    .brand-icon { width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center; }
+
+    .article-hero { background:var(--dark2); border-bottom:1px solid #30363d; padding:48px 0 36px; }
+    .article-category { font-size:.8rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
+    .article-title { font-size:2rem; font-weight:800; line-height:1.25; margin-bottom:16px; }
+    .article-meta { color:#6e7681; font-size:.88rem; display:flex; flex-wrap:wrap; gap:16px; }
+
+    .hero-image-wrap { margin-top:28px; border-radius:12px; overflow:hidden; max-height:420px; }
+    .hero-image-wrap img { width:100%; max-height:420px; object-fit:cover; display:block; }
+
+    .article-body { max-width:760px; }
+    .article-body h2 { font-size:1.35rem; font-weight:700; margin:2rem 0 .8rem; color:#e6edf3; padding-bottom:8px; border-bottom:1px solid #30363d; }
+    .article-body h3 { font-size:1.1rem; font-weight:600; margin:1.5rem 0 .6rem; color:#e6edf3; }
+    .article-body p { line-height:1.8; color:#c9d1d9; margin-bottom:1rem; }
+    .article-body ul, .article-body ol { padding-left:1.4rem; margin-bottom:1rem; }
+    .article-body li { line-height:1.75; color:#c9d1d9; margin-bottom:.3rem; }
+    .article-body strong { color:#e6edf3; }
+    .article-body a { color:var(--accent); }
+    .article-body a:hover { text-decoration:underline; }
+    .article-body table { width:100%; border-collapse:collapse; margin-bottom:1.5rem; font-size:.9rem; }
+    .article-body th { background:var(--dark3); color:#e6edf3; padding:10px 14px; text-align:left; border:1px solid #30363d; }
+    .article-body td { padding:10px 14px; border:1px solid #30363d; color:#c9d1d9; vertical-align:top; }
+    .article-body tr:nth-child(even) td { background:rgba(255,255,255,.02); }
+    .article-body .btn { text-decoration:none; }
+    .article-body figure { margin:2rem 0; }
+    .article-body figure img { border-radius:10px; }
+    .article-body figcaption { font-size:.78rem; color:#6e7681; margin-top:6px; text-align:center; }
+
+    .cta-box { background:linear-gradient(135deg,#1c1f4a,#1a1030); border:1px solid #6366f150; border-radius:12px; padding:28px; margin:2.5rem 0; text-align:center; }
+    .cta-box h3 { font-size:1.2rem; font-weight:700; margin-bottom:8px; }
+    .cta-box p { color:#8b949e; font-size:.9rem; margin-bottom:16px; }
+
+    .related-card { background:var(--dark2); border:1px solid #30363d; border-radius:10px; overflow:hidden; transition:.15s; height:100%; }
+    .related-card:hover { border-color:#58a6ff44; }
+    .related-thumb { width:100%; height:110px; object-fit:cover; display:block; background:var(--dark3); }
+    .related-card-body { padding:12px 14px; }
+    .related-card .cat { font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; margin-bottom:5px; }
+    .related-card .title { font-size:.88rem; font-weight:600; color:#e6edf3; line-height:1.4; }
+    .related-card .title a { color:inherit; }
+    .related-card .title a:hover { color:var(--accent); }
+
+    .nav-articles { border-top:1px solid #30363d; padding-top:24px; margin-top:24px; }
+
+    /* Lang switcher */
+    .lang-btn { background:none; border:1px solid #30363d; border-radius:6px; color:#8b949e; padding:4px 10px; font-size:.82rem; cursor:pointer; }
+    .lang-btn:hover { border-color:#58a6ff; color:#e6edf3; }
+    .dropdown-menu { background:var(--dark2); border:1px solid #30363d; }
+    .dropdown-item { color:#c9d1d9; font-size:.88rem; }
+    .dropdown-item:hover, .dropdown-item:focus { background:var(--dark3); color:#e6edf3; }
+
+    footer { background:var(--dark2); border-top:1px solid #30363d; padding:32px 0; text-align:center; color:#6e7681; font-size:.85rem; }
+    footer a { color:#8b949e; }
+    footer a:hover { color:#e6edf3; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container d-flex align-items-center justify-content-between gap-2 flex-wrap">
+    <a href="/" class="brand text-decoration-none">
+      <div class="brand-icon"><i class="bi bi-send-fill text-white" style="font-size:.8rem;"></i></div>
+      AutoBlogspot
+    </a>
+    <nav class="d-flex gap-3 align-items-center flex-wrap">
+      <a href="/#features" class="text-secondary" style="font-size:.9rem;">{{ _("blog_features") }}</a>
+      <a href="/#pricing" class="text-secondary" style="font-size:.9rem;">{{ _("blog_pricing") }}</a>
+      <a href="/blog" class="fw-semibold" style="font-size:.9rem;">Blog</a>
+
+      <!-- Language switcher -->
+      <div class="dropdown">
+        <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          {% if get_lang() == 'vi' %}🇻🇳{% elif get_lang() == 'en' %}🇬🇧{% elif get_lang() == 'fr' %}🇫🇷{% elif get_lang() == 'it' %}🇮🇹{% endif %}
+          {{ get_lang()|upper }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          {% for code, label in LANGUAGE_LABELS.items() %}
+          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}"
+                 href="/set-lang?lang={{ code }}&next=/blog/{{ article.slug }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <a href="/login" class="btn btn-sm btn-outline-secondary">{{ _("blog_login") }}</a>
+      <a href="/register" class="btn btn-sm btn-primary">{{ _("blog_try_free") }}</a>
+    </nav>
+  </div>
+</header>
+
+<section class="article-hero">
+  <div class="container">
+    <nav aria-label="breadcrumb" style="margin-bottom:16px;">
+      <ol class="breadcrumb" style="background:none;padding:0;margin:0;font-size:.85rem;">
+        <li class="breadcrumb-item"><a href="/" style="color:#8b949e;">{{ _("blog_home") }}</a></li>
+        <li class="breadcrumb-item"><a href="/blog" style="color:#8b949e;">Blog</a></li>
+        <li class="breadcrumb-item active" style="color:#e6edf3;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ article.title }}</li>
+      </ol>
+    </nav>
+    <div class="article-category">{{ article.display_category }}</div>
+    <h1 class="article-title">{{ article.title }}</h1>
+    <div class="article-meta">
+      <span><i class="bi bi-calendar3 me-1"></i>{{ article.date }}</span>
+      <span><i class="bi bi-clock me-1"></i>{{ article.read_time }} {{ _("blog_min_read") }}</span>
+      <span><i class="bi bi-person me-1"></i>{{ _("blog_author") }}</span>
+    </div>
+  </div>
+</section>
+
+<main class="py-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="article-body">
+          {{ article.content | safe }}
+        </div>
+
+        <!-- Prev / Next navigation -->
+        {% if prev_article or next_article %}
+        <div class="nav-articles d-flex justify-content-between gap-3 flex-wrap">
+          {% if prev_article %}
+          <div style="max-width:48%;">
+            <div style="font-size:.75rem;color:#6e7681;margin-bottom:4px;"><i class="bi bi-arrow-left me-1"></i>{{ _("blog_prev") }}</div>
+            <a href="/blog/{{ prev_article.slug }}" style="font-size:.9rem;font-weight:600;color:#e6edf3;line-height:1.4;">{{ prev_article.title }}</a>
+          </div>
+          {% endif %}
+          {% if next_article %}
+          <div style="max-width:48%;text-align:right;">
+            <div style="font-size:.75rem;color:#6e7681;margin-bottom:4px;">{{ _("blog_next") }} <i class="bi bi-arrow-right ms-1"></i></div>
+            <a href="/blog/{{ next_article.slug }}" style="font-size:.9rem;font-weight:600;color:#e6edf3;line-height:1.4;">{{ next_article.title }}</a>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-lg-4 mt-4 mt-lg-0">
+        <div style="position:sticky;top:80px;">
+          <!-- CTA -->
+          <div class="cta-box mb-4">
+            <h3>{{ _("blog_cta_title") }}</h3>
+            <p>{{ _("blog_cta_desc") }}</p>
+            <a href="/register" class="btn btn-primary w-100">{{ _("blog_start_free") }}</a>
+          </div>
+
+          <!-- Related articles -->
+          {% if related %}
+          <div style="background:var(--dark2);border:1px solid #30363d;border-radius:10px;overflow:hidden;">
+            <div style="font-size:.82rem;font-weight:700;color:#e6edf3;padding:14px 16px 10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #30363d;">{{ _("blog_related") }}</div>
+            <div class="d-flex flex-column gap-0">
+              {% for r in related %}
+              <a href="/blog/{{ r.slug }}" class="related-card text-decoration-none" style="border-radius:0;border:none;border-bottom:1px solid #30363d;">
+                <img src="/blog/image/{{ r.slug }}" loading="lazy" class="related-thumb" alt="{{ r.title }}">
+                <div class="related-card-body">
+                  <div class="cat">{{ r.display_category }}</div>
+                  <div class="title">{{ r.title }}</div>
+                  <div style="font-size:.76rem;color:#6e7681;margin-top:5px;"><i class="bi bi-clock me-1"></i>{{ r.read_time }} {{ _("blog_min_read") }}</div>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Back to blog -->
+          <div class="text-center mt-4">
+            <a href="/blog" style="font-size:.88rem;color:#8b949e;">{{ _("blog_all_articles") }}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p class="mb-2"><strong style="color:#e6edf3;">AutoBlogspot</strong> — AI-powered auto blog for Blogspot, WordPress, Tumblr &amp; Hashnode</p>
+    <p class="mb-0">
+      <a href="/" class="me-3">{{ _("blog_home") }}</a>
+      <a href="/blog" class="me-3">Blog</a>
+      <a href="/register" class="me-3">{{ _("blog_try_free") }}</a>
+      <a href="/login">{{ _("blog_login") }}</a>
+    </p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

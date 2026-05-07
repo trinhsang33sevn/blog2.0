@@ -1,5 +1,6 @@
 import jinja2
 from fastapi.templating import Jinja2Templates
+from .i18n import _, LANGUAGE_LABELS, get_lang
 
 _env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("templates"),
@@ -30,5 +31,8 @@ def _model_display(model_id: str) -> str:
 
 
 _env.filters["model_display"] = _model_display
+_env.globals["_"] = _
+_env.globals["LANGUAGE_LABELS"] = LANGUAGE_LABELS
+_env.globals["get_lang"] = get_lang
 
 templates = Jinja2Templates(env=_env)

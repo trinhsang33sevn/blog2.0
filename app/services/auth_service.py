@@ -52,6 +52,31 @@ def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email.strip().lower()).first()
 
 
+def generate_reset_token(db: Session, user: User) -> str:
+    token = secrets.token_urlsafe(32)
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
+    db.commit()
+    return token
+
+
+def validate_reset_token(db: Session, token: str):
+    """Return User if token is valid and not expired, else None."""
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user or not user.reset_token_expires:
+        return None
+    if datetime.utcnow() > user.reset_token_expires:
+        return None
+    return user
+
+
+def consume_reset_token(db: Session, user: User, new_password: str):
+    user.password_hash = hash_password(new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+
+
 def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subscription:
     sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
@@ -60,10 +85,7 @@ def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subsc
     # Extend from current expiry if still active, else from now
     base = sub.expires_at if (sub and sub.expires_at and sub.expires_at > now) else now
 
-    if plan == "business":
-        expires = None  # business = no expiry
-    else:
-        expires = base + timedelta(days=30 * months)
+    expires = base + timedelta(days=30 * months)
 
     if sub:
         sub.plan = plan

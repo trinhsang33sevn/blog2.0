@@ -49,20 +49,43 @@ ALL_PAID_MODELS = GEMINI_MODELS + CLAUDE_MODELS + OPENAI_MODELS + GROQ_MODELS
 # ─── Gemini multi-key rotation ────────────────────────────────────────────────
 
 _gemini_lock = Lock()
-_gemini_key_failed_at: dict[str, float] = {}  # key → epoch time rate-limited
-_GEMINI_COOLDOWN_SECS = 65  # wait 65s after 429 before retrying same key
+
+# key → (cooldown_until: float, fail_count: int)
+_gemini_state: dict[str, tuple[float, int]] = {}
+
+_GEMINI_BASE_COOLDOWN  = 65    # giây đầu tiên sau 429
+_GEMINI_MAX_COOLDOWN   = 3600  # tối đa 1 giờ
 
 
 def _gemini_key_available(key: str) -> bool:
     with _gemini_lock:
-        failed = _gemini_key_failed_at.get(key)
-        return failed is None or (time.time() - failed) > _GEMINI_COOLDOWN_SECS
+        state = _gemini_state.get(key)
+        if state is None:
+            return True
+        cooldown_until, _ = state
+        return time.time() >= cooldown_until
 
 
-def _gemini_mark_limited(key: str) -> None:
+def _gemini_mark_limited(key: str, retry_after: int | None = None) -> None:
     with _gemini_lock:
-        _gemini_key_failed_at[key] = time.time()
-        logger.warning(f"[gemini] Key ...{key[-8:]} rate limited, cooldown {_GEMINI_COOLDOWN_SECS}s")
+        _, fail_count = _gemini_state.get(key, (0.0, 0))
+        fail_count += 1
+        if retry_after and retry_after > 0:
+            cooldown = min(retry_after + 2, _GEMINI_MAX_COOLDOWN)
+        else:
+            # Adaptive: 65s → 130s → 300s → 600s → max 3600s
+            cooldown = min(_GEMINI_BASE_COOLDOWN * (2 ** (fail_count - 1)), _GEMINI_MAX_COOLDOWN)
+        cooldown_until = time.time() + cooldown
+        _gemini_state[key] = (cooldown_until, fail_count)
+        logger.warning(
+            f"[gemini] Key ...{key[-8:]} 429 (lần {fail_count}), "
+            f"cooldown {cooldown:.0f}s (đến {time.strftime('%H:%M:%S', time.localtime(cooldown_until))})"
+        )
+
+
+def _gemini_mark_ok(key: str) -> None:
+    with _gemini_lock:
+        _gemini_state.pop(key, None)
 
 
 def _call_gemini_single(api_key: str, model: str, messages: list, max_tokens: int) -> str:
@@ -80,39 +103,49 @@ def _call_gemini_single(api_key: str, model: str, messages: list, max_tokens: in
 
 def call_gemini(keys_str: str, model: str, messages: list, max_tokens: int = 4000) -> str:
     """
-    Gọi Gemini API với nhiều API keys, tự xoay vòng khi bị rate limit.
+    Gọi Gemini API với nhiều API keys, xoay vòng khi bị 429.
+    - Chỉ thử keys không bị cooldown.
+    - Khi 429: parse Retry-After header → adaptive cooldown (65s→130s→300s→max 1h).
+    - Khi tất cả keys đều đang cooldown → raise ngay để smart_call fallback về OpenRouter.
     keys_str: nhiều keys cách nhau bởi newline.
     """
     keys = [k.strip() for k in keys_str.splitlines() if k.strip()]
     if not keys:
         raise ValueError("Không có Gemini API key nào được cấu hình")
 
-    # Phase 1: thử keys không bị cooldown trước
-    for key in keys:
-        if not _gemini_key_available(key):
-            continue
+    # Single lock acquisition to classify all keys at once
+    now = time.time()
+    with _gemini_lock:
+        available = [k for k in keys if _gemini_state.get(k, (now,))[0] <= now]
+        if not available:
+            in_cooldown = [k for k in keys if k in _gemini_state]
+            earliest = min(_gemini_state[k][0] for k in in_cooldown) if in_cooldown else now
+    if not available:
+        wait = max(0, earliest - time.time())
+        raise RuntimeError(
+            f"Tất cả {len(keys)} Gemini keys đang bị rate limit. "
+            f"Key sớm nhất khả dụng sau ~{wait:.0f}s. Fallback về OpenRouter."
+        )
+
+    for key in available:
         try:
             result = _call_gemini_single(key, model, messages, max_tokens)
-            with _gemini_lock:
-                _gemini_key_failed_at.pop(key, None)
+            _gemini_mark_ok(key)
             return result
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 429:
-                _gemini_mark_limited(key)
+                retry_after = None
+                try:
+                    retry_after = int(e.response.headers.get("Retry-After", 0))
+                except (ValueError, TypeError):
+                    pass
+                _gemini_mark_limited(key, retry_after)
                 continue
             raise
 
-    # Phase 2: nếu tất cả bị cooldown, thử lại theo thứ tự
-    logger.warning(f"[gemini] Tất cả {len(keys)} keys bị rate limit, thử lại lần cuối")
-    for key in keys:
-        try:
-            return _call_gemini_single(key, model, messages, max_tokens)
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 429:
-                continue
-            raise
-
-    raise RuntimeError(f"Tất cả {len(keys)} Gemini API keys đều bị rate limit. Fallback về OpenRouter.")
+    raise RuntimeError(
+        f"Tất cả {len(available)} Gemini keys khả dụng đều bị 429. Fallback về OpenRouter."
+    )
 
 
 # ─── Claude ───────────────────────────────────────────────────────────────────

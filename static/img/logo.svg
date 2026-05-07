@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32">
+  <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+  <path d="M6 16L26 7L18 25L15 19L6 16Z" fill="white"/>
+  <circle cx="15" cy="19" r="2" fill="#a5b4fc"/>
+  <text x="40" y="22" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="16" fill="#1e293b">PostPilot</text>
+</svg>

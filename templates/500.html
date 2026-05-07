@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 — Server Error | AutoBlogspot</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <style>
+    :root { --dark:#0d1117; --dark2:#161b22; --accent:#f85149; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:#e6edf3; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .container { text-align:center; padding:40px 20px; max-width:480px; }
+    .code { font-size:7rem; font-weight:900; line-height:1; background:linear-gradient(135deg,#f85149,#ff6e40); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    h1 { font-size:1.5rem; font-weight:700; margin:16px 0 8px; color:#e6edf3; }
+    p { color:#8b949e; font-size:.95rem; line-height:1.6; margin-bottom:28px; }
+    .actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn { padding:10px 24px; border-radius:8px; font-size:.9rem; font-weight:600; text-decoration:none; transition:.15s; }
+    .btn-primary { background:#f85149; color:#fff; }
+    .btn-primary:hover { opacity:.85; }
+    .btn-outline { border:1px solid #30363d; color:#8b949e; }
+    .btn-outline:hover { border-color:#f85149; color:#e6edf3; }
+    .brand { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:40px; font-weight:800; font-size:1.1rem; color:#e6edf3; text-decoration:none; }
+    .brand-icon { width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem; }
+    .detail { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px; margin-top:24px; font-size:.8rem; color:#6e7681; text-align:left; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="brand">
+      <div class="brand-icon">✈</div>
+      AutoBlogspot
+    </a>
+    <div class="code">500</div>
+    <h1>Something went wrong</h1>
+    <p>An unexpected error occurred on our server. We've been notified and are working to fix it.</p>
+    <div class="actions">
+      <a href="/" class="btn btn-primary">Go home</a>
+      <a href="javascript:history.back()" class="btn btn-outline">Go back</a>
+    </div>
+    {% if detail %}
+    <div class="detail"><strong>Error:</strong> {{ detail }}</div>
+    {% endif %}
+  </div>
+</body>
+</html>

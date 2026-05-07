@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — AutoBlogspot{% endblock %}
+{% block title %}{{ _("dash_title") }} — AutoBlogspot{% endblock %}
 {% block content %}
-<h4 class="mb-4 fw-bold"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h4>
+<h1 class="mb-4 fw-bold h4"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
 
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
@@ -9,28 +9,28 @@
     <div class="stat-card">
       <div class="stat-icon bg-primary-soft"><i class="bi bi-globe2 text-primary"></i></div>
       <div class="stat-value">{{ total_sites }}</div>
-      <div class="stat-label">Website đang hoạt động</div>
+      <div class="stat-label">{{ _("dash_active_sites") }}</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card">
       <div class="stat-icon bg-success-soft"><i class="bi bi-folder2-open text-success"></i></div>
       <div class="stat-value">{{ running_projects }} / {{ total_projects }}</div>
-      <div class="stat-label">Dự án đang chạy</div>
+      <div class="stat-label">{{ _("dash_running_projects") }}</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card">
       <div class="stat-icon bg-warning-soft"><i class="bi bi-file-earmark-text text-warning"></i></div>
       <div class="stat-value">{{ published_articles }}</div>
-      <div class="stat-label">Bài đã đăng / {{ total_articles }} tổng</div>
+      <div class="stat-label">{{ _("dash_published") }} / {{ total_articles }} {{ _("dash_total") }}</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
     <div class="stat-card">
       <div class="stat-icon bg-info-soft"><i class="bi bi-search text-info"></i></div>
       <div class="stat-value">{{ indexed_articles }}</div>
-      <div class="stat-label">Đã index / {{ pending_index }} đang chờ</div>
+      <div class="stat-label">{{ _("dash_indexed") }} / {{ pending_index }} {{ _("dash_pending_index") }}</div>
     </div>
   </div>
 </div>
@@ -40,7 +40,7 @@
   <div class="col-md-5">
     <div class="card shadow-sm">
       <div class="card-header fw-semibold">
-        <i class="bi bi-play-circle me-1 text-success"></i>Dự án đang chạy
+        <i class="bi bi-play-circle me-1 text-success"></i>{{ _("dash_running_projects_card") }}
       </div>
       <div class="card-body p-0">
         {% if running_projects_list %}
@@ -50,17 +50,17 @@
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <a href="/projects/{{ p.id }}" class="fw-semibold text-decoration-none">{{ p.name }}</a>
-                <div class="text-muted small">{{ p.articles_per_day }} bài/ngày · {{ p.project_sites|length }} website</div>
+                <div class="text-muted small">{{ p.articles_per_day }} {{ _("dash_articles_per_day") }} · {{ p.project_sites|length }} website</div>
               </div>
-              <span class="badge bg-success">Đang chạy</span>
+              <span class="badge bg-success">{{ _("dash_status_running") }}</span>
             </div>
           </li>
           {% endfor %}
         </ul>
         {% else %}
         <div class="text-center text-muted py-4">
-          <i class="bi bi-inbox fs-2 d-block mb-2"></i>Chưa có dự án nào đang chạy
-          <a href="/projects/new" class="btn btn-sm btn-primary mt-2">Tạo dự án mới</a>
+          <i class="bi bi-inbox fs-2 d-block mb-2"></i>{{ _("dash_no_running") }}
+          <a href="/projects/new" class="btn btn-sm btn-primary mt-2">{{ _("dash_create_project") }}</a>
         </div>
         {% endif %}
       </div>
@@ -71,8 +71,8 @@
   <div class="col-md-7">
     <div class="card shadow-sm">
       <div class="card-header fw-semibold d-flex justify-content-between">
-        <span><i class="bi bi-clock-history me-1"></i>Bài viết mới nhất</span>
-        <a href="/articles" class="small text-decoration-none">Xem tất cả</a>
+        <span><i class="bi bi-clock-history me-1"></i>{{ _("dash_recent_articles") }}</span>
+        <a href="/articles" class="small text-decoration-none">{{ _("dash_view_all") }}</a>
       </div>
       <div class="card-body p-0">
         {% if recent_articles %}
@@ -99,7 +99,7 @@
         </div>
         {% else %}
         <div class="text-center text-muted py-4">
-          <i class="bi bi-file-earmark fs-2 d-block mb-2"></i>Chưa có bài viết nào được đăng
+          <i class="bi bi-file-earmark fs-2 d-block mb-2"></i>{{ _("dash_no_articles") }}
         </div>
         {% endif %}
       </div>

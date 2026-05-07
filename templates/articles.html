@@ -1,48 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Bài viết — AutoBlogspot{% endblock %}
+{% block title %}{{ _("art_title") }} — AutoBlogspot{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
-  <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-text me-2"></i>Danh sách Bài viết</h4>
-  <span class="text-muted small">Tổng: {{ total }} bài</span>
+  <h1 class="fw-bold mb-0 h4"><i class="bi bi-file-earmark-text me-2"></i>{{ _("art_title") }}</h1>
+  <span class="text-muted small">{{ _("art_total") }}: {{ total }} {{ _("art_items") }}</span>
 </div>
 
+{% if request.query_params.get('success') %}
+<div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+  <i class="bi bi-check-circle me-1"></i>{{ request.query_params.get('success')|replace('+', ' ') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
 <!-- Filters -->
-<div class="card shadow-sm mb-4">
+<div class="card shadow-sm mb-3">
   <div class="card-body py-2">
-    <form method="get" class="row g-2 align-items-end">
+    <form method="get" class="row g-2 align-items-end" id="filterForm">
       <div class="col-md-3">
-        <label class="form-label small mb-1">Dự án</label>
+        <label class="form-label small mb-1">{{ _("art_filter_project") }}</label>
         <select name="project_id" class="form-select form-select-sm" onchange="this.form.submit()">
-          <option value="">Tất cả dự án</option>
+          <option value="">{{ _("art_all_projects") }}</option>
           {% for p in projects %}
           <option value="{{ p.id }}" {{ 'selected' if filter_project_id == p.id }}>{{ p.name }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-3">
-        <label class="form-label small mb-1">Website</label>
+        <label class="form-label small mb-1">{{ _("art_filter_site") }}</label>
         <select name="site_id" class="form-select form-select-sm" onchange="this.form.submit()">
-          <option value="">Tất cả website</option>
+          <option value="">{{ _("art_all_sites") }}</option>
           {% for s in sites %}
           <option value="{{ s.id }}" {{ 'selected' if filter_site_id == s.id }}>{{ s.blog_name }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="col-md-2">
-        <label class="form-label small mb-1">Trạng thái</label>
+        <label class="form-label small mb-1">{{ _("art_filter_status") }}</label>
         <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-          <option value="">Tất cả</option>
-          <option value="pending" {{ 'selected' if filter_status == 'pending' }}>Chờ viết</option>
-          <option value="writing" {{ 'selected' if filter_status == 'writing' }}>Đang viết</option>
-          <option value="ready" {{ 'selected' if filter_status == 'ready' }}>Sẵn sàng đăng</option>
-          <option value="published" {{ 'selected' if filter_status == 'published' }}>Đã đăng</option>
-          <option value="failed" {{ 'selected' if filter_status == 'failed' }}>Lỗi</option>
+          <option value="">{{ _("art_all_status") }}</option>
+          <option value="pending"   {{ 'selected' if filter_status == 'pending' }}>{{ _("art_status_pending") }}</option>
+          <option value="writing"   {{ 'selected' if filter_status == 'writing' }}>{{ _("art_status_writing") }}</option>
+          <option value="ready"     {{ 'selected' if filter_status == 'ready' }}>{{ _("art_status_ready") }}</option>
+          <option value="published" {{ 'selected' if filter_status == 'published' }}>{{ _("art_status_published") }}</option>
+          <option value="failed"    {{ 'selected' if filter_status == 'failed' }}>{{ _("art_status_failed") }}</option>
         </select>
       </div>
       <div class="col-md-2">
-        <a href="/articles" class="btn btn-sm btn-outline-secondary w-100">Xóa bộ lọc</a>
+        <a href="/articles" class="btn btn-sm btn-outline-secondary w-100">{{ _("art_clear_filter") }}</a>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Bulk Action Bar (hidden until items selected) -->
+<div id="bulkBar" class="card shadow-sm mb-3 border-primary d-none">
+  <div class="card-body py-2 d-flex align-items-center gap-3">
+    <span class="fw-semibold text-primary" id="bulkCount">0 {{ _("art_selected") }}</span>
+    <div class="vr"></div>
+    <form method="post" action="/articles/bulk-retry" id="retryForm">
+      <div id="retryIds"></div>
+      <button type="button" class="btn btn-sm btn-warning" onclick="submitBulk('retryForm','retry')">
+        <i class="bi bi-arrow-clockwise me-1"></i>{{ _("art_rewrite") }}
+      </button>
+    </form>
+    <form method="post" action="/articles/bulk-delete" id="deleteForm">
+      <div id="deleteIds"></div>
+      <button type="button" class="btn btn-sm btn-danger"
+        onclick="if(confirm('{{ _("art_bulk_delete") }}')) submitBulk('deleteForm','delete')">
+        <i class="bi bi-trash me-1"></i>{{ _("art_delete") }}
+      </button>
+    </form>
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearSelection()">
+      {{ _("art_deselect_all") }}
+    </button>
   </div>
 </div>
 
@@ -51,23 +82,29 @@
   <div class="card-body p-0">
     {% if articles %}
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle mb-0" id="articlesTable">
         <thead class="table-light">
           <tr>
-            <th style="width:35%">Tiêu đề</th>
-            <th>Website</th>
-            <th>Dự án</th>
-            <th>Trạng thái</th>
-            <th>Ngày đăng</th>
-            <th>Thao tác</th>
+            <th style="width:36px">
+              <input type="checkbox" class="form-check-input" id="checkAll" title="{{ _("art_select_all") }}">
+            </th>
+            <th style="width:35%">{{ _("art_col_title") }}</th>
+            <th>{{ _("art_col_site") }}</th>
+            <th>{{ _("art_col_project") }}</th>
+            <th>{{ _("art_col_status") }}</th>
+            <th>{{ _("art_col_date") }}</th>
+            <th>{{ _("art_col_actions") }}</th>
           </tr>
         </thead>
         <tbody>
           {% for a in articles %}
-          <tr>
+          <tr class="article-row" data-id="{{ a.id }}">
+            <td>
+              <input type="checkbox" class="form-check-input row-check" value="{{ a.id }}" onchange="onCheckChange()">
+            </td>
             <td>
               <div class="fw-semibold text-truncate" style="max-width:300px" title="{{ a.title }}">
-                {{ a.title or "(chưa tạo nội dung)" }}
+                {{ a.title or _("art_no_content") }}
               </div>
               {% if a.cluster %}
               <div class="text-muted small text-truncate" style="max-width:300px">
@@ -84,22 +121,22 @@
             <td class="small">{{ a.project.name if a.project else "—" }}</td>
             <td>
               {% if a.status == 'published' %}
-                <span class="badge bg-success">✓ Đã đăng</span>
+                <span class="badge bg-success">✓ {{ _("art_badge_published") }}</span>
               {% elif a.status == 'writing' %}
-                <span class="badge bg-info text-dark">✍ Đang viết</span>
+                <span class="badge bg-info text-dark">✍ {{ _("art_badge_writing") }}</span>
               {% elif a.status == 'ready' %}
-                <span class="badge bg-primary">📤 Sẵn sàng</span>
+                <span class="badge bg-primary">📤 {{ _("art_badge_ready") }}</span>
               {% elif a.status == 'failed' %}
                 {% set retry_count = a.retry_count or 0 %}
                 {% if retry_count >= 3 %}
-                  <span class="badge bg-danger">✗ Lỗi vĩnh viễn</span>
+                  <span class="badge bg-danger">✗ {{ _("art_badge_failed_perm") }}</span>
                 {% else %}
                   <span class="badge bg-warning text-dark" title="Sẽ tự retry lần {{ retry_count + 1 }}/3">
-                    ↺ Lỗi ({{ retry_count }}/3)
+                    ↺ {{ _("art_badge_failed") }} ({{ retry_count }}/3)
                   </span>
                 {% endif %}
               {% else %}
-                <span class="badge bg-secondary">⏳ Chờ</span>
+                <span class="badge bg-secondary">⏳ {{ _("art_badge_pending") }}</span>
               {% endif %}
             </td>
             <td class="small text-muted">
@@ -107,12 +144,12 @@
             </td>
             <td>
               {% if a.url %}
-              <a href="{{ a.url }}" target="_blank" class="btn btn-xs btn-outline-primary">
+              <a href="{{ a.url }}" target="_blank" class="btn btn-xs btn-outline-primary" title="Xem bài">
                 <i class="bi bi-box-arrow-up-right"></i>
               </a>
-              {% elif a.status == 'failed' %}
+              {% elif a.status in ('failed', 'pending') %}
               <form method="post" action="/articles/{{ a.id }}/retry" style="display:inline">
-                <button type="submit" class="btn btn-xs btn-outline-warning" title="Thử lại">
+                <button type="submit" class="btn btn-xs btn-outline-warning" title="{{ _("art_rewrite") }}">
                   <i class="bi bi-arrow-clockwise"></i>
                 </button>
               </form>
@@ -147,4 +184,59 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+const checkAll = document.getElementById('checkAll');
+const bulkBar  = document.getElementById('bulkBar');
+const bulkCount = document.getElementById('bulkCount');
+
+function selectedIds() {
+  return [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+}
+
+function onCheckChange() {
+  const ids = selectedIds();
+  const total = document.querySelectorAll('.row-check').length;
+  checkAll.checked = ids.length === total && total > 0;
+  checkAll.indeterminate = ids.length > 0 && ids.length < total;
+  bulkCount.textContent = ids.length + ' {{ _("art_selected") }}';
+  bulkBar.classList.toggle('d-none', ids.length === 0);
+}
+
+checkAll.addEventListener('change', function() {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = this.checked);
+  onCheckChange();
+});
+
+// Click on row (not checkbox/button) also toggles checkbox
+document.querySelectorAll('.article-row').forEach(row => {
+  row.addEventListener('click', function(e) {
+    if (e.target.closest('a,button,form,input')) return;
+    const cb = row.querySelector('.row-check');
+    cb.checked = !cb.checked;
+    onCheckChange();
+  });
+});
+
+function clearSelection() {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+  checkAll.checked = false;
+  checkAll.indeterminate = false;
+  onCheckChange();
+}
+
+function submitBulk(formId, type) {
+  const ids = selectedIds();
+  if (!ids.length) return;
+  const form = document.getElementById(formId);
+  const container = document.getElementById(type === 'retry' ? 'retryIds' : 'deleteIds');
+  container.innerHTML = '';
+  ids.forEach(id => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'ids'; inp.value = id;
+    container.appendChild(inp);
+  });
+  form.submit();
+}
+</script>
 {% endblock %}

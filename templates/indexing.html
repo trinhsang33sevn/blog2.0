@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Theo dõi Index — AutoBlogspot{% endblock %}
+{% block title %}{{ _("idx_title") }}{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
-  <h4 class="fw-bold mb-0"><i class="bi bi-search me-2"></i>Theo dõi Index Google</h4>
+  <h1 class="fw-bold mb-0 h4"><i class="bi bi-search me-2"></i>{{ _("idx_title") }}</h1>
 </div>
 
 <!-- Summary Cards -->
@@ -10,25 +10,25 @@
   <div class="col-6 col-md-3">
     <a href="/indexing" class="stat-card mini text-decoration-none {{ 'border-primary' if not filter_status }}">
       <div class="stat-value">{{ counts.all }}</div>
-      <div class="stat-label">Tổng cộng</div>
+      <div class="stat-label">{{ _("idx_total") }}</div>
     </a>
   </div>
   <div class="col-6 col-md-3">
     <a href="/indexing?status=submitted" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'submitted' }}">
       <div class="stat-value text-warning">{{ counts.submitted }}</div>
-      <div class="stat-label">Đang ép index</div>
+      <div class="stat-label">{{ _("idx_submitting") }}</div>
     </a>
   </div>
   <div class="col-6 col-md-3">
     <a href="/indexing?status=indexed" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'indexed' }}">
       <div class="stat-value text-success">{{ counts.indexed }}</div>
-      <div class="stat-label">Đã được index</div>
+      <div class="stat-label">{{ _("idx_indexed") }}</div>
     </a>
   </div>
   <div class="col-6 col-md-3">
     <a href="/indexing?status=pending" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'pending' }}">
       <div class="stat-value text-secondary">{{ counts.pending }}</div>
-      <div class="stat-label">Chờ gửi Sinbyte</div>
+      <div class="stat-label">{{ _("idx_waiting") }}</div>
     </a>
   </div>
 </div>
@@ -41,12 +41,12 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th style="width:35%">URL Bài viết</th>
-            <th>Trạng thái</th>
-            <th>Gửi Sinbyte</th>
-            <th>Kiểm tra cuối</th>
-            <th>Kiểm tra tiếp</th>
-            <th>Thao tác</th>
+            <th style="width:35%">{{ _("idx_col_url") }}</th>
+            <th>{{ _("idx_col_status") }}</th>
+            <th>{{ _("idx_col_sinbyte") }}</th>
+            <th>{{ _("idx_col_last_check") }}</th>
+            <th>{{ _("idx_col_next_check") }}</th>
+            <th>{{ _("idx_col_actions") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -62,13 +62,13 @@
             </td>
             <td>
               {% if task.status == 'indexed' %}
-                <span class="badge bg-success">✓ Indexed</span>
+                <span class="badge bg-success">✓ {{ _("idx_badge_indexed") }}</span>
               {% elif task.status == 'submitted' %}
-                <span class="badge bg-warning text-dark">⚡ Đang ép</span>
+                <span class="badge bg-warning text-dark">⚡ {{ _("idx_badge_submitting") }}</span>
               {% elif task.status == 'failed' %}
-                <span class="badge bg-danger">✗ Thất bại</span>
+                <span class="badge bg-danger">✗ {{ _("idx_badge_failed") }}</span>
               {% else %}
-                <span class="badge bg-secondary">⏳ Chờ</span>
+                <span class="badge bg-secondary">⏳ {{ _("idx_badge_waiting") }}</span>
               {% endif %}
             </td>
             <td class="small text-muted">
@@ -77,7 +77,7 @@
             </td>
             <td class="small text-muted">
               {{ task.last_checked_at.strftime('%d/%m %H:%M') if task.last_checked_at else '—' }}
-              {% if task.check_count %}<br>(lần {{ task.check_count }}){% endif %}
+              {% if task.check_count %}<br>({{ _("idx_check_count") }} {{ task.check_count }}){% endif %}
             </td>
             <td class="small">
               {% if task.next_check_at and task.status != 'indexed' %}
@@ -85,14 +85,14 @@
                 {% if delta.total_seconds() > 0 %}
                   <span class="text-muted">{{ task.next_check_at.strftime('%d/%m %H:%M') }}</span>
                 {% else %}
-                  <span class="text-danger fw-semibold">Đến hạn!</span>
+                  <span class="text-danger fw-semibold">{{ _("idx_due") }}</span>
                 {% endif %}
               {% else %}—{% endif %}
             </td>
             <td>
               {% if task.status != 'indexed' %}
               <form method="post" action="/indexing/{{ task.id }}/resubmit">
-                <button class="btn btn-xs btn-outline-warning" title="Gửi lại Sinbyte">
+                <button class="btn btn-xs btn-outline-warning" title="{{ _('idx_resubmit') }}">
                   <i class="bi bi-arrow-repeat"></i>
                 </button>
               </form>
@@ -121,7 +121,7 @@
     {% else %}
     <div class="text-center text-muted py-5">
       <i class="bi bi-search fs-1 d-block mb-2"></i>
-      Chưa có task index nào. Bài viết sau khi đăng sẽ tự động được thêm vào đây.
+      {{ _("idx_empty") }}
     </div>
     {% endif %}
   </div>
@@ -130,12 +130,12 @@
 <!-- Info Box -->
 <div class="card border-info mt-3">
   <div class="card-body small text-muted">
-    <strong><i class="bi bi-info-circle text-info me-1"></i>Quy trình ép index tự động:</strong>
+    <strong><i class="bi bi-info-circle text-info me-1"></i>{{ _("idx_process_title") }}:</strong>
     <ol class="mb-0 mt-1">
-      <li>Sau khi bài đăng → URL tự động gửi đến Sinbyte.</li>
-      <li>Sau <strong>7 ngày</strong>: kiểm tra xem Google đã index chưa.</li>
-      <li>Chưa index → gửi lại Sinbyte → kiểm tra sau <strong>3 ngày</strong>.</li>
-      <li>Vẫn chưa → AI viết lại bài → ép index lại → kiểm tra sau <strong>7 ngày</strong>. Lặp đến khi index.</li>
+      <li>{{ _("idx_process_1") }}</li>
+      <li>{{ _("idx_process_2") }}</li>
+      <li>{{ _("idx_process_3") }}</li>
+      <li>{{ _("idx_process_4") }}</li>
     </ol>
   </div>
 </div>

@@ -9,20 +9,22 @@ from .database import Base
 
 PLAN_LIMITS = {
     "free":     {"projects": 1,    "sites": 1,   "articles_per_day": 5},
-    "pro":      {"projects": 5,    "sites": 10,  "articles_per_day": 20},
+    "pro":      {"projects": 5,    "sites": 10,  "articles_per_day": 35},
     "business": {"projects": None, "sites": None, "articles_per_day": None},
 }
 
 
 class User(Base):
     __tablename__ = "users"
-    id            = Column(Integer, primary_key=True, index=True)
-    email         = Column(String(200), unique=True, nullable=False, index=True)
-    password_hash = Column(String(500), nullable=False)
-    full_name     = Column(String(200))
-    is_active     = Column(Boolean, default=True)
-    is_admin      = Column(Boolean, default=False)
-    created_at    = Column(DateTime, default=datetime.utcnow)
+    id                  = Column(Integer, primary_key=True, index=True)
+    email               = Column(String(200), unique=True, nullable=False, index=True)
+    password_hash       = Column(String(500), nullable=False)
+    full_name           = Column(String(200))
+    is_active           = Column(Boolean, default=True)
+    is_admin            = Column(Boolean, default=False)
+    created_at          = Column(DateTime, default=datetime.utcnow)
+    reset_token         = Column(String(200), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
     subscription      = relationship("Subscription", back_populates="user", uselist=False, cascade="all, delete-orphan")
     google_accounts   = relationship("GoogleAccount", back_populates="user")

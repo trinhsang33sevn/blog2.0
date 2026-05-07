@@ -1,7 +1,18 @@
 """Hashnode GraphQL API integration (Personal Access Token)."""
+import re
+import unicodedata
+
 import httpx
 
 HASHNODE_GQL = "https://gql.hashnode.com"
+
+
+def _slugify(text: str) -> str:
+    """Chuyển text bất kỳ → slug ASCII hợp lệ cho Hashnode (a-z, 0-9, -)."""
+    nfkd = unicodedata.normalize("NFD", text)
+    ascii_str = nfkd.encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_str.lower()).strip("-")
+    return slug or "tag"
 
 
 def _gql(api_key: str, query: str, variables: dict | None = None) -> dict:
@@ -11,7 +22,15 @@ def _gql(api_key: str, query: str, variables: dict | None = None) -> dict:
             headers={"Authorization": api_key, "Content-Type": "application/json"},
             json={"query": query, "variables": variables or {}},
         )
-        resp.raise_for_status()
+        if not resp.is_success:
+            try:
+                detail = resp.json()
+            except Exception:
+                detail = resp.text[:300]
+            raise httpx.HTTPStatusError(
+                f"Hashnode {resp.status_code}: {detail}",
+                request=resp.request, response=resp,
+            )
         data = resp.json()
     if "errors" in data:
         raise ValueError(str(data["errors"]))
@@ -48,8 +67,9 @@ def publish_post(api_key: str, publication_id: str, title: str, content: str,
     }
     """
     tag_inputs = [
-        {"name": t, "slug": t.lower().replace(" ", "-")}
+        {"name": t, "slug": _slugify(t)}
         for t in (tags or [])
+        if t and t.strip()
     ][:5]
     variables = {
         "input": {

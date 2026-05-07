@@ -1,8 +1,11 @@
 import json
+import logging
 from threading import Thread
 
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
+
+logger = logging.getLogger("autoblogspot.billing")
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,6 +15,7 @@ from ..models import Project, ProjectSite, BlogspotSite, Keyword, KeywordCluster
 from ..services.openrouter import FREE_MODELS, LANGUAGE_NAMES, get_setting
 from ..services.ai_providers import CLAUDE_MODELS, OPENAI_MODELS, GROQ_MODELS, GEMINI_MODELS
 from ..services.scheduler import process_keyword_clustering
+from ..templates import templates
 
 
 def _get_available_models(db, user_id: int) -> dict:
@@ -38,7 +42,7 @@ def _get_default_model(groups: dict, current_model: str = None) -> str:
             return groups[provider][0]["id"]
     or_models = groups.get("openrouter", FREE_MODELS)
     return or_models[1]["id"] if len(or_models) > 1 else "meta-llama/llama-3.3-70b-instruct:free"
-from ..templates import templates
+
 
 router = APIRouter()
 LANGUAGES = list(LANGUAGE_NAMES.items())
@@ -331,19 +335,188 @@ def delete_project(project_id: int, request: Request, db: Session = Depends(get_
 
 @router.get("/billing", response_class=HTMLResponse)
 def billing_page(request: Request, db: Session = Depends(get_db)):
-    current_user = get_current_user(request, db)
     from ..models import PLAN_LIMITS
-    from ..services.openrouter import get_setting
+    from ..services.sepay import generate_reference, build_qr_url, expected_amount
+    current_user = get_current_user(request, db)
+
+    bank_name   = get_setting(db, "payment_bank_name") or ""
+    acct_number = get_setting(db, "payment_account_number") or ""
+    acct_holder = get_setting(db, "payment_account_holder") or ""
+
     payment_config = {
-        "bank_name":      get_setting(db, "payment_bank_name") or "",
-        "account_number": get_setting(db, "payment_account_number") or "",
-        "account_holder": get_setting(db, "payment_account_holder") or "",
+        "bank_name":      bank_name,
+        "account_number": acct_number,
+        "account_holder": acct_holder,
         "transfer_note":  get_setting(db, "payment_transfer_note") or "",
     }
+
+    sepay_configured = bool(get_setting(db, "sepay_api_key"))
+    vn_bank_ready    = bool(bank_name and acct_number)
+
+    uid = current_user.id
+    vn_payment = {}
+    if vn_bank_ready:
+        for plan in ("pro", "business"):
+            ref = generate_reference(uid, plan)
+            amt = expected_amount(plan)
+            vn_payment[plan] = {
+                "reference": ref,
+                "amount":    amt,
+                "qr_url":    build_qr_url(acct_number, bank_name, amt, ref) if vn_bank_ready else "",
+            }
+
+    ls_configured = bool(
+        get_setting(db, "ls_api_key") and
+        get_setting(db, "ls_store_id") and
+        get_setting(db, "ls_pro_variant_id")
+    )
     return templates.TemplateResponse(request, "billing.html", {
-        "current_user":   current_user,
-        "sub":            current_user.subscription,
-        "plan_limits":    PLAN_LIMITS,
-        "active_page":    "billing",
-        "payment_config": payment_config,
+        "current_user":      current_user,
+        "sub":               current_user.subscription,
+        "plan_limits":       PLAN_LIMITS,
+        "active_page":       "billing",
+        "payment_config":    payment_config,
+        "vn_bank_ready":     vn_bank_ready,
+        "vn_payment":        vn_payment,
+        "sepay_configured":  sepay_configured,
+        "ls_configured":     ls_configured,
+        "ls_pro_price":      get_setting(db, "ls_pro_price") or "$8/month",
+        "ls_business_price": get_setting(db, "ls_business_price") or "$20/month",
     })
+
+
+@router.get("/billing/checkout/{plan}")
+def billing_checkout(plan: str, request: Request, db: Session = Depends(get_db)):
+    from urllib.parse import quote_plus
+    from ..services.lemonsqueezy import create_checkout
+    current_user = get_current_user(request, db)
+
+    if plan not in ("pro", "business"):
+        return RedirectResponse("/billing?error=Invalid+plan")
+
+    api_key    = get_setting(db, "ls_api_key") or ""
+    store_id   = get_setting(db, "ls_store_id") or ""
+    variant_id = get_setting(db, f"ls_{plan}_variant_id") or ""
+
+    if not (api_key and store_id and variant_id):
+        return RedirectResponse("/billing?error=International+payment+not+configured+yet")
+
+    base_url = str(request.base_url).rstrip("/")
+    redirect_url = f"{base_url}/billing?success=payment_completed"
+    try:
+        checkout_url = create_checkout(
+            api_key, store_id, variant_id,
+            current_user.email, plan, current_user.id,
+            redirect_url,
+        )
+        return RedirectResponse(checkout_url)
+    except ValueError as e:
+        return RedirectResponse(f"/billing?error={quote_plus(str(e))}")
+
+
+@router.post("/billing/webhook/sepay")
+async def sepay_webhook(request: Request, db: Session = Depends(get_db)):
+    from ..models import User
+    from ..services.auth_service import upgrade_plan
+    from ..services.sepay import parse_reference, expected_amount
+
+    # Token-based verification: SePay sends ?token=SECRET in webhook URL
+    expected_token = get_setting(db, "sepay_webhook_token") or ""
+    if expected_token:
+        received_token = request.query_params.get("token", "")
+        import hmac as _hmac
+        if not _hmac.compare_digest(expected_token, received_token):
+            logger.warning("SePay webhook: invalid token from %s", request.client.host if request.client else "?")
+            return Response(status_code=401)
+
+    try:
+        event = await request.json()
+    except Exception:
+        return Response(status_code=400)
+
+    transfer_type   = event.get("transferType", "")
+    transfer_amount = int(event.get("transferAmount", 0))
+    content         = event.get("content", "") or ""
+
+    if transfer_type != "in":
+        return Response(status_code=200)
+
+    parsed = parse_reference(content)
+    if not parsed:
+        logger.info("SePay webhook: unrecognized content=%r", content[:100])
+        return Response(status_code=200)
+
+    user_id, plan = parsed
+    required = expected_amount(plan)
+    if transfer_amount < required:
+        logger.warning("SePay webhook: insufficient amount %d < %d for user %d plan %s",
+                       transfer_amount, required, user_id, plan)
+        return Response(status_code=200)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        logger.warning("SePay webhook: user_id=%d not found", user_id)
+        return Response(status_code=200)
+
+    upgrade_plan(db, user.id, plan, months=1)
+    logger.info("SePay webhook: upgraded user %d (%s) to plan=%s amount=%d",
+                user.id, user.email, plan, transfer_amount)
+    return Response(content='{"success":true}', media_type="application/json")
+
+
+@router.post("/billing/webhook/lemonsqueezy")
+async def lemonsqueezy_webhook(request: Request, db: Session = Depends(get_db)):
+    from ..models import User
+    from ..services.auth_service import upgrade_plan
+    from ..services.lemonsqueezy import verify_webhook
+
+    payload_bytes = await request.body()
+    signature     = request.headers.get("X-Signature", "")
+    secret        = get_setting(db, "ls_webhook_secret") or ""
+
+    if not secret:
+        logger.error("LemonSqueezy webhook: ls_webhook_secret not configured — rejecting all requests")
+        return Response(status_code=503)
+
+    if not verify_webhook(payload_bytes, signature, secret):
+        logger.warning("LemonSqueezy webhook: invalid signature from %s",
+                       request.client.host if request.client else "?")
+        return Response(status_code=401)
+
+    try:
+        event = json.loads(payload_bytes)
+    except Exception:
+        return Response(status_code=400)
+
+    event_name = event.get("meta", {}).get("event_name", "")
+    if event_name not in ("order_created", "subscription_created", "subscription_updated"):
+        return Response(status_code=200)
+
+    attrs  = event.get("data", {}).get("attributes", {})
+    status = attrs.get("status", "")
+    if status not in ("paid", "active"):
+        return Response(status_code=200)
+
+    custom      = event.get("meta", {}).get("custom_data", {})
+    plan        = custom.get("plan", "pro")
+    user_id_str = custom.get("user_id", "")
+    user_email  = attrs.get("user_email", "")
+
+    user = None
+    if user_id_str:
+        try:
+            user = db.query(User).filter(User.id == int(user_id_str)).first()
+        except (ValueError, TypeError):
+            pass
+    if not user and user_email:
+        user = db.query(User).filter(User.email == user_email).first()
+
+    if not user:
+        logger.error("LemonSqueezy webhook: could not find user (id=%r, email=%r) for event %s",
+                     user_id_str, user_email, event_name)
+        return Response(status_code=200)
+
+    upgrade_plan(db, user.id, plan, months=1)
+    logger.info("LemonSqueezy webhook: upgraded user %d (%s) to plan=%s event=%s",
+                user.id, user.email, plan, event_name)
+    return Response(status_code=200)

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Gói dịch vụ — AutoBlogspot{% endblock %}
+{% block title %}{{ _("bill_title") }} — AutoBlogspot{% endblock %}
 {% block content %}
-<h4 class="mb-4 fw-bold"><i class="bi bi-credit-card me-2"></i>Gói dịch vụ</h4>
+<h1 class="mb-4 fw-bold h4"><i class="bi bi-credit-card me-2"></i>{{ _("bill_title") }}</h1>
 
 {% if sub %}
 <!-- Current Plan Status -->
@@ -9,7 +9,7 @@
   <div class="card-body">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div>
-        <div class="text-muted small mb-1">Gói hiện tại</div>
+        <div class="text-muted small mb-1">{{ _("bill_current_plan") }}</div>
         <div class="d-flex align-items-center gap-2">
           {% if sub.plan == 'business' %}
             <span class="badge bg-warning text-dark fs-6 px-3 py-2">Business</span>
@@ -19,19 +19,19 @@
             <span class="badge bg-secondary fs-6 px-3 py-2">Free Trial</span>
           {% endif %}
           {% if sub.is_active_plan %}
-            <span class="badge bg-success-subtle text-success border border-success-subtle">Đang hoạt động</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ _("bill_active") }}</span>
           {% else %}
-            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hết hạn</span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ _("bill_expired") }}</span>
           {% endif %}
         </div>
       </div>
       <div class="text-end">
         {% if sub.expires_at %}
-          <div class="text-muted small">Hết hạn</div>
+          <div class="text-muted small">{{ _("bill_expires") }}</div>
           <div class="fw-semibold">{{ sub.expires_at.strftime('%d/%m/%Y') }}</div>
         {% else %}
-          <div class="text-muted small">Thời hạn</div>
-          <div class="fw-semibold text-success">Vĩnh viễn</div>
+          <div class="text-muted small">{{ _("bill_duration") }}</div>
+          <div class="fw-semibold text-success">{{ _("bill_permanent") }}</div>
         {% endif %}
       </div>
     </div>
@@ -43,19 +43,19 @@
         <div class="fs-4 fw-bold text-primary">
           {{ sub.projects_limit if sub.projects_limit else '∞' }}
         </div>
-        <div class="text-muted small">Dự án tối đa</div>
+        <div class="text-muted small">{{ _("bill_max_projects") }}</div>
       </div>
       <div class="col-4 text-center">
         <div class="fs-4 fw-bold text-primary">
           {{ sub.sites_limit if sub.sites_limit else '∞' }}
         </div>
-        <div class="text-muted small">Website tối đa</div>
+        <div class="text-muted small">{{ _("bill_max_sites") }}</div>
       </div>
       <div class="col-4 text-center">
         <div class="fs-4 fw-bold text-primary">
           {{ sub.articles_per_day_limit if sub.articles_per_day_limit else '∞' }}
         </div>
-        <div class="text-muted small">Bài/ngày tối đa</div>
+        <div class="text-muted small">{{ _("bill_max_articles") }}</div>
       </div>
     </div>
   </div>
@@ -63,7 +63,7 @@
 {% endif %}
 
 <!-- Plan Comparison -->
-<h5 class="fw-semibold mb-3">Bảng giá</h5>
+<h5 class="fw-semibold mb-3">{{ _("bill_pricing") }}</h5>
 <div class="row g-3 mb-4">
 
   <!-- Free -->
@@ -79,7 +79,7 @@
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.articles_per_day }} bài/ngày</li>
         </ul>
         {% if sub and sub.plan == 'free' %}
-        <span class="badge bg-secondary mt-2">Gói hiện tại</span>
+        <span class="badge bg-secondary mt-2">{{ _("bill_current_plan_badge") }}</span>
         {% endif %}
       </div>
     </div>
@@ -88,19 +88,19 @@
   <!-- Pro -->
   <div class="col-md-4">
     <div class="card h-100 border-0 shadow-sm {% if sub and sub.plan == 'pro' %}border-primary border-2{% endif %}">
-      <div class="card-header bg-primary text-white fw-semibold border-0">Phổ biến nhất</div>
+      <div class="card-header bg-primary text-white fw-semibold border-0">{{ _("bill_most_popular") }}</div>
       <div class="card-body">
         <h5 class="fw-bold">Pro</h5>
         <div class="display-6 fw-bold mb-1">200.000₫</div>
-        <div class="text-muted small mb-3">mỗi tháng</div>
+        <div class="text-muted small mb-3">{{ _("bill_per_month") }}</div>
         <ul class="list-unstyled">
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.projects }} dự án</li>
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.sites }} website</li>
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.articles_per_day }} bài/ngày</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Hỗ trợ ưu tiên</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_priority_support") }}</li>
         </ul>
         {% if sub and sub.plan == 'pro' %}
-        <span class="badge bg-primary mt-2">Gói hiện tại</span>
+        <span class="badge bg-primary mt-2">{{ _("bill_current_plan_badge") }}</span>
         {% endif %}
       </div>
     </div>
@@ -109,57 +109,150 @@
   <!-- Business -->
   <div class="col-md-4">
     <div class="card h-100 border-0 shadow-sm {% if sub and sub.plan == 'business' %}border-warning border-2{% endif %}">
-      <div class="card-header bg-warning text-dark fw-semibold border-0">Không giới hạn</div>
+      <div class="card-header bg-warning text-dark fw-semibold border-0">{{ _("bill_unlimited") }}</div>
       <div class="card-body">
         <h5 class="fw-bold">Business</h5>
         <div class="display-6 fw-bold mb-1">500.000₫</div>
-        <div class="text-muted small mb-3">mỗi tháng</div>
+        <div class="text-muted small mb-3">{{ _("bill_per_month") }}</div>
         <ul class="list-unstyled">
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Không giới hạn dự án</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Không giới hạn website</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Không giới hạn bài/ngày</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Hỗ trợ 24/7</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_unlimited_projects") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_unlimited_sites") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_unlimited_articles") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_support_247") }}</li>
         </ul>
         {% if sub and sub.plan == 'business' %}
-        <span class="badge bg-warning text-dark mt-2">Gói hiện tại</span>
+        <span class="badge bg-warning text-dark mt-2">{{ _("bill_current_plan_badge") }}</span>
         {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<!-- Payment Instructions -->
-<div class="card shadow-sm border-0">
-  <div class="card-body">
-    <h6 class="fw-semibold mb-3"><i class="bi bi-bank me-2"></i>Hướng dẫn thanh toán</h6>
-    {% if payment_config and (payment_config.bank_name or payment_config.account_number) %}
-    <p class="mb-2">Chuyển khoản ngân hàng theo thông tin bên dưới và liên hệ xác nhận:</p>
-    <div class="bg-light rounded p-3 font-monospace small mb-3">
-      {% if payment_config.bank_name %}
-      <div><strong>Ngân hàng:</strong> {{ payment_config.bank_name }}</div>
-      {% endif %}
-      {% if payment_config.account_number %}
-      <div><strong>Số tài khoản:</strong> {{ payment_config.account_number }}</div>
-      {% endif %}
-      {% if payment_config.account_holder %}
-      <div><strong>Chủ tài khoản:</strong> {{ payment_config.account_holder }}</div>
-      {% endif %}
-      {% if payment_config.transfer_note %}
-      <div class="mt-2"><strong>Nội dung CK:</strong> {{ payment_config.transfer_note }}</div>
-      {% else %}
-      <div class="mt-2"><strong>Nội dung CK:</strong> AUTOBLOG [email của bạn] [tên gói]</div>
-      <div class="text-muted mt-1">Ví dụ: AUTOBLOG user@gmail.com PRO 1 thang</div>
-      {% endif %}
+<!-- Payment Methods -->
+<h5 class="fw-semibold mb-3">{{ _("bill_payment_methods") }}</h5>
+<div class="row g-3 mb-4">
+
+  <!-- Vietnamese Bank Transfer + SePay QR -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold border-0 bg-light">
+        <i class="bi bi-bank me-2 text-success"></i>{{ _("bill_payment_title") }}
+        <span class="badge bg-success ms-2 small">{{ _("bill_vn_badge") }}</span>
+        {% if sepay_configured %}
+        <span class="badge bg-info ms-1 small">{{ _("bill_auto_activate") }}</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if vn_bank_ready %}
+
+        {# ── Tab chọn gói ── #}
+        <ul class="nav nav-pills nav-fill mb-3" id="vnPlanTabs">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#vnPro">
+              Pro <span class="fw-bold">200.000₫</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#vnBiz">
+              Business <span class="fw-bold">500.000₫</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          {% for plan_key, label in [("pro", "Pro"), ("business", "Business")] %}
+          {% set pd = vn_payment.get(plan_key) %}
+          {% if pd %}
+          <div class="tab-pane fade {% if plan_key == 'pro' %}show active{% endif %}" id="vn{{ plan_key | capitalize }}">
+
+            {# QR code #}
+            <div class="text-center mb-3">
+              <img src="{{ pd.qr_url }}" alt="VietQR {{ label }}"
+                   class="rounded border" style="max-width:180px;height:auto">
+              <div class="text-muted small mt-1">{{ _("bill_scan_qr") }}</div>
+            </div>
+
+            {# Bank details #}
+            <div class="bg-light rounded p-3 font-monospace small mb-3">
+              <div><strong>{{ _("bill_bank") }}:</strong> {{ payment_config.bank_name }}</div>
+              <div><strong>{{ _("bill_account_number") }}:</strong>
+                <span class="user-select-all fw-bold">{{ payment_config.account_number }}</span>
+              </div>
+              {% if payment_config.account_holder %}
+              <div><strong>{{ _("bill_account_holder") }}:</strong> {{ payment_config.account_holder }}</div>
+              {% endif %}
+              <div class="mt-2 pt-2 border-top">
+                <strong>{{ _("bill_amount") }}:</strong>
+                <span class="text-danger fw-bold">{{ "{:,.0f}".format(pd.amount) }}₫</span>
+              </div>
+              <div>
+                <strong>{{ _("bill_transfer_note") }}:</strong>
+                <span class="text-primary fw-bold user-select-all">{{ pd.reference }}</span>
+              </div>
+            </div>
+
+            {% if sepay_configured %}
+            <div class="alert alert-success py-2 mb-0 small">
+              <i class="bi bi-lightning-charge-fill me-1"></i>
+              <strong>{{ _("bill_auto_note_title") }}</strong> {{ _("bill_auto_note_body") }}
+            </div>
+            {% else %}
+            <p class="text-muted small mb-0">{{ _("bill_payment_after") }}</p>
+            {% endif %}
+
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="alert alert-info mb-0 small">
+          <i class="bi bi-info-circle me-2"></i>{{ _("bill_no_payment_config") }}
+        </div>
+        {% endif %}
+      </div>
     </div>
-    <p class="text-muted small mb-0">
-      Sau khi chuyển khoản, liên hệ admin để được kích hoạt. Tài khoản sẽ được nâng cấp trong vòng 24 giờ.
-    </p>
-    {% else %}
-    <div class="alert alert-info mb-0">
-      <i class="bi bi-info-circle me-2"></i>
-      Thông tin thanh toán chưa được cấu hình. Vui lòng liên hệ admin để được hướng dẫn.
+  </div>
+
+  <!-- LemonSqueezy International -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header fw-semibold border-0 bg-light">
+        <i class="bi bi-credit-card me-2 text-primary"></i>{{ _("bill_intl_payment_title") }}
+        <span class="badge bg-primary ms-2 small">{{ _("bill_intl_badge") }}</span>
+      </div>
+      <div class="card-body d-flex flex-column">
+        {% if ls_configured %}
+        <p class="text-muted small mb-3">{{ _("bill_intl_desc") }}</p>
+        <div class="d-flex align-items-center gap-2 mb-3 small text-muted">
+          <i class="bi bi-shield-check text-success"></i>{{ _("bill_intl_powered_by") }}
+        </div>
+        <div class="d-grid gap-2 mt-auto">
+          {% if not (sub and sub.plan == 'pro') %}
+          <a href="/billing/checkout/pro" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-up-circle me-2"></i>Pro — {{ ls_pro_price }}
+          </a>
+          {% endif %}
+          {% if not (sub and sub.plan == 'business') %}
+          <a href="/billing/checkout/business" class="btn btn-primary">
+            <i class="bi bi-star me-2"></i>Business — {{ ls_business_price }}
+          </a>
+          {% endif %}
+          {% if sub and sub.plan in ('pro', 'business') %}
+          <div class="alert alert-success py-2 mb-0 small text-center">
+            <i class="bi bi-check-circle me-1"></i>{{ _("bill_already_on_plan") }} {{ sub.plan | capitalize }}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+          <i class="bi bi-credit-card fs-1 mb-3 opacity-25"></i>
+          <p class="mb-0 small">{{ _("bill_intl_not_configured") }}</p>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
   </div>
 </div>
+
 {% endblock %}

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
 from ..models import Project, ProjectSite, KeywordCluster, Article, IndexTask, BlogspotSite, GoogleAccount, PlatformAccount
-from . import openrouter, blogger, wordpress, tumblr, hashnode, sinbyte, index_checker, image_service, agent_service
+from . import openrouter, blogger, wordpress, tumblr, hashnode, sinbyte, index_checker, image_service, agent_service, wordpress_selfhosted as wp_sh
 
 logger = logging.getLogger(__name__)
 
@@ -162,20 +162,28 @@ def _write_single_article(db: Session, article: Article) -> None:
         article.author_id = author.id
     if angle:
         article.content_angle_id = angle.id
-    db.flush()
+    # Commit ngay để release write lock trước khi gọi AI (có thể mất 60-120s)
+    db.commit()
+
+    # ── Gọi AI — không giữ write lock ────────────────────────────────────────
+    article_id   = article.id
+    cluster_id   = cluster.id
+    user_id      = project.user_id
+    ai_model     = project.ai_model
+    language     = article.language
 
     result = openrouter.analyze_intent_and_write_article(
         db=db,
         keywords=keywords,
         cluster_name=cluster.cluster_name,
-        language=article.language,
+        language=language,
         backlinks=backlinks,
-        model=project.ai_model,
+        model=ai_model,
         existing_titles=existing_titles,
         internal_links=internal_links,
         author_persona={"name": author.name, "bio": author.bio, "writing_style": author.writing_style} if author else None,
         content_angle={"name": angle.name, "description": angle.description} if angle else None,
-        user_id=project.user_id,
+        user_id=user_id,
     )
 
     title = (result.get("title") or "").strip()
@@ -186,34 +194,24 @@ def _write_single_article(db: Session, article: Article) -> None:
     if not raw_content:
         raise ValueError("AI trả về nội dung rỗng")
 
-    if not cluster.intent_analysis:
-        cluster.intent_analysis = result.get("intent_analysis", "")
-        db.flush()
-
-    article.title = title
-
-    ai_labels = result.get("labels", [])
-    if ai_labels:
-        article.labels = json.dumps(ai_labels, ensure_ascii=False)
-
     # Tầng 1: thay thế cụm từ AI điển hình
     processed = openrouter._replace_ai_phrases(raw_content)
 
-    # Tầng 2: AI humanize pass
+    # Tầng 2: AI humanize — cũng không giữ lock
     processed = openrouter.humanize_article(
         db=db,
         content=processed,
-        language=article.language,
-        model=project.ai_model,
-        user_id=project.user_id,
+        language=language,
+        model=ai_model,
+        user_id=user_id,
     )
 
     # Kiểm tra nội dung trước khi chèn ảnh
     _validate_article(title, processed)
 
-    # Chèn ảnh vào bài viết
-    pixabay_key = openrouter.get_setting(db, "pixabay_api_key", user_id=project.user_id)
-    article.content = image_service.insert_images_into_content(
+    # Chèn ảnh vào bài viết (HTTP call, không cần DB lock)
+    pixabay_key = openrouter.get_setting(db, "pixabay_api_key", user_id=user_id)
+    final_content = image_service.insert_images_into_content(
         content=processed,
         title=title,
         image_prompt=result.get("image_prompt", ""),
@@ -221,12 +219,29 @@ def _write_single_article(db: Session, article: Article) -> None:
         pixabay_api_key=pixabay_key,
     )
 
+    # ── Ghi kết quả vào DB — write lock ngắn ─────────────────────────────────
+    # Reload article từ DB để tránh stale state sau khi commit ở trên
+    article = db.get(Article, article_id)
+    if not article:
+        raise ValueError(f"Article {article_id} không tìm thấy sau khi xử lý AI")
+
+    ai_labels = result.get("labels", [])
+    if ai_labels:
+        article.labels = json.dumps(ai_labels, ensure_ascii=False)
+
+    if cluster.intent_analysis is None:
+        cluster = db.get(KeywordCluster, cluster_id)
+        if cluster:
+            cluster.intent_analysis = result.get("intent_analysis", "")
+
     attempts = (article.retry_count or 0) + 1
-    article.status = "ready"
-    article.retry_count = 0
+    article.title        = title
+    article.content      = final_content
+    article.status       = "ready"
+    article.retry_count  = 0
     article.error_message = None
     db.commit()
-    logger.info(f"Article {article.id} written OK (attempt={attempts}): {title}")
+    logger.info(f"Article {article_id} written OK (attempt={attempts}): {title}")
 
 
 def process_writing_queue():
@@ -276,6 +291,40 @@ def process_writing_queue():
         db.close()
 
 
+def write_articles_now(article_ids: list[int]) -> None:
+    """
+    Viết nội dung ngay lập tức cho các bài trong danh sách article_ids.
+    Gọi trong background thread — không chặn request.
+    Sau khi viết xong, status → 'ready', scheduler sẽ đăng theo lịch bình thường.
+    """
+    db = get_db()
+    try:
+        articles = (
+            db.query(Article)
+            .filter(Article.id.in_(article_ids), Article.status.in_(("pending", "failed")))
+            .all()
+        )
+        for article in articles:
+            article_id = article.id
+            try:
+                article.status = "writing"
+                article.updated_at = datetime.utcnow()
+                db.commit()
+                _write_single_article(db, article)
+                logger.info(f"[immediate-write] Article {article_id} written OK")
+            except Exception as e:
+                logger.error(f"[immediate-write] Article {article_id} failed: {e}")
+                fresh = db.get(Article, article_id)
+                if fresh:
+                    fresh.status = "failed"
+                    fresh.error_message = str(e)[:500]
+                    fresh.retry_count = (fresh.retry_count or 0) + 1
+                    fresh.updated_at = datetime.utcnow()
+                    db.commit()
+    finally:
+        db.close()
+
+
 # ─── Article Publishing ───────────────────────────────────────────────────────
 
 def reset_daily_counts(db: Session):
@@ -305,21 +354,34 @@ def _publish_article(db: Session, project, ps, article) -> None:
         labels = None
 
     if platform == "blogspot":
-        account   = db.query(GoogleAccount).filter(GoogleAccount.id == site.account_id).first()
+        account = db.query(GoogleAccount).filter(GoogleAccount.id == site.account_id).first()
+        if not account:
+            raise ValueError(f"Google account cho site {site.id} không tìm thấy (đã bị xóa?)")
         post_data = blogger.publish_post(
             db=db, account=account, blog_id=site.blog_id,
             title=article.title, content=article.content, labels=labels or None,
         )
     elif platform == "wordpress":
-        pa        = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        if not pa:
+            raise ValueError(f"WordPress account cho site {site.id} không tìm thấy (đã bị xóa?)")
         post_data = wordpress.publish_post(pa.access_token, site.blog_id, article.title, article.content, labels)
     elif platform == "tumblr":
-        pa        = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        if not pa:
+            raise ValueError(f"Tumblr account cho site {site.id} không tìm thấy (đã bị xóa?)")
         token     = tumblr.refresh_access_token(db, pa)
         post_data = tumblr.publish_post(token, site.blog_id, article.title, article.content, labels)
     elif platform == "hashnode":
-        pa        = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        if not pa:
+            raise ValueError(f"Hashnode account cho site {site.id} không tìm thấy (đã bị xóa?)")
         post_data = hashnode.publish_post(pa.access_token, site.blog_id, article.title, article.content, labels)
+    elif platform == "wordpress_selfhosted":
+        pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+        if not pa:
+            raise ValueError(f"WP Self-hosted account cho site {site.id} không tìm thấy (đã bị xóa?)")
+        post_data = wp_sh.publish_post(pa.refresh_token, pa.name, pa.access_token, article.title, article.content, labels)
     else:
         raise ValueError(f"Platform không được hỗ trợ: {platform}")
 
@@ -433,6 +495,8 @@ def publish_ready_articles():
                     logger.error(f"Publish failed for article {article.id}: {e}")
                     article.status = "failed"
                     article.error_message = str(e)[:500]
+                    article.retry_count = (article.retry_count or 0) + 1
+                    article.updated_at = datetime.utcnow()
                     db.commit()
 
     finally:
@@ -508,7 +572,7 @@ def process_keyword_clustering():
 # ─── Sinbyte Submission ───────────────────────────────────────────────────────
 
 def submit_new_urls_to_sinbyte():
-    """Submit newly published article URLs to Sinbyte."""
+    """Submit newly published article URLs to Sinbyte (nếu có key), rồi chuyển sang submitted."""
     db = get_db()
     try:
         pending_tasks = (
@@ -523,22 +587,30 @@ def submit_new_urls_to_sinbyte():
         if not urls:
             return
 
-        try:
-            task_name = f"AutoBlogspot-{datetime.utcnow().strftime('%Y%m%d-%H%M')}"
-            result = sinbyte.submit_urls(db, task_name, urls)
-            task_id = str(result.get("id", ""))
+        sinbyte_key = openrouter.get_setting(db, "sinbyte_api_key")
+        task_id = ""
 
-            for task in pending_tasks:
-                task.status = "submitted"
-                task.submitted_at = datetime.utcnow()
+        if sinbyte_key and sinbyte_key.strip():
+            try:
+                task_name = f"AutoBlogspot-{datetime.utcnow().strftime('%Y%m%d-%H%M')}"
+                result = sinbyte.submit_urls(db, task_name, urls)
+                task_id = str(result.get("id", ""))
+                logger.info(f"Submitted {len(urls)} URLs to Sinbyte, task_id={task_id}")
+            except Exception as e:
+                logger.warning(f"Sinbyte submit failed ({e}), bỏ qua Sinbyte, vẫn theo dõi Google Index")
+        else:
+            logger.info(f"Sinbyte chưa cấu hình — bỏ qua, {len(urls)} URLs chuyển sang theo dõi Google Index trực tiếp")
+
+        # Dù có Sinbyte hay không, vẫn chuyển sang submitted để check_index_status() hoạt động
+        now = datetime.utcnow()
+        for task in pending_tasks:
+            task.status = "submitted"
+            task.submitted_at = now
+            if task_id:
                 task.sinbyte_task_id = task_id
                 task.sinbyte_submitted_count = 1
 
-            db.commit()
-            logger.info(f"Submitted {len(urls)} URLs to Sinbyte, task_id={task_id}")
-
-        except Exception as e:
-            logger.error(f"Error submitting to Sinbyte: {e}")
+        db.commit()
 
     finally:
         db.close()
@@ -648,7 +720,7 @@ def _rewrite_article_for_task(db: Session, task: IndexTask):
         article.title = result["title"]
         article.content = result["content"]
         article.updated_at = datetime.utcnow()
-        db.flush()
+        db.commit()
 
         # Update bài trên platform tương ứng
         site     = article.site
@@ -676,6 +748,11 @@ def _rewrite_article_for_task(db: Session, task: IndexTask):
                 if pa:
                     hashnode.update_post(pa.access_token, article.blogger_post_id,
                                          article.title, article.content)
+            elif platform == "wordpress_selfhosted":
+                pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
+                if pa:
+                    wp_sh.update_post(pa.refresh_token, pa.name, pa.access_token,
+                                      article.blogger_post_id, article.title, article.content)
             logger.info(f"Rewrote article {article.id} [{platform}]: '{old_title}' → '{article.title}'")
 
     except Exception as e:

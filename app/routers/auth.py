@@ -1,11 +1,21 @@
+import logging
+
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from ..config import get_settings
 from ..database import get_db
-from ..models import User
-from ..services.auth_service import create_user, get_user_by_email, verify_password
+from ..i18n import _ as t
+from ..services.auth_service import (
+    create_user, get_user_by_email, verify_password,
+    generate_reset_token, validate_reset_token, consume_reset_token,
+)
+from ..services.email_service import send_password_reset
 from ..templates import templates
+
+logger = logging.getLogger("autoblogspot.auth")
+settings = get_settings()
 
 router = APIRouter()
 
@@ -27,11 +37,11 @@ def login(
     user = get_user_by_email(db, email)
     if not user or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(request, "login.html", {
-            "error": "Email hoặc mật khẩu không đúng"
+            "error": t("auth_err_invalid_credentials")
         }, status_code=401)
     if not user.is_active:
         return templates.TemplateResponse(request, "login.html", {
-            "error": "Tài khoản đã bị vô hiệu hóa"
+            "error": t("auth_err_disabled")
         }, status_code=403)
 
     request.session["user_id"] = user.id
@@ -56,19 +66,19 @@ def register(
 ):
     if password != password_confirm:
         return templates.TemplateResponse(request, "register.html", {
-            "error": "Mật khẩu xác nhận không khớp",
+            "error": t("rp_err_mismatch"),
             "full_name": full_name, "email": email,
         }, status_code=400)
 
     if len(password) < 6:
         return templates.TemplateResponse(request, "register.html", {
-            "error": "Mật khẩu phải có ít nhất 6 ký tự",
+            "error": t("rp_err_too_short"),
             "full_name": full_name, "email": email,
         }, status_code=400)
 
     if get_user_by_email(db, email):
         return templates.TemplateResponse(request, "register.html", {
-            "error": "Email này đã được đăng ký",
+            "error": t("auth_err_email_taken"),
             "full_name": full_name, "email": email,
         }, status_code=400)
 
@@ -83,36 +93,62 @@ def logout(request: Request):
     return RedirectResponse("/login", status_code=303)
 
 
-# ─── Admin routes ─────────────────────────────────────────────────────────────
+@router.get("/forgot-password", response_class=HTMLResponse)
+def forgot_password_page(request: Request):
+    return templates.TemplateResponse(request, "forgot_password.html", {})
 
-@router.get("/admin/users", response_class=HTMLResponse)
-def admin_users(request: Request, db: Session = Depends(get_db)):
-    user_id = request.session.get("user_id")
-    current = db.query(User).filter(User.id == user_id).first() if user_id else None
-    if not current or not current.is_admin:
-        return RedirectResponse("/")
 
-    users = db.query(User).order_by(User.created_at.desc()).all()
-    return templates.TemplateResponse(request, "admin_users.html", {
-        "users": users,
-        "current_user": current,
-        "active_page": "admin",
+@router.post("/forgot-password")
+def forgot_password(
+    request: Request,
+    email: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = get_user_by_email(db, email)
+    # Always show success to prevent email enumeration
+    if user and user.is_active:
+        token = generate_reset_token(db, user)
+        reset_url = f"{settings.BASE_URL}/reset-password?token={token}"
+        sent = send_password_reset(user.email, reset_url)
+        if not sent:
+            logger.warning("Could not send reset email to %s (email not configured)", user.email)
+    return templates.TemplateResponse(request, "forgot_password.html", {
+        "success": True,
     })
 
 
-@router.post("/admin/users/{uid}/upgrade")
-def admin_upgrade(
-    uid: int,
+@router.get("/reset-password", response_class=HTMLResponse)
+def reset_password_page(request: Request, token: str = ""):
+    if not token:
+        return RedirectResponse("/forgot-password")
+    return templates.TemplateResponse(request, "reset_password.html", {"token": token})
+
+
+@router.post("/reset-password")
+def reset_password(
     request: Request,
-    plan: str = Form(...),
-    months: int = Form(1),
+    token: str = Form(...),
+    password: str = Form(...),
+    password_confirm: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    user_id = request.session.get("user_id")
-    current = db.query(User).filter(User.id == user_id).first() if user_id else None
-    if not current or not current.is_admin:
-        return RedirectResponse("/")
+    if password != password_confirm:
+        return templates.TemplateResponse(request, "reset_password.html", {
+            "token": token, "error": "pw_mismatch",
+        }, status_code=400)
+    if len(password) < 6:
+        return templates.TemplateResponse(request, "reset_password.html", {
+            "token": token, "error": "pw_too_short",
+        }, status_code=400)
 
-    from ..services.auth_service import upgrade_plan
-    upgrade_plan(db, uid, plan, months)
-    return RedirectResponse(f"/admin/users?success=Da+nang+cap+plan+{plan}", status_code=303)
+    user = validate_reset_token(db, token)
+    if not user:
+        return templates.TemplateResponse(request, "reset_password.html", {
+            "token": token, "error": "token_invalid",
+        }, status_code=400)
+
+    consume_reset_token(db, user, password)
+    logger.info("Password reset for user %s", user.email)
+    return templates.TemplateResponse(request, "reset_password.html", {
+        "token": "", "done": True,
+    })

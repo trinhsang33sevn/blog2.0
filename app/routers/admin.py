@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db, engine
-from ..models import User, Subscription, Project, Article, BlogspotSite, AppSetting, PLAN_LIMITS
+from ..models import User, Subscription, Article
 from ..services.openrouter import set_setting, get_setting
 from ..services.auth_service import upgrade_plan
 from ..templates import templates
@@ -91,11 +91,11 @@ def _system_stats(db: Session) -> dict:
     h, rem = divmod(uptime, 3600)
     m, s   = divmod(rem, 60)
 
-    db_path = str(engine.url).replace("sqlite:///", "")
     try:
+        db_path = str(engine.url).replace("sqlite:///", "")
         db_size_mb = round(os.path.getsize(db_path) / 1024 / 1024, 2)
     except OSError:
-        db_size_mb = 0
+        db_size_mb = 0  # PostgreSQL or path not accessible
 
     import platform, sys
     return {
@@ -120,6 +120,14 @@ def _payment_config(db: Session) -> dict:
         "payment_account_number": get_setting(db, "payment_account_number"),
         "payment_account_holder": get_setting(db, "payment_account_holder"),
         "payment_transfer_note":  get_setting(db, "payment_transfer_note"),
+        "sepay_api_key":          get_setting(db, "sepay_api_key"),
+        "ls_api_key":             get_setting(db, "ls_api_key"),
+        "ls_webhook_secret":      get_setting(db, "ls_webhook_secret"),
+        "ls_store_id":            get_setting(db, "ls_store_id"),
+        "ls_pro_variant_id":      get_setting(db, "ls_pro_variant_id"),
+        "ls_business_variant_id": get_setting(db, "ls_business_variant_id"),
+        "ls_pro_price":           get_setting(db, "ls_pro_price") or "$8/month",
+        "ls_business_price":      get_setting(db, "ls_business_price") or "$20/month",
     }
 
 
@@ -165,6 +173,7 @@ def save_payment_config(
     payment_account_number: str = Form(""),
     payment_account_holder: str = Form(""),
     payment_transfer_note:  str = Form(""),
+    sepay_api_key:          str = Form(""),
     db: Session = Depends(get_db),
 ):
     if not _require_admin(request, db):
@@ -174,9 +183,37 @@ def save_payment_config(
         ("payment_account_number", payment_account_number),
         ("payment_account_holder", payment_account_holder),
         ("payment_transfer_note",  payment_transfer_note),
+        ("sepay_api_key",          sepay_api_key),
     ]:
         set_setting(db, key, val.strip())
     return RedirectResponse("/admin?tab=revenue&success=Da+luu+thong+tin+thanh+toan", status_code=303)
+
+
+@router.post("/admin/lemonsqueezy-config")
+def save_lemonsqueezy_config(
+    request: Request,
+    ls_api_key:             str = Form(""),
+    ls_webhook_secret:      str = Form(""),
+    ls_store_id:            str = Form(""),
+    ls_pro_variant_id:      str = Form(""),
+    ls_business_variant_id: str = Form(""),
+    ls_pro_price:           str = Form(""),
+    ls_business_price:      str = Form(""),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    for key, val in [
+        ("ls_api_key",             ls_api_key),
+        ("ls_webhook_secret",      ls_webhook_secret),
+        ("ls_store_id",            ls_store_id),
+        ("ls_pro_variant_id",      ls_pro_variant_id),
+        ("ls_business_variant_id", ls_business_variant_id),
+        ("ls_pro_price",           ls_pro_price),
+        ("ls_business_price",      ls_business_price),
+    ]:
+        set_setting(db, key, val.strip())
+    return RedirectResponse("/admin?tab=revenue&success=Da+luu+LemonSqueezy+config", status_code=303)
 
 
 @router.post("/admin/users/{uid}/toggle-active")
@@ -188,3 +225,17 @@ def toggle_user_active(uid: int, request: Request, db: Session = Depends(get_db)
         user.is_active = not user.is_active
         db.commit()
     return RedirectResponse("/admin?tab=members", status_code=303)
+
+
+@router.post("/admin/users/{uid}/delete")
+def delete_user(uid: int, request: Request, db: Session = Depends(get_db)):
+    admin = _require_admin(request, db)
+    if not admin:
+        return RedirectResponse("/")
+    if admin.id == uid:
+        return RedirectResponse("/admin?tab=members&error=Khong+the+xoa+chinh+minh", status_code=303)
+    user = db.query(User).filter(User.id == uid).first()
+    if user:
+        db.delete(user)
+        db.commit()
+    return RedirectResponse("/admin?tab=members&success=Da+xoa+nguoi+dung", status_code=303)

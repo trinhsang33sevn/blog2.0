@@ -1,9 +1,75 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ get_lang() }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoBlogspot — AI tự động viết & đăng bài lên 4 nền tảng</title>
+  <title>{{ _("land_title") }} — AutoBlogspot</title>
+  <meta name="description" content="{{ _('land_meta_description') }}">
+  <meta name="keywords" content="phần mềm tự động đăng bài, auto blog wordpress, AI viết bài SEO, tự động đăng blogspot, wordpress self-hosted automation, tool đăng bài nhiều nền tảng">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://autoblogspot.com/">
+  <!-- hreflang multilingual SEO -->
+  <link rel="alternate" hreflang="vi" href="https://autoblogspot.com/?lang=vi">
+  <link rel="alternate" hreflang="en" href="https://autoblogspot.com/?lang=en">
+  <link rel="alternate" hreflang="fr" href="https://autoblogspot.com/?lang=fr">
+  <link rel="alternate" hreflang="it" href="https://autoblogspot.com/?lang=it">
+  <link rel="alternate" hreflang="x-default" href="https://autoblogspot.com/">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://autoblogspot.com/">
+  <meta property="og:title" content="{{ _('land_title') }} — AutoBlogspot">
+  <meta property="og:description" content="{{ _('land_meta_description') }}">
+  <meta property="og:image" content="https://autoblogspot.com/static/img/logo.svg">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ _('land_title') }} — AutoBlogspot">
+  <meta name="twitter:description" content="{{ _('land_meta_description') }}">
+  <meta name="twitter:image" content="https://autoblogspot.com/static/img/logo.svg">
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AutoBlogspot",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://autoblogspot.com",
+    "description": "Phần mềm AI tự động viết bài chuẩn SEO và đăng lên 5 nền tảng blog: Blogspot, WordPress.com, WordPress self-hosted, Tumblr, Hashnode.",
+    "offers": [
+      {"@type": "Offer", "name": "Free Trial", "price": "0", "priceCurrency": "VND", "description": "3 ngày dùng thử miễn phí"},
+      {"@type": "Offer", "name": "Pro", "price": "200000", "priceCurrency": "VND"},
+      {"@type": "Offer", "name": "Business", "price": "500000", "priceCurrency": "VND"}
+    ],
+    "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"}
+  }
+  </script>
+  <!-- ── Google Analytics 4 ─────────────────────────────────────────────────
+       Thay G-XXXXXXXXXX bằng Measurement ID của bạn từ analytics.google.com
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  ─────────────────────────────────────────────────────────────────────────── -->
+
+  <!-- ── Facebook Pixel ────────────────────────────────────────────────────
+       Thay YOUR_PIXEL_ID bằng Pixel ID của bạn từ business.facebook.com
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'YOUR_PIXEL_ID');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+  ─────────────────────────────────────────────────────────────────────────── -->
+
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
@@ -83,6 +149,24 @@
       transition: opacity .2s;
     }
     .nav-cta:hover { opacity: .88; color: #fff !important; }
+
+    /* ===== LANG SWITCHER ===== */
+    .lang-btn {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: .875rem;
+      cursor: pointer;
+      transition: border-color .2s;
+      line-height: 1.4;
+    }
+    .lang-btn:hover { border-color: var(--accent); }
+    .lang-dropdown { background: #161b22 !important; border: 1px solid #30363d !important; }
+    .lang-dropdown .dropdown-item { color: #8b949e !important; font-size: .85rem; }
+    .lang-dropdown .dropdown-item:hover { background: rgba(88,166,255,.1) !important; color: #e6edf3 !important; }
+    .lang-dropdown .dropdown-item.fw-bold { color: var(--accent) !important; }
 
     /* ===== HERO ===== */
     .hero {
@@ -614,17 +698,29 @@
 <nav class="navbar">
   <div class="container d-flex align-items-center justify-content-between py-2">
     <a href="/" class="navbar-brand">
-      <div class="brand-icon"><i class="bi bi-robot text-white"></i></div>
+      <div class="brand-icon"><i class="bi bi-send-fill text-white"></i></div>
       AutoBlogspot
     </a>
     <div class="d-none d-md-flex align-items-center gap-3">
-      <a href="#platforms" class="nav-pill">Nền tảng</a>
-      <a href="#features" class="nav-pill">Tính năng</a>
-      <a href="#pricing" class="nav-pill">Bảng giá</a>
+      <a href="#platforms" class="nav-pill">{{ _("land_nav_platforms") }}</a>
+      <a href="#features" class="nav-pill">{{ _("land_nav_features") }}</a>
+      <a href="#pricing" class="nav-pill">{{ _("land_nav_pricing") }}</a>
+      <a href="#faq" class="nav-pill">FAQ</a>
+      <a href="/blog" class="nav-pill">Blog</a>
     </div>
-    <div class="d-flex gap-2">
-      <a href="/login" class="nav-pill">Đăng nhập</a>
-      <a href="/register" class="nav-cta">Dùng thử miễn phí</a>
+    <div class="d-flex gap-2 align-items-center">
+      <div class="dropdown">
+        <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">
+          {% if get_lang() == 'vi' %}🇻🇳{% elif get_lang() == 'en' %}🇬🇧{% elif get_lang() == 'fr' %}🇫🇷{% elif get_lang() == 'it' %}🇮🇹{% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
+          {% for code, label in LANGUAGE_LABELS.items() %}
+          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/?lang={{ code }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <a href="/login" class="nav-pill">{{ _("land_nav_login") }}</a>
+      <a href="/register" class="nav-cta">{{ _("land_nav_free_trial") }}</a>
     </div>
   </div>
 </nav>
@@ -638,37 +734,33 @@
       <div class="col-lg-6">
         <div class="hero-eyebrow">
           <span class="pulse"></span>
-          AI đang hoạt động 24/7 &mdash; 100% tự động
+          {{ _("land_hero_eyebrow") }}
         </div>
         <h1>
-          Một AI viết bài<br>
-          <span class="gradient-text">4 nền tảng</span><br>
-          đều lên bài
+          {{ _("land_hero_h1_line1") }}<br>
+          <span class="gradient-text">{{ _("land_hero_h1_gradient") }}</span><br>
+          {{ _("land_hero_h1_line3") }}
         </h1>
-        <p class="hero-lead">
-          AutoBlogspot tự động <strong style="color:#e6edf3">phân tích từ khóa</strong>,
-          <strong style="color:#e6edf3">viết nội dung chuẩn SEO</strong> và đăng lên
-          <strong style="color:#e6edf3">Blogspot, WordPress.com, Tumblr, Hashnode</strong>
-          cùng lúc — không cần bạn can thiệp thủ công.
-        </p>
+        <p class="hero-lead">{{ _("land_hero_lead") | safe }}</p>
         <div class="hero-actions">
           <a href="/register" class="btn-hero-primary">
-            <i class="bi bi-rocket-takeoff"></i>Bắt đầu miễn phí
+            <i class="bi bi-rocket-takeoff"></i>{{ _("land_hero_cta_start") }}
           </a>
           <a href="#how-it-works" class="btn-hero-outline">
-            Xem cách hoạt động <i class="bi bi-arrow-down"></i>
+            {{ _("land_hero_cta_howto") }} <i class="bi bi-arrow-down"></i>
           </a>
         </div>
         <div class="platform-row mb-3">
           <span class="platform-badge pb-blogspot"><i class="bi bi-google"></i>Blogspot</span>
           <span class="platform-badge pb-wordpress"><i class="bi bi-wordpress"></i>WordPress.com</span>
+          <span class="platform-badge" style="background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:#818cf8;"><i class="bi bi-server"></i>WP Self-hosted</span>
           <span class="platform-badge pb-tumblr"><i class="bi bi-journal-text"></i>Tumblr</span>
           <span class="platform-badge pb-hashnode"><i class="bi bi-hash"></i>Hashnode</span>
         </div>
         <p style="font-size:.78rem;color:#8b949e;">
-          <i class="bi bi-check-circle-fill text-success me-1"></i>Dùng thử 3 ngày miễn phí &nbsp;·&nbsp;
-          <i class="bi bi-shield-check text-success me-1"></i>Không cần thẻ tín dụng &nbsp;·&nbsp;
-          <i class="bi bi-infinity text-primary me-1"></i>Hủy bất cứ lúc nào
+          <i class="bi bi-check-circle-fill text-success me-1"></i>{{ _("land_hero_trust_trial") }} &nbsp;·&nbsp;
+          <i class="bi bi-shield-check text-success me-1"></i>{{ _("land_hero_trust_nocard") }} &nbsp;·&nbsp;
+          <i class="bi bi-infinity text-primary me-1"></i>{{ _("land_hero_trust_cancel") }}
         </p>
       </div>
 
@@ -679,21 +771,21 @@
             <span class="dot dot-red"></span>
             <span class="dot dot-yellow"></span>
             <span class="dot dot-green"></span>
-            <span class="dash-title"><i class="bi bi-robot me-1"></i>AutoBlogspot — Dashboard</span>
+            <span class="dash-title"><i class="bi bi-send-fill me-1"></i>AutoBlogspot — Dashboard</span>
           </div>
 
           <div class="stat-grid">
             <div class="stat-item">
               <div class="stat-val" style="color:#10b981">247</div>
-              <div class="stat-lbl">Bài đã đăng</div>
+              <div class="stat-lbl">{{ _("land_dash_published_lbl") }}</div>
             </div>
             <div class="stat-item">
               <div class="stat-val" style="color:#58a6ff">189</div>
-              <div class="stat-lbl">Đã được index</div>
+              <div class="stat-lbl">{{ _("land_dash_indexed_lbl") }}</div>
             </div>
             <div class="stat-item">
               <div class="stat-val" style="color:#F7C948">76%</div>
-              <div class="stat-lbl">Tỷ lệ index</div>
+              <div class="stat-lbl">{{ _("land_dash_index_rate_lbl") }}</div>
             </div>
           </div>
 
@@ -701,13 +793,13 @@
           <div class="project-row">
             <div class="project-header">
               <span class="status-dot status-running"></span>
-              <span style="font-size:.82rem;color:#e6edf3;font-weight:600;">SEO Sức khỏe 2025</span>
-              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">3 bài/ngày</span>
+              <span style="font-size:.82rem;color:#e6edf3;font-weight:600;">SEO Health 2025</span>
+              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">3 {{ _("land_dash_posts_day") }}</span>
             </div>
             <div class="progress-bar-bg mb-1">
               <div class="progress-bar-fill" style="width:68%;background:linear-gradient(90deg,#EA4335,#1877F2);"></div>
             </div>
-            <div style="font-size:.7rem;color:#8b949e;">68% từ khóa đã xử lý</div>
+            <div style="font-size:.7rem;color:#8b949e;">68{{ _("land_dash_kw_suffix") }}</div>
             <div class="site-badges mt-2">
               <span class="site-badge" style="background:rgba(234,67,53,.15);color:#f87171;">Blogspot ×3</span>
               <span class="site-badge" style="background:rgba(0,115,170,.15);color:#60a5fa;">WordPress ×2</span>
@@ -718,12 +810,12 @@
             <div class="project-header">
               <span class="status-dot status-running"></span>
               <span style="font-size:.82rem;color:#e6edf3;font-weight:600;">Tech Blog EN</span>
-              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">5 bài/ngày</span>
+              <span style="font-size:.7rem;color:#8b949e;margin-left:auto;">5 {{ _("land_dash_posts_day") }}</span>
             </div>
             <div class="progress-bar-bg mb-1">
               <div class="progress-bar-fill" style="width:42%;background:linear-gradient(90deg,#35465C,#F7C948);"></div>
             </div>
-            <div style="font-size:.7rem;color:#8b949e;">42% từ khóa đã xử lý</div>
+            <div style="font-size:.7rem;color:#8b949e;">42{{ _("land_dash_kw_suffix") }}</div>
             <div class="site-badges mt-2">
               <span class="site-badge" style="background:rgba(53,70,92,.3);color:#94a3b8;">Tumblr ×2</span>
               <span class="site-badge" style="background:rgba(247,201,72,.15);color:#fbbf24;">Hashnode ×1</span>
@@ -731,9 +823,9 @@
           </div>
 
           <div class="terminal mt-3">
-            <span class="t-green">✓</span> <span class="t-gray">[10:42]</span> <span class="t-white">Đăng thành công:</span> <span class="t-blue">cach-giam-can-hieu-qua.html</span><br>
+            <span class="t-green">✓</span> <span class="t-gray">[10:42]</span> <span class="t-white">{{ _("land_dash_post_success") }}</span> <span class="t-blue">healthy-living-tips.html</span><br>
             <span class="t-yellow">⚡</span> <span class="t-gray">[10:42]</span> <span class="t-white">Sinbyte submit URL → index queue</span><br>
-            <span class="t-green">✓</span> <span class="t-gray">[10:43]</span> <span class="t-white">AI đang viết bài tiếp theo...</span> <span class="cursor"></span>
+            <span class="t-green">✓</span> <span class="t-gray">[10:43]</span> <span class="t-white">{{ _("land_dash_ai_writing") }}</span> <span class="cursor"></span>
           </div>
         </div>
       </div>
@@ -747,64 +839,71 @@
 <section id="platforms" class="platform-section">
   <div class="container">
     <div class="text-center mb-5">
-      <div class="section-eyebrow ey-blue">Nền tảng hỗ trợ</div>
-      <h2 class="section-title">Một dự án — đăng lên khắp nơi</h2>
-      <p class="section-sub">Viết một lần, AI tự động phân phối nội dung lên tất cả các nền tảng bạn chọn.</p>
+      <div class="section-eyebrow ey-blue">{{ _("land_platforms_eyebrow") }}</div>
+      <h2 class="section-title">{{ _("land_platforms_title") }}</h2>
+      <p class="section-sub">{{ _("land_platforms_sub") }}</p>
     </div>
-    <div class="row g-4">
-      <div class="col-md-6 col-lg-3">
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-6 col-lg-4">
         <div class="platform-card pc-blogspot h-100">
           <div class="platform-logo pl-blogspot"><i class="bi bi-google"></i></div>
           <div class="number" style="font-size:.7rem;color:#f87171;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">GOOGLE BLOGGER</div>
           <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Blogspot</h5>
-          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
-            Kết nối Google OAuth an toàn. Đồng bộ tất cả blog trong tài khoản. Đăng bài tự động với label, ảnh và backlink.
-          </p>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">{{ _("land_pc_blogspot_desc") }}</p>
           <div class="mt-3 d-flex gap-2 flex-wrap">
             <span style="font-size:.7rem;background:rgba(234,67,53,.1);color:#f87171;padding:2px 8px;border-radius:4px;">OAuth2</span>
             <span style="font-size:.7rem;background:rgba(234,67,53,.1);color:#f87171;padding:2px 8px;border-radius:4px;">GData API</span>
           </div>
         </div>
       </div>
-      <div class="col-md-6 col-lg-3">
+      <div class="col-md-6 col-lg-4">
         <div class="platform-card pc-wordpress h-100">
           <div class="platform-logo pl-wordpress"><i class="bi bi-wordpress"></i></div>
           <div class="number" style="font-size:.7rem;color:#60a5fa;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">AUTOMATTIC</div>
           <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">WordPress.com</h5>
-          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
-            Đăng nhập WordPress.com OAuth2. Quản lý nhiều site, đăng bài với tags, excerpt và status tùy chỉnh.
-          </p>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">{{ _("land_pc_wordpress_desc") }}</p>
           <div class="mt-3 d-flex gap-2 flex-wrap">
             <span style="font-size:.7rem;background:rgba(0,115,170,.1);color:#60a5fa;padding:2px 8px;border-radius:4px;">OAuth2</span>
             <span style="font-size:.7rem;background:rgba(0,115,170,.1);color:#60a5fa;padding:2px 8px;border-radius:4px;">REST API v1.1</span>
           </div>
         </div>
       </div>
-      <div class="col-md-6 col-lg-3">
+      <div class="col-md-6 col-lg-4">
         <div class="platform-card pc-tumblr h-100">
           <div class="platform-logo pl-tumblr"><i class="bi bi-journal-text"></i></div>
           <div class="number" style="font-size:.7rem;color:#94a3b8;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">TUMBLR / AUTOMATTIC</div>
           <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Tumblr</h5>
-          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
-            Kết nối Tumblr OAuth2, tự đồng bộ danh sách blog. Đăng nội dung HTML với tag và auto-refresh token.
-          </p>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">{{ _("land_pc_tumblr_desc") }}</p>
           <div class="mt-3 d-flex gap-2 flex-wrap">
             <span style="font-size:.7rem;background:rgba(53,70,92,.3);color:#94a3b8;padding:2px 8px;border-radius:4px;">OAuth2</span>
             <span style="font-size:.7rem;background:rgba(53,70,92,.3);color:#94a3b8;padding:2px 8px;border-radius:4px;">API v2</span>
           </div>
         </div>
       </div>
-      <div class="col-md-6 col-lg-3">
+      <div class="col-md-6 col-lg-4">
         <div class="platform-card pc-hashnode h-100">
           <div class="platform-logo pl-hashnode"><i class="bi bi-hash"></i></div>
           <div class="number" style="font-size:.7rem;color:#fbbf24;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">HASHNODE</div>
           <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">Hashnode</h5>
-          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">
-            Kết nối bằng API key, tự đồng bộ publications. Đăng bài tech/blog chuyên nghiệp với SEO tối ưu.
-          </p>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">{{ _("land_pc_hashnode_desc") }}</p>
           <div class="mt-3 d-flex gap-2 flex-wrap">
             <span style="font-size:.7rem;background:rgba(247,201,72,.1);color:#fbbf24;padding:2px 8px;border-radius:4px;">API Key</span>
             <span style="font-size:.7rem;background:rgba(247,201,72,.1);color:#fbbf24;padding:2px 8px;border-radius:4px;">GraphQL</span>
+          </div>
+        </div>
+      </div>
+      <!-- WordPress Self-hosted -->
+      <div class="col-md-6 col-lg-4">
+        <div class="platform-card h-100" style="border-color:#30363d;">
+          <div class="platform-logo" style="background:rgba(99,102,241,.15);color:#818cf8;margin-bottom:16px;">
+            <i class="bi bi-server"></i>
+          </div>
+          <div class="number" style="font-size:.7rem;color:#818cf8;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">WORDPRESS SELF-HOSTED</div>
+          <h5 style="font-weight:800;font-size:1.05rem;color:#e6edf3;margin-bottom:8px;">WordPress Hosting</h5>
+          <p style="font-size:.85rem;color:#8b949e;line-height:1.6;margin:0;">{{ _("land_pc_wpselfhosted_desc") }}</p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <span style="font-size:.7rem;background:rgba(99,102,241,.1);color:#818cf8;padding:2px 8px;border-radius:4px;">REST API</span>
+            <span style="font-size:.7rem;background:rgba(99,102,241,.1);color:#818cf8;padding:2px 8px;border-radius:4px;">App Password</span>
           </div>
         </div>
       </div>
@@ -816,9 +915,9 @@
 <section id="features" class="features-section">
   <div class="container">
     <div class="text-center mb-5">
-      <div class="section-eyebrow ey-green">Tính năng</div>
-      <h2 class="section-title">Mạnh mẽ từ lõi đến giao diện</h2>
-      <p class="section-sub">Mọi công cụ bạn cần để xây dựng hệ thống blog tự động, quy mô lớn và hiệu quả.</p>
+      <div class="section-eyebrow ey-green">{{ _("land_features_eyebrow") }}</div>
+      <h2 class="section-title">{{ _("land_features_title") }}</h2>
+      <p class="section-sub">{{ _("land_features_sub") }}</p>
     </div>
     <div class="row g-3">
 
@@ -827,8 +926,8 @@
           <div class="feature-icon-wrap" style="background:rgba(88,166,255,.1);">
             <i class="bi bi-cpu-fill" style="color:#58a6ff;"></i>
           </div>
-          <div class="feature-title">AI viết nội dung thông minh</div>
-          <p class="feature-desc">Sử dụng OpenRouter với hàng chục model AI miễn phí (Llama 3.1, Gemma, Mistral…). Auto-fallback sang model khác khi quá tải — không bao giờ dừng giữa chừng.</p>
+          <div class="feature-title">{{ _("land_feat_ai_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_ai_desc") }}</p>
         </div>
       </div>
 
@@ -837,8 +936,8 @@
           <div class="feature-icon-wrap" style="background:rgba(16,185,129,.1);">
             <i class="bi bi-diagram-3-fill" style="color:#10b981;"></i>
           </div>
-          <div class="feature-title">Phân cụm từ khóa bằng AI</div>
-          <p class="feature-desc">Nhập hàng trăm từ khóa, AI tự phân tích intent và nhóm thành các cluster logic. Mỗi cluster thành một bài hoàn chỉnh, tối ưu SEO theo chiều sâu.</p>
+          <div class="feature-title">{{ _("land_feat_cluster_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_cluster_desc") }}</p>
         </div>
       </div>
 
@@ -847,8 +946,8 @@
           <div class="feature-icon-wrap" style="background:rgba(247,201,72,.1);">
             <i class="bi bi-clock-history" style="color:#F7C948;"></i>
           </div>
-          <div class="feature-title">Lịch đăng bài linh hoạt</div>
-          <p class="feature-desc">Đặt số bài/ngày, khoảng cách tối thiểu-tối đa. Hệ thống tự randomize giờ đăng để tự nhiên nhất, tránh bị phát hiện là bot.</p>
+          <div class="feature-title">{{ _("land_feat_schedule_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_schedule_desc") }}</p>
         </div>
       </div>
 
@@ -857,8 +956,8 @@
           <div class="feature-icon-wrap" style="background:rgba(234,67,53,.1);">
             <i class="bi bi-images" style="color:#f87171;"></i>
           </div>
-          <div class="feature-title">Hình ảnh tự động kép lớp</div>
-          <p class="feature-desc">Ảnh đầu bài: Pollinations.ai sinh ảnh AI miễn phí không cần API. Ảnh trong bài: Pixabay (miễn bản quyền). Chèn tự nhiên, alt text tự động theo nội dung.</p>
+          <div class="feature-title">{{ _("land_feat_image_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_image_desc") }}</p>
         </div>
       </div>
 
@@ -867,8 +966,8 @@
           <div class="feature-icon-wrap" style="background:rgba(139,92,246,.1);">
             <i class="bi bi-search" style="color:#a78bfa;"></i>
           </div>
-          <div class="feature-title">Theo dõi index Google</div>
-          <p class="feature-desc">Tự động kiểm tra trạng thái index của từng bài qua Google search operator. Gửi URL lên Sinbyte để ép index nhanh ngay sau khi đăng.</p>
+          <div class="feature-title">{{ _("land_feat_index_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_index_desc") }}</p>
         </div>
       </div>
 
@@ -877,8 +976,8 @@
           <div class="feature-icon-wrap" style="background:rgba(0,115,170,.1);">
             <i class="bi bi-link-45deg" style="color:#60a5fa;"></i>
           </div>
-          <div class="feature-title">Backlink chèn tự nhiên</div>
-          <p class="feature-desc">Cài danh sách backlink target, AI tự chèn vào nội dung theo ngữ cảnh, không lộ liễu — bài viết vẫn đọc tự nhiên dù có link.</p>
+          <div class="feature-title">{{ _("land_feat_backlink_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_backlink_desc") }}</p>
         </div>
       </div>
 
@@ -887,8 +986,8 @@
           <div class="feature-icon-wrap" style="background:rgba(16,185,129,.1);">
             <i class="bi bi-translate" style="color:#10b981;"></i>
           </div>
-          <div class="feature-title">Đa ngôn ngữ</div>
-          <p class="feature-desc">Viết bài bằng Tiếng Việt, Anh, Hàn, Nhật, Tây Ban Nha và nhiều ngôn ngữ khác. Mỗi site trong dự án có thể dùng ngôn ngữ riêng biệt.</p>
+          <div class="feature-title">{{ _("land_feat_multilang_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_multilang_desc") }}</p>
         </div>
       </div>
 
@@ -897,8 +996,8 @@
           <div class="feature-icon-wrap" style="background:rgba(234,67,53,.1);">
             <i class="bi bi-people-fill" style="color:#f87171;"></i>
           </div>
-          <div class="feature-title">Kết nối không giới hạn tài khoản</div>
-          <p class="feature-desc">Kết nối bao nhiêu tài khoản Google/WordPress/Tumblr/Hashnode tùy thích. Giới hạn chỉ là số website theo gói — tài khoản không bị giới hạn.</p>
+          <div class="feature-title">{{ _("land_feat_accounts_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_accounts_desc") }}</p>
         </div>
       </div>
 
@@ -907,8 +1006,72 @@
           <div class="feature-icon-wrap" style="background:rgba(88,166,255,.1);">
             <i class="bi bi-arrow-repeat" style="color:#58a6ff;"></i>
           </div>
-          <div class="feature-title">Auto retry &amp; recovery</div>
-          <p class="feature-desc">Đăng bị lỗi API? Hệ thống tự retry theo exponential backoff. Log chi tiết từng bài, dễ debug. Scheduler tiếp tục chạy ngay cả khi một task thất bại.</p>
+          <div class="feature-title">{{ _("land_feat_retry_title") }}</div>
+          <p class="feature-desc">{{ _("land_feat_retry_desc") }}</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- =============================== USE CASES =============================== -->
+<section id="use-cases" class="features-section" style="background:var(--dark2);border-top:1px solid #21262d;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-red">{{ _("land_usecase_eyebrow") }}</div>
+      <h2 class="section-title">{{ _("land_usecase_title") }}</h2>
+      <p class="section-sub">{{ _("land_usecase_sub") }}</p>
+    </div>
+    <div class="row g-4">
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(234,67,53,.1);">
+            <i class="bi bi-pencil-square" style="color:#f87171;"></i>
+          </div>
+          <div class="feature-title">{{ _("land_uc1_title") }}</div>
+          <p class="feature-desc">{{ _("land_uc1_desc") }}</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(16,185,129,.1);">
+            <i class="bi bi-currency-dollar" style="color:#10b981;"></i>
+          </div>
+          <div class="feature-title">{{ _("land_uc2_title") }}</div>
+          <p class="feature-desc">{{ _("land_uc2_desc") }}</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(88,166,255,.1);">
+            <i class="bi bi-graph-up-arrow" style="color:#58a6ff;"></i>
+          </div>
+          <div class="feature-title">{{ _("land_uc3_title") }}</div>
+          <p class="feature-desc">{{ _("land_uc3_desc") }}</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(99,102,241,.1);">
+            <i class="bi bi-server" style="color:#818cf8;"></i>
+          </div>
+          <div class="feature-title">{{ _("land_uc4_title") }}</div>
+          <p class="feature-desc">{{ _("land_uc4_desc") }}</p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-card">
+          <div class="feature-icon-wrap" style="background:rgba(247,201,72,.1);">
+            <i class="bi bi-building" style="color:#F7C948;"></i>
+          </div>
+          <div class="feature-title">{{ _("land_uc5_title") }}</div>
+          <p class="feature-desc">{{ _("land_uc5_desc") }}</p>
         </div>
       </div>
 
@@ -922,71 +1085,119 @@
     <div class="row g-4 text-center">
       <div class="col-6 col-md-3">
         <div class="stat-big">
-          <div class="num">4</div>
-          <div class="desc">Nền tảng hỗ trợ</div>
+          <div class="num">5</div>
+          <div class="desc">{{ _("land_stats_platforms") }}</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-big">
           <div class="num">50+</div>
-          <div class="desc">AI Models miễn phí</div>
+          <div class="desc">{{ _("land_stats_ai_models") }}</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-big">
           <div class="num">24/7</div>
-          <div class="desc">Hoạt động liên tục</div>
+          <div class="desc">{{ _("land_stats_uptime") }}</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-big">
           <div class="num">∞</div>
-          <div class="desc">Tài khoản kết nối</div>
+          <div class="desc">{{ _("land_stats_accounts") }}</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- =============================== FAQ =============================== -->
+<section id="faq" class="hiw-section" style="background:var(--dark2);border-top:1px solid #21262d;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow ey-blue">FAQ</div>
+      <h2 class="section-title">{{ _("land_faq_title") }}</h2>
+      <p class="section-sub">{{ _("land_faq_sub") }}</p>
+    </div>
+    <div class="row g-3 justify-content-center">
+      <div class="col-lg-8">
+        <div class="accordion accordion-flush" id="faqAccordion">
+          {% for i in range(1, 7) %}
+          <div class="accordion-item" style="background:var(--dark3);border:1px solid #30363d;border-radius:12px!important;margin-bottom:10px;">
+            <h3 class="accordion-header">
+              <button class="accordion-button {% if i > 1 %}collapsed{% endif %}" type="button"
+                data-bs-toggle="collapse" data-bs-target="#faq{{ i }}"
+                style="background:var(--dark3);color:#e6edf3;border-radius:12px!important;font-weight:600;font-size:.9rem;">
+                {{ _("land_faq_q" ~ i) }}
+              </button>
+            </h3>
+            <div id="faq{{ i }}" class="accordion-collapse collapse {% if i == 1 %}show{% endif %}" data-bs-parent="#faqAccordion">
+              <div class="accordion-body" style="color:#8b949e;font-size:.875rem;line-height:1.7;">
+                {{ _("land_faq_a" ~ i) }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"{{ _('land_faq_q1') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a1') }}"}},
+    {"@type":"Question","name":"{{ _('land_faq_q2') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a2') }}"}},
+    {"@type":"Question","name":"{{ _('land_faq_q3') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a3') }}"}},
+    {"@type":"Question","name":"{{ _('land_faq_q4') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a4') }}"}},
+    {"@type":"Question","name":"{{ _('land_faq_q5') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a5') }}"}},
+    {"@type":"Question","name":"{{ _('land_faq_q6') }}","acceptedAnswer":{"@type":"Answer","text":"{{ _('land_faq_a6') }}"}}
+  ]
+}
+</script>
+
 <!-- =============================== HOW IT WORKS =============================== -->
 <section id="how-it-works" class="hiw-section">
   <div class="container">
     <div class="text-center mb-5">
-      <div class="section-eyebrow ey-gold">Quy trình</div>
-      <h2 class="section-title">Thiết lập một lần, chạy mãi mãi</h2>
-      <p class="section-sub">Chỉ cần 4 bước để hệ thống tự động hoàn toàn — từ từ khóa đến bài đăng trên 4 nền tảng.</p>
+      <div class="section-eyebrow ey-gold">{{ _("land_hiw_eyebrow") }}</div>
+      <h2 class="section-title">{{ _("land_hiw_title") }}</h2>
+      <p class="section-sub">{{ _("land_hiw_sub") }}</p>
     </div>
     <div class="row g-3">
       <div class="col-md-6 col-lg-3">
         <div class="step-card">
           <div class="step-number">1</div>
           <div class="step-badge" style="background:rgba(234,67,53,.15);color:#f87171;">01</div>
-          <div class="step-title">Kết nối tài khoản</div>
-          <p class="step-desc">Đăng nhập Google, WordPress, Tumblr qua OAuth2 hoặc nhập Hashnode API key. Hệ thống tự đồng bộ danh sách blog/site của bạn.</p>
+          <div class="step-title">{{ _("land_step1_title") }}</div>
+          <p class="step-desc">{{ _("land_step1_desc") }}</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="step-card">
           <div class="step-number">2</div>
           <div class="step-badge" style="background:rgba(0,115,170,.15);color:#60a5fa;">02</div>
-          <div class="step-title">Tạo dự án &amp; nhập từ khóa</div>
-          <p class="step-desc">Chọn các site muốn đăng, nhập từ khóa mục tiêu (hỗ trợ 500+ từ khóa), chọn AI model, cài tần suất và ngôn ngữ riêng cho mỗi site.</p>
+          <div class="step-title">{{ _("land_step2_title") }}</div>
+          <p class="step-desc">{{ _("land_step2_desc") }}</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="step-card">
           <div class="step-number">3</div>
           <div class="step-badge" style="background:rgba(16,185,129,.15);color:#10b981;">03</div>
-          <div class="step-title">Bấm Start — AI làm hết</div>
-          <p class="step-desc">AI phân cụm từ khóa → viết bài → chèn ảnh → chèn backlink → đăng lên tất cả nền tảng → gửi URL lên Sinbyte ép index tự động.</p>
+          <div class="step-title">{{ _("land_step3_title") }}</div>
+          <p class="step-desc">{{ _("land_step3_desc") }}</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
         <div class="step-card">
           <div class="step-number">4</div>
           <div class="step-badge" style="background:rgba(247,201,72,.15);color:#F7C948;">04</div>
-          <div class="step-title">Theo dõi &amp; tối ưu</div>
-          <p class="step-desc">Dashboard thời gian thực: số bài đăng, tỷ lệ index Google, tiến độ từ khóa, log chi tiết từng bài và status trên từng nền tảng.</p>
+          <div class="step-title">{{ _("land_step4_title") }}</div>
+          <p class="step-desc">{{ _("land_step4_desc") }}</p>
         </div>
       </div>
     </div>
@@ -998,12 +1209,12 @@
   <div class="container">
     <div class="row g-5 align-items-center">
       <div class="col-lg-5">
-        <div class="section-eyebrow ey-red">Điểm khác biệt</div>
-        <h2 class="section-title">Tại sao chọn AutoBlogspot?</h2>
-        <p class="section-sub">Không chỉ là công cụ đăng bài — đây là một robot SEO hoàn chỉnh chạy ngầm 24/7 không mệt mỏi.</p>
+        <div class="section-eyebrow ey-red">{{ _("land_why_eyebrow") }}</div>
+        <h2 class="section-title">{{ _("land_why_title") }}</h2>
+        <p class="section-sub">{{ _("land_why_sub") }}</p>
         <div class="mt-4">
           <a href="/register" class="btn-hero-primary d-inline-flex">
-            <i class="bi bi-play-circle"></i>Bắt đầu ngay hôm nay
+            <i class="bi bi-play-circle"></i>{{ _("land_why_cta") }}
           </a>
         </div>
       </div>
@@ -1011,36 +1222,36 @@
         <div class="why-item">
           <div class="why-icon" style="background:rgba(16,185,129,.1);"><i class="bi bi-shield-check" style="color:#10b981;"></i></div>
           <div class="why-text">
-            <h6>Nội dung nhân hóa — vượt AI detection</h6>
-            <p>AI được prompt đặc biệt để viết văn phong tự nhiên như người thật, giảm rủi ro bị Google phát hiện là nội dung máy móc.</p>
+            <h6>{{ _("land_why1_title") }}</h6>
+            <p>{{ _("land_why1_desc") }}</p>
           </div>
         </div>
         <div class="why-item">
           <div class="why-icon" style="background:rgba(88,166,255,.1);"><i class="bi bi-cloud-lightning-fill" style="color:#58a6ff;"></i></div>
           <div class="why-text">
-            <h6>AI Model miễn phí — chi phí gần như bằng 0</h6>
-            <p>OpenRouter cung cấp 50+ model AI miễn phí chất lượng cao. AutoBlogspot tự động chọn và fallback giữa các model để đảm bảo không ngắt quãng.</p>
+            <h6>{{ _("land_why2_title") }}</h6>
+            <p>{{ _("land_why2_desc") }}</p>
           </div>
         </div>
         <div class="why-item">
           <div class="why-icon" style="background:rgba(247,201,72,.1);"><i class="bi bi-lightning-charge-fill" style="color:#F7C948;"></i></div>
           <div class="why-text">
-            <h6>Index nhanh hơn đối thủ</h6>
-            <p>Tích hợp Sinbyte tự động submit URL ngay sau khi đăng bài. Tăng tốc đáng kể thời gian được Google crawl và index, giúp bài lên top sớm hơn.</p>
+            <h6>{{ _("land_why3_title") }}</h6>
+            <p>{{ _("land_why3_desc") }}</p>
           </div>
         </div>
         <div class="why-item">
           <div class="why-icon" style="background:rgba(234,67,53,.1);"><i class="bi bi-layers-fill" style="color:#f87171;"></i></div>
           <div class="why-text">
-            <h6>Scale không giới hạn tài khoản</h6>
-            <p>Kết nối bao nhiêu tài khoản Google, WordPress, Tumblr, Hashnode tùy thích. Phân phối rủi ro, tăng khả năng tiếp cận organic traffic từ nhiều nguồn.</p>
+            <h6>{{ _("land_why4_title") }}</h6>
+            <p>{{ _("land_why4_desc") }}</p>
           </div>
         </div>
         <div class="why-item">
           <div class="why-icon" style="background:rgba(139,92,246,.1);"><i class="bi bi-gear-wide-connected" style="color:#a78bfa;"></i></div>
           <div class="why-text">
-            <h6>Cài một lần — chạy mãi không cần giám sát</h6>
-            <p>APScheduler chạy nền liên tục, tự retry khi lỗi, tự skip bài đã đăng. Bạn chỉ cần bật máy tính — mọi thứ còn lại để AI lo.</p>
+            <h6>{{ _("land_why5_title") }}</h6>
+            <p>{{ _("land_why5_desc") }}</p>
           </div>
         </div>
       </div>
@@ -1052,9 +1263,9 @@
 <section id="pricing" class="pricing-section">
   <div class="container">
     <div class="text-center mb-5">
-      <div class="section-eyebrow ey-gold">Bảng giá</div>
-      <h2 class="section-title">Gói phù hợp cho mọi nhu cầu</h2>
-      <p class="section-sub">Dùng thử miễn phí 3 ngày. Nâng cấp khi bạn sẵn sàng scale mạnh hơn.</p>
+      <div class="section-eyebrow ey-gold">{{ _("land_pricing_eyebrow") }}</div>
+      <h2 class="section-title">{{ _("land_pricing_title") }}</h2>
+      <p class="section-sub">{{ _("land_pricing_sub") }}</p>
     </div>
     <div class="row g-4 justify-content-center">
 
@@ -1064,17 +1275,17 @@
           <div class="plan-header">
             <div class="plan-name">Free Trial</div>
             <div class="plan-price-big">0₫</div>
-            <div class="plan-desc">Dùng thử 3 ngày miễn phí</div>
+            <div class="plan-desc">{{ _("land_plan_free_desc") }}</div>
           </div>
           <div class="plan-body">
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>1 dự án đang chạy</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>1 website bất kỳ nền tảng</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>5 bài/ngày tối đa</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>AI models miễn phí</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Ảnh tự động (Pollinations)</span></div>
-            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">Theo dõi index Sinbyte</span></div>
-            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">Hỗ trợ ưu tiên</span></div>
-            <a href="/register" class="btn-plan btn-plan-outline">Bắt đầu miễn phí</a>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_free_f1") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_free_f2") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_free_f3") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_free_f4") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_free_f5") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">{{ _("land_plan_free_f6") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-x-circle text-secondary"></i><span style="color:#8b949e;">{{ _("land_plan_free_f7") }}</span></div>
+            <a href="/register" class="btn-plan btn-plan-outline">{{ _("land_plan_free_cta") }}</a>
           </div>
         </div>
       </div>
@@ -1083,20 +1294,20 @@
       <div class="col-md-6 col-lg-4">
         <div class="plan-wrap highlighted">
           <div class="plan-header">
-            <div class="plan-badge-top">⭐ Phổ biến nhất</div>
+            <div class="plan-badge-top">{{ _("land_plan_pro_badge") }}</div>
             <div class="plan-name">Pro</div>
-            <div class="plan-price-big">200.000₫<span class="plan-period">/tháng</span></div>
-            <div class="plan-desc">Dành cho blogger &amp; marketer chuyên nghiệp</div>
+            <div class="plan-price-big">200.000₫<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
+            <div class="plan-desc">{{ _("land_plan_pro_desc") }}</div>
           </div>
           <div class="plan-body">
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>5 dự án đồng thời</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>10 website (mọi nền tảng)</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>20 bài/ngày/website</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>AI models miễn phí + tùy chọn</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Ảnh Pollinations + Pixabay</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Theo dõi index Sinbyte</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Hỗ trợ ưu tiên</span></div>
-            <a href="/register" class="btn-plan btn-plan-primary">Đăng ký Pro</a>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f1") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f2") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f3") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f4") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f5") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f6") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_pro_f7") }}</span></div>
+            <a href="/register" class="btn-plan btn-plan-primary">{{ _("land_plan_pro_cta") }}</a>
           </div>
         </div>
       </div>
@@ -1105,20 +1316,20 @@
       <div class="col-md-6 col-lg-4">
         <div class="plan-wrap">
           <div class="plan-header">
-            <div class="plan-badge-top gold">🚀 Không giới hạn</div>
+            <div class="plan-badge-top gold">{{ _("land_plan_biz_badge") }}</div>
             <div class="plan-name">Business</div>
-            <div class="plan-price-big">500.000₫<span class="plan-period">/tháng</span></div>
-            <div class="plan-desc">Scale không giới hạn — agency &amp; team lớn</div>
+            <div class="plan-price-big">500.000₫<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
+            <div class="plan-desc">{{ _("land_plan_biz_desc") }}</div>
           </div>
           <div class="plan-body">
-            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn dự án</span></div>
-            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn website</span></div>
-            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>Không giới hạn bài/ngày</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Tất cả tính năng Pro</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Multi-user (sắp ra mắt)</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>API access (sắp ra mắt)</span></div>
-            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>Hỗ trợ 24/7 riêng</span></div>
-            <a href="/register" class="btn-plan btn-plan-gold">Đăng ký Business</a>
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>{{ _("land_plan_biz_f1") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>{{ _("land_plan_biz_f2") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-infinity" style="color:#F7C948;"></i><span>{{ _("land_plan_biz_f3") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_biz_f4") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_biz_f5") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_biz_f6") }}</span></div>
+            <div class="plan-feature"><i class="bi bi-check-circle-fill text-success"></i><span>{{ _("land_plan_biz_f7") }}</span></div>
+            <a href="/register" class="btn-plan btn-plan-gold">{{ _("land_plan_biz_cta") }}</a>
           </div>
         </div>
       </div>
@@ -1128,9 +1339,7 @@
     <!-- Comparison note -->
     <div class="text-center mt-4">
       <p style="font-size:.85rem;color:#8b949e;">
-        <i class="bi bi-info-circle me-1"></i>
-        Tất cả gói đều hỗ trợ đầy đủ 4 nền tảng: Blogspot, WordPress.com, Tumblr, Hashnode.
-        Nâng/hạ cấp bất cứ lúc nào.
+        <i class="bi bi-info-circle me-1"></i>{{ _("land_pricing_note") }}
       </p>
     </div>
   </div>
@@ -1143,25 +1352,22 @@
   <div class="container">
     <div class="cta-box">
       <div class="section-eyebrow ey-blue mb-3" style="display:inline-block;">
-        <i class="bi bi-robot me-1"></i>Sẵn sàng chưa?
+        <i class="bi bi-send-fill me-1"></i>{{ _("land_cta_eyebrow") }}
       </div>
-      <h2>Để AI làm việc trong khi<br>bạn tập trung vào điều quan trọng hơn</h2>
-      <p>
-        Hàng trăm bài viết chuẩn SEO, đăng lên 4 nền tảng, hình ảnh đẹp, backlink chèn sẵn —<br>
-        tất cả chạy tự động 24/7 mà không tốn một phút thủ công nào của bạn.
-      </p>
+      <h2>{{ _("land_cta_title") }}</h2>
+      <p>{{ _("land_cta_body") }}</p>
       <div class="d-flex gap-3 justify-content-center flex-wrap">
         <a href="/register" class="btn-hero-primary">
-          <i class="bi bi-rocket-takeoff"></i>Dùng thử miễn phí 3 ngày
+          <i class="bi bi-rocket-takeoff"></i>{{ _("land_cta_primary") }}
         </a>
         <a href="/login" class="btn-hero-outline">
-          Đã có tài khoản <i class="bi bi-arrow-right"></i>
+          {{ _("land_cta_secondary") }} <i class="bi bi-arrow-right"></i>
         </a>
       </div>
       <p class="mt-4" style="font-size:.8rem;color:#8b949e;margin-bottom:0;">
-        <i class="bi bi-lock-fill me-1"></i>Bảo mật OAuth2 chuẩn Google &nbsp;·&nbsp;
-        <i class="bi bi-credit-card-2-back me-1"></i>Không cần thẻ tín dụng &nbsp;·&nbsp;
-        <i class="bi bi-x-circle me-1"></i>Hủy bất cứ lúc nào
+        <i class="bi bi-lock-fill me-1"></i>{{ _("land_cta_trust1") }} &nbsp;·&nbsp;
+        <i class="bi bi-credit-card-2-back me-1"></i>{{ _("land_cta_trust2") }} &nbsp;·&nbsp;
+        <i class="bi bi-x-circle me-1"></i>{{ _("land_cta_trust3") }}
       </p>
     </div>
   </div>
@@ -1173,12 +1379,10 @@
     <div class="row g-4 mb-4">
       <div class="col-lg-4">
         <div class="footer-brand">
-          <div class="footer-brand-icon"><i class="bi bi-robot text-white" style="font-size:.8rem;"></i></div>
+          <div class="footer-brand-icon"><i class="bi bi-send-fill text-white" style="font-size:.8rem;"></i></div>
           AutoBlogspot
         </div>
-        <p style="font-size:.85rem;line-height:1.7;margin-bottom:12px;">
-          Hệ thống tự động viết &amp; đăng bài lên 4 nền tảng bằng AI. Chạy 24/7, không cần giám sát.
-        </p>
+        <p style="font-size:.85rem;line-height:1.7;margin-bottom:12px;">{{ _("land_footer_tagline") }}</p>
         <div class="platform-row">
           <span class="platform-badge pb-blogspot" style="font-size:.7rem;"><i class="bi bi-google"></i>Blogspot</span>
           <span class="platform-badge pb-wordpress" style="font-size:.7rem;"><i class="bi bi-wordpress"></i>WordPress</span>
@@ -1187,18 +1391,19 @@
         </div>
       </div>
       <div class="col-6 col-lg-2">
-        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Sản phẩm</div>
-        <a href="#features" class="d-block mb-2" style="font-size:.85rem;">Tính năng</a>
-        <a href="#pricing" class="d-block mb-2" style="font-size:.85rem;">Bảng giá</a>
-        <a href="#platforms" class="d-block mb-2" style="font-size:.85rem;">Nền tảng</a>
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">{{ _("land_footer_product") }}</div>
+        <a href="#features" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_features") }}</a>
+        <a href="#pricing" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_pricing") }}</a>
+        <a href="#platforms" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_platforms") }}</a>
+        <a href="/blog" class="d-block mb-2" style="font-size:.85rem;">Blog</a>
       </div>
       <div class="col-6 col-lg-2">
-        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Tài khoản</div>
-        <a href="/login" class="d-block mb-2" style="font-size:.85rem;">Đăng nhập</a>
-        <a href="/register" class="d-block mb-2" style="font-size:.85rem;">Đăng ký</a>
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">{{ _("land_footer_account") }}</div>
+        <a href="/login" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_login") }}</a>
+        <a href="/register" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_register") }}</a>
       </div>
       <div class="col-lg-4">
-        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">Tích hợp AI &amp; API</div>
+        <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">{{ _("land_footer_integrations") }}</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">OpenRouter AI</span>
           <span style="background:#21262d;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-size:.75rem;color:#8b949e;">Pollinations.ai</span>
@@ -1212,8 +1417,12 @@
       </div>
     </div>
     <div style="border-top:1px solid #21262d;padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-      <span style="font-size:.8rem;">© 2025 AutoBlogspot — Tự động viết &amp; đăng bài AI</span>
-      <span style="font-size:.8rem;">Made with <i class="bi bi-heart-fill" style="color:#EA4335;"></i> for Vietnamese bloggers</span>
+      <span style="font-size:.8rem;">{{ _("land_footer_copyright") }}</span>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <a href="/terms" style="font-size:.8rem;color:#8b949e;">{{ _("land_footer_terms") }}</a>
+        <a href="/privacy" style="font-size:.8rem;color:#8b949e;">{{ _("land_footer_privacy") }}</a>
+        <span style="font-size:.8rem;">{{ _("land_footer_made_for") }}</span>
+      </div>
     </div>
   </div>
 </footer>

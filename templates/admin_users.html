@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Quản trị người dùng — AutoBlogspot{% endblock %}
+{% block title %}{{ _("adm_users_title") }} — AutoBlogspot{% endblock %}
 {% block content %}
-<h4 class="mb-4 fw-bold"><i class="bi bi-shield-check me-2"></i>Quản trị người dùng</h4>
+<h1 class="mb-4 fw-bold h4"><i class="bi bi-shield-check me-2"></i>{{ _("adm_users_title") }}</h1>
 
 {% if request.query_params.get('success') %}
 <div class="alert alert-success alert-dismissible fade show">
@@ -16,13 +16,13 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>ID</th>
-            <th>Tên / Email</th>
-            <th>Gói</th>
-            <th>Trạng thái</th>
-            <th>Hết hạn</th>
-            <th>Tạo lúc</th>
-            <th>Hành động</th>
+            <th>{{ _("adm_col_id") }}</th>
+            <th>{{ _("adm_col_name_email") }}</th>
+            <th>{{ _("adm_col_plan") }}</th>
+            <th>{{ _("adm_col_status") }}</th>
+            <th>{{ _("adm_col_expires") }}</th>
+            <th>{{ _("adm_col_created") }}</th>
+            <th>{{ _("adm_col_actions") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -30,9 +30,9 @@
           <tr>
             <td class="text-muted small">{{ u.id }}</td>
             <td>
-              <div class="fw-semibold">{{ u.full_name or '(chưa đặt tên)' }}</div>
+              <div class="fw-semibold">{{ u.full_name or _("adm_no_name") }}</div>
               <div class="text-muted small">{{ u.email }}</div>
-              {% if u.is_admin %}<span class="badge bg-danger-subtle text-danger">Admin</span>{% endif %}
+              {% if u.is_admin %}<span class="badge bg-danger-subtle text-danger">{{ _("adm_badge_admin") }}</span>{% endif %}
             </td>
             <td>
               {% if u.subscription %}
@@ -50,9 +50,9 @@
             <td>
               {% if u.subscription %}
                 {% if u.subscription.is_active_plan %}
-                  <span class="badge bg-success-subtle text-success border border-success-subtle">Hoạt động</span>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">{{ _("adm_badge_active") }}</span>
                 {% else %}
-                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Hết hạn</span>
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ _("adm_badge_expired") }}</span>
                 {% endif %}
               {% else %}
                 <span class="text-muted small">—</span>
@@ -71,7 +71,7 @@
             <td>
               <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                 data-bs-target="#upgradeModal{{ u.id }}">
-                <i class="bi bi-arrow-up-circle me-1"></i>Nâng cấp
+                <i class="bi bi-arrow-up-circle me-1"></i>{{ _("adm_btn_upgrade") }}
               </button>
 
               <!-- Upgrade Modal -->
@@ -79,13 +79,13 @@
                 <div class="modal-dialog modal-sm">
                   <div class="modal-content">
                     <div class="modal-header">
-                      <h6 class="modal-title">Nâng cấp: {{ u.email }}</h6>
+                      <h6 class="modal-title">{{ _("adm_upgrade_modal") }}: {{ u.email }}</h6>
                       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <form method="post" action="/admin/users/{{ u.id }}/upgrade">
                       <div class="modal-body">
                         <div class="mb-3">
-                          <label class="form-label fw-semibold">Gói</label>
+                          <label class="form-label fw-semibold">{{ _("adm_col_plan") }}</label>
                           <select name="plan" class="form-select">
                             <option value="free">Free</option>
                             <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro</option>
@@ -93,14 +93,14 @@
                           </select>
                         </div>
                         <div class="mb-3">
-                          <label class="form-label fw-semibold">Số tháng</label>
+                          <label class="form-label fw-semibold">{{ _("adm_months") }}</label>
                           <input type="number" name="months" class="form-control" value="1" min="1" max="24">
-                          <div class="form-text">Business: nhập 0 để không giới hạn thời gian</div>
+                          <div class="form-text">{{ _("adm_months_hint") }}</div>
                         </div>
                       </div>
                       <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-sm btn-primary">Xác nhận</button>
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">{{ _("adm_btn_cancel") }}</button>
+                        <button type="submit" class="btn btn-sm btn-primary">{{ _("adm_btn_confirm") }}</button>
                       </div>
                     </form>
                   </div>

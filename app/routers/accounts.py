@@ -3,17 +3,19 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from ..config import get_settings
 from ..database import get_db
 from ..dependencies import get_current_user, can_add_site
 from ..models import GoogleAccount, BlogspotSite, PlatformAccount
-from ..services import blogger, wordpress, tumblr, hashnode
+from ..services import blogger, wordpress, tumblr, hashnode, wordpress_selfhosted as wp_sh
 from ..templates import templates
 
 router = APIRouter()
 
-_BLOGGER_REDIRECT = "http://localhost:8000/accounts/oauth/callback"
-_WP_REDIRECT      = "http://localhost:8000/accounts/wordpress/callback"
-_TUMBLR_REDIRECT  = "http://localhost:8000/accounts/tumblr/callback"
+_BASE = get_settings().BASE_URL.rstrip("/")
+_BLOGGER_REDIRECT = f"{_BASE}/accounts/oauth/callback"
+_WP_REDIRECT      = f"{_BASE}/accounts/wordpress/callback"
+_TUMBLR_REDIRECT  = f"{_BASE}/accounts/tumblr/callback"
 
 LANGUAGES = [
     ("vi", "Tiếng Việt"), ("en", "Tiếng Anh"), ("de", "Tiếng Đức"),
@@ -28,23 +30,25 @@ LANGUAGES = [
 def accounts_page(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
     uid = current_user.id
-    google_accounts   = db.query(GoogleAccount).filter(GoogleAccount.user_id == uid).all()
-    wp_accounts       = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "wordpress").all()
-    tumblr_accounts   = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "tumblr").all()
-    hashnode_accounts = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "hashnode").all()
+    google_accounts        = db.query(GoogleAccount).filter(GoogleAccount.user_id == uid).all()
+    wp_accounts            = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "wordpress").all()
+    tumblr_accounts        = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "tumblr").all()
+    hashnode_accounts      = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "hashnode").all()
+    wp_selfhosted_accounts = db.query(PlatformAccount).filter(PlatformAccount.user_id == uid, PlatformAccount.platform == "wordpress_selfhosted").all()
 
     from ..services.openrouter import get_setting as _gs
     return templates.TemplateResponse(request, "accounts.html", {
-        "accounts":          google_accounts,
-        "wp_accounts":       wp_accounts,
-        "tumblr_accounts":   tumblr_accounts,
-        "hashnode_accounts": hashnode_accounts,
-        "wp_configured":     bool(_gs(db, "wp_client_id", user_id=uid)),
-        "tumblr_configured": bool(_gs(db, "tumblr_consumer_key", user_id=uid)),
-        "google_configured": bool(_gs(db, "google_client_id", user_id=uid)),
-        "languages":         LANGUAGES,
-        "current_user":      current_user,
-        "active_page":       "accounts",
+        "accounts":               google_accounts,
+        "wp_accounts":            wp_accounts,
+        "tumblr_accounts":        tumblr_accounts,
+        "hashnode_accounts":      hashnode_accounts,
+        "wp_selfhosted_accounts": wp_selfhosted_accounts,
+        "wp_configured":          bool(_gs(db, "wp_client_id", user_id=uid)),
+        "tumblr_configured":      bool(_gs(db, "tumblr_consumer_key", user_id=uid)),
+        "google_configured":      bool(_gs(db, "google_client_id", user_id=uid)),
+        "languages":              LANGUAGES,
+        "current_user":           current_user,
+        "active_page":            "accounts",
     })
 
 
@@ -272,7 +276,10 @@ def wp_sync_sites(account_id: int, request: Request, db: Session = Depends(get_d
 def tumblr_oauth_start(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
     try:
-        url = tumblr.build_oauth_url(db, _TUMBLR_REDIRECT, user_id=current_user.id)
+        import secrets
+        state = secrets.token_urlsafe(16)
+        request.session["tumblr_oauth_state"] = state
+        url = tumblr.build_oauth_url(db, _TUMBLR_REDIRECT, user_id=current_user.id, state=state)
         return RedirectResponse(url)
     except ValueError as e:
         from urllib.parse import quote_plus
@@ -280,10 +287,28 @@ def tumblr_oauth_start(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/accounts/tumblr/callback")
-def tumblr_oauth_callback(request: Request, code: str = None, error: str = None, db: Session = Depends(get_db)):
+def tumblr_oauth_callback(
+    request: Request,
+    code: str = None, error: str = None, state: str = None,
+    db: Session = Depends(get_db),
+):
     current_user = get_current_user(request, db)
+    from urllib.parse import quote_plus
+
     if error or not code:
-        return RedirectResponse("/accounts?error=Tumblr+OAuth+cancelled")
+        _ERROR_HINTS = {
+            "access_denied":         "Bạn đã huỷ xác thực.",
+            "redirect_uri_mismatch": "Redirect URI không khớp — kiểm tra 'OAuth2 redirect URLs' trong Tumblr app.",
+            "invalid_client":        "Consumer Key/Secret không hợp lệ — kiểm tra lại trong Cài đặt.",
+            "unauthorized_client":   "App chưa được phê duyệt scope 'write offline_access'.",
+            "invalid_request":       "Thiếu tham số bắt buộc — thử kết nối lại từ đầu.",
+        }
+        hint = _ERROR_HINTS.get(error or "", f"Lỗi OAuth: {error or 'không có mã'}")
+        return RedirectResponse(f"/accounts?tab=tumblr&error={quote_plus(hint)}")
+
+    expected = request.session.pop("tumblr_oauth_state", None)
+    if expected and state != expected:
+        return RedirectResponse(f"/accounts?tab=tumblr&error={quote_plus('State không hợp lệ — thử kết nối lại.')}")
     try:
         tokens        = tumblr.exchange_code_for_tokens(db, code, _TUMBLR_REDIRECT, user_id=current_user.id)
         access_token  = tokens["access_token"]
@@ -392,6 +417,70 @@ def hashnode_connect(
         return RedirectResponse(f"/accounts?success=Hashnode+connected+{synced}+publications&tab=hashnode", status_code=303)
     except Exception as e:
         return RedirectResponse(f"/accounts?error={str(e)}", status_code=303)
+
+
+# ─── WordPress Self-hosted ───────────────────────────────────────────────────
+
+@router.post("/accounts/wpselfhosted/connect")
+def wp_selfhosted_connect(
+    request: Request,
+    site_url: str = Form(...),
+    username: str = Form(...),
+    app_password: str = Form(...),
+    label: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    from urllib.parse import quote_plus
+    current_user = get_current_user(request, db)
+    ok, msg = can_add_site(current_user, db)
+    if not ok:
+        return RedirectResponse(f"/accounts?error={quote_plus(msg)}&tab=wpselfhosted", status_code=303)
+
+    site_url = site_url.strip().rstrip("/")
+    if not site_url.startswith("http"):
+        site_url = "https://" + site_url
+    username = username.strip()
+    app_password = app_password.strip()
+
+    try:
+        wp_sh.test_connection(site_url, username, app_password)
+    except ValueError as e:
+        return RedirectResponse(f"/accounts?error={quote_plus(str(e))}&tab=wpselfhosted", status_code=303)
+
+    display_name = label.strip() or f"{username}@{site_url.split('//')[-1]}"
+
+    existing = db.query(PlatformAccount).filter(
+        PlatformAccount.user_id == current_user.id,
+        PlatformAccount.platform == "wordpress_selfhosted",
+        PlatformAccount.refresh_token == site_url,
+        PlatformAccount.name == username,
+    ).first()
+
+    if existing:
+        existing.access_token = app_password
+        db.commit()
+        return RedirectResponse(f"/accounts?success=WordPress+Self-hosted+updated&tab=wpselfhosted", status_code=303)
+
+    pa = PlatformAccount(
+        user_id=current_user.id,
+        platform="wordpress_selfhosted",
+        name=username,
+        access_token=app_password,
+        refresh_token=site_url,
+    )
+    db.add(pa)
+    db.flush()
+
+    db.add(BlogspotSite(
+        user_id=current_user.id,
+        platform="wordpress_selfhosted",
+        platform_account_id=pa.id,
+        blog_id=site_url,
+        blog_url=site_url,
+        blog_name=display_name,
+    ))
+    db.commit()
+    return RedirectResponse(f"/accounts?success=WordPress+Self-hosted+connected&tab=wpselfhosted", status_code=303)
 
 
 # ─── Delete platform account ──────────────────────────────────────────────────

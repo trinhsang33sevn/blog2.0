@@ -57,6 +57,24 @@ def _pixabay_figure_html(query: str, api_key: str) -> str:
     )
 
 
+def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -> str:
+    """Tạo ảnh minh họa section bằng Pollinations.ai khi không có Pixabay."""
+    seed = random.randint(1, 99999)
+    prompt = f"professional high quality photo illustration of {query}, realistic, detailed"
+    encoded = quote(prompt[:500])
+    url = (
+        f"https://image.pollinations.ai/prompt/{encoded}"
+        f"?width={width}&height={height}&nologo=true&seed={seed}"
+    )
+    safe_query = query.replace('"', "")
+    return (
+        f'\n<figure style="margin:1.5rem 0;text-align:center;">'
+        f'<img src="{url}" alt="{safe_query}" '
+        f'style="max-width:100%;border-radius:8px;" loading="lazy">'
+        f"</figure>\n"
+    )
+
+
 def insert_images_into_content(
     content: str,
     title: str,
@@ -67,7 +85,7 @@ def insert_images_into_content(
     """
     Chèn 2-4 ảnh vào bài viết, số lượng ngẫu nhiên theo độ dài nội dung:
     - Đầu bài: 1 ảnh Pollinations.ai (hero image)
-    - Trong bài: 1-3 ảnh Pixabay phân bổ đều vào các section h2
+    - Trong bài: 1-3 ảnh Pixabay (nếu có key) hoặc Pollinations.ai (fallback)
     """
     # ── Hero image (Pollinations) ─────────────────────────────────────────────
     prompt = image_prompt.strip() if image_prompt else title
@@ -83,8 +101,8 @@ def insert_images_into_content(
     sections = re.split(r"(?=<h2[\s>])", content)
     sections[0] = hero_html + sections[0]
 
-    # ── Xác định số ảnh Pixabay cần chèn dựa theo độ dài bài ─────────────────
-    if pixabay_api_key and image_queries:
+    # ── Xác định số ảnh inline cần chèn dựa theo độ dài bài ──────────────────
+    if image_queries:
         word_count = len(re.sub(r"<[^>]+>", " ", content).split())
         if word_count < 400:
             extra_count = 1
@@ -101,12 +119,16 @@ def insert_images_into_content(
             else:
                 step = num_sections / extra_count
                 chosen = [int(round(1 + i * step)) for i in range(extra_count)]
-                chosen = [min(c, len(sections) - 1) for c in chosen]
+                chosen = list(dict.fromkeys(min(c, len(sections) - 1) for c in chosen))
 
             for i, section_idx in enumerate(chosen):
                 if i >= len(image_queries):
                     break
-                figure = _pixabay_figure_html(image_queries[i], pixabay_api_key)
+                # Dùng Pixabay nếu có key, fallback sang Pollinations.ai
+                if pixabay_api_key:
+                    figure = _pixabay_figure_html(image_queries[i], pixabay_api_key)
+                else:
+                    figure = _pollinations_figure_html(image_queries[i])
                 if figure:
                     sections[section_idx] = re.sub(
                         r"(</h2>)",

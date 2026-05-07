@@ -112,6 +112,29 @@ def refresh_models(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(f"/settings?error={str(e)}&tab=ai", status_code=303)
 
 
+@router.post("/settings/change-password")
+def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password:     str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    from ..services.auth_service import verify_password, hash_password
+    current_user = get_current_user(request, db)
+
+    if not verify_password(current_password, current_user.password_hash):
+        return JSONResponse({"ok": False, "message": "Mật khẩu hiện tại không đúng"}, status_code=400)
+    if new_password != confirm_password:
+        return JSONResponse({"ok": False, "message": "Mật khẩu xác nhận không khớp"}, status_code=400)
+    if len(new_password) < 6:
+        return JSONResponse({"ok": False, "message": "Mật khẩu mới phải có ít nhất 6 ký tự"}, status_code=400)
+
+    current_user.password_hash = hash_password(new_password)
+    db.commit()
+    return JSONResponse({"ok": True, "message": "Đổi mật khẩu thành công"})
+
+
 @router.post("/settings/test-api/{provider}")
 def test_api_connection(
     provider: str,

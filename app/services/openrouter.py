@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from datetime import datetime
 from threading import Lock
 from typing import Optional
 import httpx
@@ -11,6 +12,7 @@ from ..models import AppSetting
 logger = logging.getLogger(__name__)
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_OR_MODEL    = "meta-llama/llama-3.3-70b-instruct:free"
 
 # Danh sách fallback cứng — dùng khi chưa refresh từ API
 FREE_MODELS = [
@@ -18,7 +20,7 @@ FREE_MODELS = [
     {"id": "openrouter/free", "name": "⚡ Auto Free Router (tự động chọn model tốt nhất)"},
 
     # ── Các model lớn, khuyến nghị viết bài ─────────────────────────────
-    {"id": "meta-llama/llama-3.3-70b-instruct:free", "name": "Llama 3.3 70B Instruct — Khuyến nghị (131K ctx)"},
+    {"id": DEFAULT_OR_MODEL, "name": "Llama 3.3 70B Instruct — Khuyến nghị (131K ctx)"},
     {"id": "nvidia/nemotron-3-super-120b-a12b:free", "name": "NVIDIA Nemotron 3 Super 120B (1M ctx)"},
     {"id": "openai/gpt-oss-120b:free", "name": "OpenAI GPT OSS 120B (131K ctx)"},
     {"id": "openai/gpt-oss-20b:free", "name": "OpenAI GPT OSS 20B (131K ctx)"},
@@ -63,10 +65,11 @@ LANGUAGE_NAMES = {
 }
 
 # Lỗi cho biết model quá tải / không khả dụng → chuyển sang model khác
-_FALLBACK_STATUS_CODES = {429, 502, 503, 529}
+_FALLBACK_STATUS_CODES = {429, 500, 502, 503, 504, 524, 529}
 _FALLBACK_ERROR_KEYWORDS = [
     "overloaded", "rate limit", "too many requests", "capacity",
     "unavailable", "no endpoints", "model not found", "error 429",
+    "provider returned error", "524", "timeout", "timed out",
 ]
 
 # ─── Circuit Breaker (in-memory model health) ─────────────────────────────────
@@ -240,7 +243,7 @@ def call_openrouter(api_key: str, model: str, messages: list, max_tokens: int = 
     """Gọi một model cụ thể. Raise exception nếu lỗi."""
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "http://localhost:8000",
+        "HTTP-Referer": "https://autoblogspot.com",
         "X-Title": "AutoBlogspot",
         "Content-Type": "application/json",
     }
@@ -315,7 +318,11 @@ def smart_call(
                     logger.warning(f"[smart_call] Không có key '{provider}' (user_id={user_id}), fallback OpenRouter")
 
     or_key = get_setting(db, "openrouter_api_key", user_id=user_id)
-    return call_with_fallback(db, or_key, preferred_model, messages, max_tokens)
+    # Strip provider prefix before passing to OpenRouter (e.g. "groq:model" → use default)
+    or_model = preferred_model
+    if preferred_model and ":" in preferred_model and not preferred_model.startswith("http"):
+        or_model = get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
+    return call_with_fallback(db, or_key, or_model, messages, max_tokens)
 
 
 def call_with_fallback(
@@ -337,6 +344,11 @@ def call_with_fallback(
         m["id"] for m in models_list
         if m["id"] not in ("openrouter/free", preferred_model)
     ]
+
+    # If preferred_model is the "auto" sentinel, replace it with first real fallback
+    if preferred_model == "openrouter/free":
+        preferred_model = all_fallback_ids[0] if all_fallback_ids else DEFAULT_OR_MODEL
+        all_fallback_ids = [m for m in all_fallback_ids if m != preferred_model]
 
     # Partition once — each model checked exactly once, preserving order
     full_order = [preferred_model] + all_fallback_ids
@@ -450,7 +462,7 @@ def humanize_article(
     Giữ nguyên toàn bộ HTML, thực tế, liên kết — chỉ thay đổi phong cách viết.
     Nếu lỗi → trả về content gốc (không làm hỏng bài).
     """
-    preferred = model or get_setting(db, "openrouter_model", "meta-llama/llama-3.3-70b-instruct:free", user_id=user_id)
+    preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
     lang_name = LANGUAGE_NAMES.get(language, "English")
 
     prompt = f"""You are a professional human editor. Your job is to rewrite the article below so it sounds 100% natural — as if written by an experienced human blogger, not an AI.
@@ -606,7 +618,7 @@ def cluster_keywords(db: Session, keywords: list[str], model: Optional[str] = No
     Phân cụm từ khóa theo chủ đề bằng AI.
     Tự động chia lô nếu số từ khóa > _CLUSTER_BATCH_SIZE để đảm bảo chất lượng.
     """
-    preferred = model or get_setting(db, "openrouter_model", "meta-llama/llama-3.3-70b-instruct:free", user_id=user_id)
+    preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
 
     # Chia thành các lô nếu quá nhiều từ khóa
     if len(keywords) <= _CLUSTER_BATCH_SIZE:
@@ -636,9 +648,12 @@ def analyze_intent_and_write_article(
     user_id: int = None,
 ) -> dict:
     """Phân tích search intent rồi viết bài unique."""
-    preferred = model or get_setting(db, "openrouter_model", "meta-llama/llama-3.3-70b-instruct:free", user_id=user_id)
+    preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
     lang_name = LANGUAGE_NAMES.get(language, "English")
     kw_str = ", ".join(keywords)
+    now = datetime.now()
+    current_date_str = now.strftime("%B %Y")   # e.g. "May 2026"
+    current_year = now.year
 
     backlink_str = ""
     if backlinks:
@@ -696,6 +711,9 @@ def analyze_intent_and_write_article(
 
     prompt = f"""{persona_intro}
 
+TODAY'S DATE: {current_date_str}
+IMPORTANT: All content must reflect {current_year} as the current year. Do NOT cite 2025 data as "current", "this year", or "recently" — that is outdated. Use {current_year} figures, trends, and context throughout.
+
 ## STEP 1 — Search Intent Analysis
 Topic cluster: {cluster_name}
 Keywords: {kw_str}
@@ -734,8 +752,8 @@ Identify:
 - HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote — NO html/head/body tags
 
 ## STEP 3 — Image Suggestions (in English)
-- image_prompt: One vivid sentence describing the perfect hero illustration for this article (specific scene, not generic). Example: "A confident young woman reviewing her monthly budget on a laptop at a cozy home desk, financial charts visible on screen."
-- image_queries: 3–5 short English phrases (2–4 words each) for Pixabay stock photos, one per main H2 section.
+- image_prompt: One VIVID, highly specific sentence for an AI image generator. Describe a real scene — specific subject, action, setting, mood, lighting. NOT generic clip-art concepts. Example: "A Vietnamese woman in her 30s sitting at a wooden desk reviewing financial documents on her laptop, warm morning light through a window, coffee cup beside her, charts visible on screen, photorealistic."
+- image_queries: 3–5 short English keyword phrases (2–4 words each) for stock photo searches, one per main H2 section. Make them concrete and visual — avoid abstract terms.
 
 ## STEP 4 — Article Labels (in {lang_name})
 Generate 1–3 concise blog category labels in {lang_name}.
@@ -747,8 +765,8 @@ Return ONLY valid JSON — no markdown fences, no extra text, nothing before or 
   "intent_analysis": "1–2 sentence summary of search intent and what the article delivers (in English)",
   "title": "SEO-optimized article title in {lang_name}",
   "content": "Complete HTML article in {lang_name} (all sections including FAQ and conclusion)",
-  "image_prompt": "Vivid English scene description for hero image",
-  "image_queries": ["english query 1", "english query 2", "english query 3", "english query 4"],
+  "image_prompt": "Vivid, specific English scene description for AI image generation",
+  "image_queries": ["concrete visual query 1", "concrete visual query 2", "concrete visual query 3", "concrete visual query 4"],
   "labels": ["Nhãn 1", "Nhãn 2"]
 }}"""
 
@@ -767,9 +785,12 @@ def rewrite_article(
     user_id: int = None,
 ) -> dict:
     """Viết lại bài chưa được index."""
-    preferred = model or get_setting(db, "openrouter_model", "meta-llama/llama-3.3-70b-instruct:free", user_id=user_id)
+    preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
     lang_name = LANGUAGE_NAMES.get(language, "English")
     kw_str = ", ".join(keywords)
+    now = datetime.now()
+    current_date_str = now.strftime("%B %Y")
+    current_year = now.year
 
     backlink_str = ""
     if backlinks:
@@ -779,6 +800,9 @@ def rewrite_article(
         )
 
     prompt = f"""The article "{title}" targeting [{kw_str}] failed to get indexed by Google. You must rewrite it completely — different angle, stronger structure, more value.
+
+TODAY'S DATE: {current_date_str}
+IMPORTANT: All content must reflect {current_year} as the current year. Do NOT reference 2025 as current — use {current_year} data and context.
 
 Language: {lang_name}
 Target keywords: {kw_str}

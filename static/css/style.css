@@ -35,11 +35,15 @@ body {
 .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-width))); }
 
 .sidebar-brand {
-  padding: 20px 20px 16px;
+  padding: 16px 20px;
   font-size: 1.15rem;
   font-weight: 700;
   color: #fff;
   border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  letter-spacing: .3px;
 }
 
 .sidebar-nav {

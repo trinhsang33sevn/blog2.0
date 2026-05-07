@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if project %}Chỉnh sửa dự án{% else %}Tạo Dự án{% endif %} — AutoBlogspot{% endblock %}
+{% block title %}{% if project %}{{ _("projf_title_edit") }}{% else %}{{ _("projf_title_create") }}{% endif %} — AutoBlogspot{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center mb-4">
   <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
-  <h4 class="fw-bold mb-0">{% if project %}Chỉnh sửa: {{ project.name }}{% else %}Tạo dự án mới{% endif %}</h4>
+  <h1 class="fw-bold mb-0 h4">{% if project %}{{ _("projf_title_edit") }}: {{ project.name }}{% else %}{{ _("projf_title_create") }}{% endif %}</h1>
 </div>
 
 {% set form_action = '/projects/' ~ project.id ~ '/edit' if project else '/projects/new' %}
@@ -13,51 +13,51 @@
     <div class="col-md-7">
       <!-- Basic Info -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold"><i class="bi bi-info-circle me-1"></i>Thông tin dự án</div>
+        <div class="card-header fw-semibold"><i class="bi bi-info-circle me-1"></i>{{ _("projf_section_info") }}</div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Tên dự án <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">{{ _("projf_name") }} <span class="text-danger">*</span></label>
             <input type="text" name="name" class="form-control" required
-              placeholder="VD: SEO Sức khỏe Q1 2025"
+              placeholder="{{ _("projf_name_placeholder") }}"
               value="{{ project.name if project else '' }}">
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold">Mô tả</label>
+            <label class="form-label fw-semibold">{{ _("projf_description") }}</label>
             <textarea name="description" class="form-control" rows="2"
-              placeholder="Mô tả ngắn về dự án...">{{ project.description if project else '' }}</textarea>
+              placeholder="{{ _("projf_desc_placeholder") }}">{{ project.description if project else '' }}</textarea>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold">Model AI</label>
+            <label class="form-label fw-semibold">{{ _("projf_ai_model") }}</label>
             <select name="ai_model" class="form-select">
               {% if model_groups.gemini %}
-              <optgroup label="🌟 Google Gemini (Miễn phí)">
+              <optgroup label="{{ _("projf_group_gemini") }}">
                 {% for m in model_groups.gemini %}
                 <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endif %}
               {% if model_groups.claude %}
-              <optgroup label="✨ Anthropic Claude (Trả phí)">
+              <optgroup label="{{ _("projf_group_claude") }}">
                 {% for m in model_groups.claude %}
                 <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endif %}
               {% if model_groups.openai %}
-              <optgroup label="🤖 OpenAI ChatGPT (Trả phí)">
+              <optgroup label="{{ _("projf_group_openai") }}">
                 {% for m in model_groups.openai %}
                 <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endif %}
               {% if model_groups.groq %}
-              <optgroup label="⚡ Groq (Siêu nhanh / Free)">
+              <optgroup label="{{ _("projf_group_groq") }}">
                 {% for m in model_groups.groq %}
                 <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
                 {% endfor %}
               </optgroup>
               {% endif %}
-              <optgroup label="🆓 OpenRouter (Fallback miễn phí)">
+              <optgroup label="{{ _("projf_group_openrouter") }}">
                 {% for m in model_groups.openrouter %}
                 <option value="{{ m.id }}" {{ 'selected' if m.id == default_model }}>{{ m.name }}</option>
                 {% endfor %}
@@ -74,22 +74,22 @@
 
       <!-- Schedule Settings -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold"><i class="bi bi-clock me-1"></i>Lịch đăng bài</div>
+        <div class="card-header fw-semibold"><i class="bi bi-clock me-1"></i>{{ _("projf_schedule") }}</div>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Bài/ngày mỗi website</label>
+              <label class="form-label fw-semibold">{{ _("projf_articles_per_day") }}</label>
               <input type="number" name="articles_per_day" class="form-control"
                 value="{{ project.articles_per_day if project else 3 }}" min="1" max="50">
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Tối thiểu (phút)</label>
+              <label class="form-label fw-semibold">{{ _("projf_min_interval") }}</label>
               <input type="number" name="min_interval" class="form-control"
                 value="{{ project.min_interval_minutes if project else 60 }}" min="5">
               <div class="form-text">Khoảng cách tối thiểu giữa 2 bài</div>
             </div>
             <div class="col-md-4">
-              <label class="form-label fw-semibold">Tối đa (phút)</label>
+              <label class="form-label fw-semibold">{{ _("projf_max_interval") }}</label>
               <input type="number" name="max_interval" class="form-control"
                 value="{{ project.max_interval_minutes if project else 240 }}" min="5">
               <div class="form-text">Khoảng cách tối đa giữa 2 bài</div>
@@ -100,10 +100,10 @@
 
       <!-- Labels -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold"><i class="bi bi-tag me-1"></i>Nhãn bài viết (Labels)</div>
+        <div class="card-header fw-semibold"><i class="bi bi-tag me-1"></i>{{ _("projf_labels") }} (Labels)</div>
         <div class="card-body">
           <input type="text" name="custom_labels_text" id="custom_labels_text" class="form-control"
-            placeholder="VD: Sức khỏe, Dinh dưỡng, Thể thao"
+            placeholder="{{ _("projf_labels_placeholder") }}"
             value="{{ current_labels if current_labels is defined else '' }}">
           <div class="form-text">
             Nhập các nhãn cách nhau bằng dấu phẩy. <strong>Nếu để trống</strong> — AI sẽ tự động sinh nhãn phù hợp cho từng bài viết.
@@ -115,11 +115,11 @@
       {% if not project %}
       <div class="card shadow-sm mb-4">
         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-tags me-1"></i>Danh sách từ khóa</span>
+          <span><i class="bi bi-tags me-1"></i>{{ _("projf_keywords") }}</span>
           <span id="kw-badge" class="badge bg-secondary">0 từ khóa</span>
         </div>
         <div class="card-body">
-          <label class="form-label">Nhập mỗi từ khóa một dòng</label>
+          <label class="form-label">{{ _("projf_kw_placeholder") }}</label>
           <textarea name="keywords_text" id="keywords_text" class="form-control font-monospace" rows="10"
             placeholder="cách giảm cân nhanh&#10;thực phẩm tốt cho tim&#10;bài tập buổi sáng&#10;..."
             oninput="countKeywords()"></textarea>
@@ -151,7 +151,7 @@
     <div class="col-md-5">
       <!-- Sites -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold"><i class="bi bi-globe2 me-1"></i>Chọn website đăng bài</div>
+        <div class="card-header fw-semibold"><i class="bi bi-globe2 me-1"></i>{{ _("projf_sites") }}</div>
         <div class="card-body">
           {% if sites %}
           <div class="text-muted small mb-2">Chọn website và ngôn ngữ viết bài cho từng site</div>
@@ -176,7 +176,7 @@
             </div>
             <div class="text-muted small mb-2">{{ site.blog_url }}</div>
             <div class="lang-selector {% if not is_selected %}d-none{% endif %}" id="lang{{ site.id }}">
-              <label class="form-label small fw-semibold mb-1">Ngôn ngữ bài viết:</label>
+              <label class="form-label small fw-semibold mb-1">{{ _("projf_language") }}:</label>
               <select name="site_languages" class="form-select form-select-sm">
                 {% for code, label in languages %}
                 <option value="{{ code }}" {{ 'selected' if code == lang_val }}>{{ label }}</option>
@@ -197,9 +197,9 @@
       <!-- Backlinks -->
       <div class="card shadow-sm mb-4">
         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-link-45deg me-1"></i>Backlink trong bài viết</span>
+          <span><i class="bi bi-link-45deg me-1"></i>{{ _("projf_backlinks") }}</span>
           <button type="button" class="btn btn-xs btn-outline-primary" onclick="addBacklink()">
-            <i class="bi bi-plus"></i> Thêm
+            <i class="bi bi-plus"></i> {{ _("projf_btn_add") }}
           </button>
         </div>
         <div class="card-body">
@@ -213,9 +213,9 @@
   </div>
 
   <div class="d-flex justify-content-end gap-2 mt-2 mb-4">
-    <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="btn btn-outline-secondary">Hủy</a>
+    <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="btn btn-outline-secondary">{{ _("projf_btn_cancel") }}</a>
     <button type="submit" class="btn btn-primary px-5">
-      <i class="bi bi-check2-circle me-1"></i>{% if project %}Lưu thay đổi{% else %}Tạo dự án{% endif %}
+      <i class="bi bi-check2-circle me-1"></i>{% if project %}{{ _("projf_btn_save") }}{% else %}{{ _("projf_btn_create") }}{% endif %}
     </button>
   </div>
 </form>
@@ -277,7 +277,7 @@ function renderBacklinks(data) {
       <div class="row g-2 align-items-end">
         <div class="col-5">
           <input type="text" class="form-control form-control-sm bl-anchor"
-            placeholder="Anchor text" value="${bl.anchor || ''}" oninput="updateBacklinks()">
+            placeholder="{{ _("projf_anchor") }}" value="${bl.anchor || ''}" oninput="updateBacklinks()">
         </div>
         <div class="col-6">
           <input type="url" class="form-control form-control-sm bl-url"
@@ -302,7 +302,7 @@ function addBacklink() {
   div.innerHTML = `
     <div class="row g-2 align-items-end">
       <div class="col-5">
-        <input type="text" class="form-control form-control-sm bl-anchor" placeholder="Anchor text" oninput="updateBacklinks()">
+        <input type="text" class="form-control form-control-sm bl-anchor" placeholder="{{ _("projf_anchor") }}" oninput="updateBacklinks()">
       </div>
       <div class="col-6">
         <input type="url" class="form-control form-control-sm bl-url" placeholder="https://example.com" oninput="updateBacklinks()">
