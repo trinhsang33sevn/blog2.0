@@ -12,9 +12,9 @@ keepalive = 5
 max_requests = 1000
 max_requests_jitter = 100
 
-# Logging
-accesslog = "logs/access.log"
-errorlog = "logs/error.log"
+# Logging — stdout/stderr (Docker best practice)
+accesslog = "-"
+errorlog = "-"
 loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)sμs'
 
