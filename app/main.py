@@ -238,19 +238,43 @@ def robots_txt():
 def sitemap_xml():
     from .blog_data import ARTICLES
     base = "https://autoblogspot.com"
-    urls = [
-        f'  <url><loc>{base}/</loc><priority>1.0</priority></url>',
-        f'  <url><loc>{base}/login</loc><priority>0.5</priority></url>',
+    langs = ["vi", "en", "fr", "it"]
+
+    def _hreflang(loc: str) -> str:
+        """Build xhtml:link alternate tags for all supported languages."""
+        links = []
+        for lng in langs:
+            href = loc if lng == "vi" else f"{loc}?lang={lng}"
+            links.append(f'    <xhtml:link rel="alternate" hreflang="{lng}" href="{href}"/>')
+        links.append(f'    <xhtml:link rel="alternate" hreflang="x-default" href="{loc}"/>')
+        return "\n".join(links)
+
+    # Static pages (no language variants needed for login/register)
+    static_urls = [
+        f'  <url>\n    <loc>{base}/</loc>\n{_hreflang(base + "/")}\n    <priority>1.0</priority>\n  </url>',
+        f'  <url>\n    <loc>{base}/blog</loc>\n{_hreflang(base + "/blog")}\n    <priority>0.9</priority>\n  </url>',
         f'  <url><loc>{base}/register</loc><priority>0.8</priority></url>',
-        f'  <url><loc>{base}/blog</loc><priority>0.9</priority></url>',
-    ] + [
-        f'  <url><loc>{base}/blog/{a["slug"]}</loc><lastmod>{a["date"]}</lastmod><priority>0.8</priority></url>'
+        f'  <url><loc>{base}/login</loc><priority>0.5</priority></url>',
+    ]
+
+    # Article URLs with full hreflang per language
+    article_urls = [
+        (
+            f'  <url>\n'
+            f'    <loc>{base}/blog/{a["slug"]}</loc>\n'
+            f'{_hreflang(base + "/blog/" + a["slug"])}\n'
+            f'    <lastmod>{a["date"]}</lastmod>\n'
+            f'    <priority>0.8</priority>\n'
+            f'  </url>'
+        )
         for a in ARTICLES
     ]
+
     content = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(urls) + "\n"
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+        '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        + "\n".join(static_urls + article_urls) + "\n"
         '</urlset>\n'
     )
     return Response(content=content, media_type="application/xml")

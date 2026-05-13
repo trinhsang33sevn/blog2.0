@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     SMTP_FROM: str = ""
     SMTP_TLS: bool = True
 
+    # Google integrations
+    GOOGLE_ANALYTICS_ID: str = ""        # GA4 Measurement ID, e.g. G-XXXXXXXXXX
+    GOOGLE_SITE_VERIFICATION: str = ""   # Google Search Console HTML tag verification code
+
     class Config:
         env_file = ".env"
 

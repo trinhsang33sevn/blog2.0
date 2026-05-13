@@ -7,7 +7,14 @@
   <meta name="description" content="{{ article.description }}">
   <meta name="keywords" content="{{ article.keywords }}">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://autoblogspot.com/blog/{{ article.slug }}">
+  <link rel="canonical" href="https://autoblogspot.com/blog/{{ article.slug }}{% if lang != 'vi' %}?lang={{ lang }}{% endif %}">
+  <!-- hreflang multilingual SEO -->
+  <link rel="alternate" hreflang="vi" href="https://autoblogspot.com/blog/{{ article.slug }}">
+  <link rel="alternate" hreflang="en" href="https://autoblogspot.com/blog/{{ article.slug }}?lang=en">
+  <link rel="alternate" hreflang="fr" href="https://autoblogspot.com/blog/{{ article.slug }}?lang=fr">
+  <link rel="alternate" hreflang="it" href="https://autoblogspot.com/blog/{{ article.slug }}?lang=it">
+  <link rel="alternate" hreflang="x-default" href="https://autoblogspot.com/blog/{{ article.slug }}">
+  {% if GSC_VERIFY %}<meta name="google-site-verification" content="{{ GSC_VERIFY }}">{% endif %}
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://autoblogspot.com/blog/{{ article.slug }}">
   <meta property="og:title" content="{{ article.title }}">
@@ -30,6 +37,10 @@
     "mainEntityOfPage": {"@type": "WebPage", "@id": "https://autoblogspot.com/blog/{{ article.slug }}"}
   }
   </script>
+  {% if GA_ID %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA_ID }}"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ GA_ID }}');</script>
+  {% endif %}
   <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
