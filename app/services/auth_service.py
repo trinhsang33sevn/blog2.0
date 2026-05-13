@@ -77,6 +77,43 @@ def consume_reset_token(db: Session, user: User, new_password: str):
     db.commit()
 
 
+def ensure_superadmin(db: Session, email: str, password: str, full_name: str) -> User:
+    """Create or update the superadmin account. Called at startup."""
+    existing = get_user_by_email(db, email)
+    if existing:
+        existing.full_name = full_name
+        existing.is_admin = True
+        existing.is_active = True
+        existing.password_hash = hash_password(password)
+        db.commit()
+        return existing
+
+    user = User(
+        email=email.strip().lower(),
+        password_hash=hash_password(password),
+        full_name=full_name.strip(),
+        is_admin=True,
+        is_active=True,
+    )
+    db.add(user)
+    db.flush()
+
+    sub = Subscription(
+        user_id=user.id,
+        plan="business",
+        status="active",
+        started_at=datetime.utcnow(),
+        expires_at=None,
+        projects_limit=None,
+        sites_limit=None,
+        articles_per_day_limit=None,
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subscription:
     sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])

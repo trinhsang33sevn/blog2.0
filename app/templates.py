@@ -39,5 +39,11 @@ _env.globals["LANGUAGE_LABELS"] = LANGUAGE_LABELS
 _env.globals["get_lang"] = get_lang
 _env.globals["GA_ID"] = _settings.GOOGLE_ANALYTICS_ID
 _env.globals["GSC_VERIFY"] = _settings.GOOGLE_SITE_VERIFICATION
+_env.globals["TELEGRAM_USERNAME"] = ""
 
 templates = Jinja2Templates(env=_env)
+
+
+def update_site_globals(**kwargs):
+    """Update Jinja2 globals at runtime (called by admin on save)."""
+    _env.globals.update(kwargs)

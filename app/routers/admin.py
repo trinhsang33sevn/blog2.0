@@ -12,7 +12,7 @@ from ..database import get_db, engine
 from ..models import User, Subscription, Article
 from ..services.openrouter import set_setting, get_setting
 from ..services.auth_service import upgrade_plan
-from ..templates import templates
+from ..templates import templates, update_site_globals
 
 router = APIRouter()
 
@@ -142,16 +142,34 @@ def admin_dashboard(request: Request, tab: str = "overview", db: Session = Depen
     users = db.query(User).order_by(User.created_at.desc()).all()
 
     return templates.TemplateResponse(request, "admin.html", {
-        "current_user":   admin,
-        "active_page":    "admin",
-        "tab":            tab,
-        "users":          users,
-        "user_stats":     _user_stats(db),
-        "revenue_stats":  _revenue_stats(db),
-        "system_stats":   _system_stats(db),
-        "payment_config": _payment_config(db),
-        "plan_prices":    PLAN_PRICES,
+        "current_user":      admin,
+        "active_page":       "admin",
+        "tab":               tab,
+        "users":             users,
+        "user_stats":        _user_stats(db),
+        "revenue_stats":     _revenue_stats(db),
+        "system_stats":      _system_stats(db),
+        "payment_config":    _payment_config(db),
+        "plan_prices":       PLAN_PRICES,
+        "telegram_username": get_setting(db, "telegram_username"),
+        "contact_email":     get_setting(db, "contact_email") or "hoangvandonglx@gmail.com",
     })
+
+
+@router.post("/admin/contact-config")
+def save_contact_config(
+    request: Request,
+    telegram_username: str = Form(""),
+    contact_email:     str = Form(""),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    tg = telegram_username.strip().lstrip("@")
+    set_setting(db, "telegram_username", tg)
+    set_setting(db, "contact_email", contact_email.strip())
+    update_site_globals(TELEGRAM_USERNAME=tg)
+    return RedirectResponse("/admin?tab=contact&success=Da+luu+thong+tin+lien+he", status_code=303)
 
 
 @router.post("/admin/users/{uid}/upgrade")

@@ -36,6 +36,11 @@
       <i class="bi bi-hdd-rack me-1"></i>{{ _("adm_tab_system") }}
     </a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'contact' %}active{% endif %}" href="/admin?tab=contact">
+      <i class="bi bi-chat-dots me-1"></i>Liên hệ &amp; Chat
+    </a>
+  </li>
 </ul>
 
 <!-- ══════════════════════ TAB: OVERVIEW ══════════════════════ -->
@@ -669,6 +674,75 @@
     <a href="/admin?tab=system" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-arrow-clockwise me-1"></i>{{ _("adm_refresh") }}
     </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ══════════════════════ TAB: CONTACT & CHAT ══════════════════════ -->
+{% if tab == 'contact' %}
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2 text-primary"></i>Cài đặt Liên hệ &amp; Telegram Chat</h6>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" action="/admin/contact-config">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Telegram Username</label>
+              <div class="input-group">
+                <span class="input-group-text">@</span>
+                <input type="text" name="telegram_username" class="form-control"
+                       placeholder="username (không có dấu @)"
+                       value="{{ telegram_username or '' }}">
+              </div>
+              <div class="form-text">Khi điền, nút chat Telegram sẽ hiện ở góc phải tất cả trang. Để trống để ẩn.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email nhận liên hệ</label>
+              <input type="email" name="contact_email" class="form-control"
+                     placeholder="hoangvandonglx@gmail.com"
+                     value="{{ contact_email or 'hoangvandonglx@gmail.com' }}">
+              <div class="form-text">Email này nhận tin nhắn từ form /contact.</div>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>Lưu cài đặt
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {% if telegram_username %}
+        <hr class="my-4">
+        <div class="alert alert-success border-0 d-flex align-items-center gap-3" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2)!important;">
+          <i class="bi bi-check-circle-fill text-success fs-5"></i>
+          <div>
+            <strong>Telegram đang hoạt động:</strong>
+            <a href="https://t.me/{{ telegram_username }}" target="_blank" class="ms-1">@{{ telegram_username }}</a>
+            — Nút chat đang hiển thị trên tất cả trang.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2 text-info"></i>Hướng dẫn</h6>
+      </div>
+      <div class="card-body p-4">
+        <ol class="mb-0" style="line-height:2;">
+          <li>Điền <strong>Telegram username</strong> của bạn (VD: <code>hoangdong</code>) — không cần dấu @</li>
+          <li>Lưu cài đặt → nút chat màu xanh sẽ xuất hiện ở góc dưới phải tất cả trang</li>
+          <li>Người dùng click vào → được chuyển đến <code>https://t.me/username</code> của bạn</li>
+          <li>Trang <a href="/contact" target="_blank">/contact</a> cũng tự động hiển thị Telegram của bạn</li>
+        </ol>
+      </div>
+    </div>
   </div>
 </div>
 {% endif %}

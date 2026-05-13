@@ -1396,6 +1396,7 @@
         <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">{{ _("land_footer_account") }}</div>
         <a href="/login" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_login") }}</a>
         <a href="/register" class="d-block mb-2" style="font-size:.85rem;">{{ _("land_footer_register") }}</a>
+        <a href="/contact" class="d-block mb-2" style="font-size:.85rem;">Liên hệ</a>
       </div>
       <div class="col-lg-4">
         <div style="font-size:.82rem;font-weight:700;color:#e6edf3;margin-bottom:12px;">{{ _("land_footer_integrations") }}</div>
@@ -1421,6 +1422,23 @@
     </div>
   </div>
 </footer>
+
+{% if TELEGRAM_USERNAME %}
+<a href="https://t.me/{{ TELEGRAM_USERNAME }}" target="_blank" rel="noopener"
+   title="Chat với chúng tôi qua Telegram"
+   style="position:fixed;bottom:24px;right:24px;z-index:9999;
+          width:52px;height:52px;border-radius:50%;
+          background:linear-gradient(135deg,#0088cc,#00b4d8);
+          display:flex;align-items:center;justify-content:center;
+          box-shadow:0 4px 16px rgba(0,136,204,.5);
+          text-decoration:none;transition:transform .2s,box-shadow .2s;"
+   onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 8px 24px rgba(0,136,204,.6)'"
+   onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 16px rgba(0,136,204,.5)'">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.322 13.19l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.826.37z"/>
+  </svg>
+</a>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>

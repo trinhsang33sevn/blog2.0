@@ -17,10 +17,14 @@ from .i18n import set_lang, SUPPORTED_LANGUAGES
 from .models import Project, Article, IndexTask, BlogspotSite
 from .services.scheduler import start_scheduler, stop_scheduler
 from .services.agent_service import seed_agents
+from .services.auth_service import ensure_superadmin
+from .services.openrouter import get_setting as get_app_setting
+from .templates import update_site_globals
 from .routers import accounts, projects, articles, indexing, settings_router
 from .routers import auth as auth_router
 from .routers import admin as admin_router
 from .routers import blog as blog_router
+from .routers import contact as contact_router
 from .templates import templates
 
 logging.basicConfig(
@@ -35,7 +39,7 @@ logger = logging.getLogger("autoblogspot")
 
 settings = get_settings()
 
-_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy")
+_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact")
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -106,6 +110,8 @@ async def lifespan(_app: FastAPI):
     db = SessionLocal()
     try:
         seed_agents(db)
+        ensure_superadmin(db, "hoangvandonglx@gmail.com", "AdminPass2026!", "Hoàng Đồng")
+        update_site_globals(TELEGRAM_USERNAME=get_app_setting(db, "telegram_username"))
     finally:
         db.close()
     start_scheduler()
@@ -168,6 +174,7 @@ app.include_router(indexing.router)
 app.include_router(settings_router.router)
 app.include_router(admin_router.router)
 app.include_router(blog_router.router)
+app.include_router(contact_router.router)
 
 
 @app.get("/", response_class=HTMLResponse)

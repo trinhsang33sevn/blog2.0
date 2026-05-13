@@ -33,6 +33,38 @@ def send_email(to: str, subject: str, html: str) -> bool:
         return False
 
 
+def send_contact_email(name: str, sender_email: str, message: str, admin_email: str) -> bool:
+    subject = f"[AutoBlogspot] Liên hệ mới từ {name}"
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f0f2f5;padding:40px 0;margin:0">
+  <div style="max-width:520px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+    <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:28px 32px;text-align:center">
+      <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700">AutoBlogspot</h1>
+      <p style="color:rgba(255,255,255,.8);margin:6px 0 0;font-size:13px">Tin nhắn liên hệ mới</p>
+    </div>
+    <div style="padding:28px 32px">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:8px 0;color:#6b7280;width:110px;vertical-align:top;">Tên:</td>
+            <td style="padding:8px 0;color:#111827;font-weight:600;">{name}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;vertical-align:top;">Email:</td>
+            <td style="padding:8px 0;"><a href="mailto:{sender_email}" style="color:#4f46e5;">{sender_email}</a></td></tr>
+      </table>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;">
+      <p style="color:#374151;font-size:14px;font-weight:600;margin:0 0 8px">Nội dung:</p>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;color:#374151;font-size:14px;line-height:1.7;white-space:pre-wrap;">{message}</div>
+    </div>
+    <div style="background:#f9fafb;padding:14px 32px;text-align:center;border-top:1px solid #e5e7eb">
+      <p style="color:#9ca3af;font-size:12px;margin:0">© 2025 AutoBlogspot — autoblogspot.com</p>
+    </div>
+  </div>
+</body>
+</html>"""
+    return send_email(admin_email, subject, html)
+
+
 def send_password_reset(to: str, reset_url: str) -> bool:
     subject = "Đặt lại mật khẩu AutoBlogspot"
     html = f"""
