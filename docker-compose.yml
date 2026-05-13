@@ -43,6 +43,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/proxy_params.conf:/etc/nginx/proxy_params.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro          # SSL certs (Let's Encrypt)
       - ./static:/app/static:ro
       - nginx_logs:/var/log/nginx
