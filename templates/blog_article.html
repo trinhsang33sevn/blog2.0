@@ -165,6 +165,28 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8">
+        {% if lang != 'vi' and article.content_lang == 'vi' %}
+        {% set _lang_labels = {'en':'English','fr':'Français','it':'Italiano'} %}
+        {% set _lang_label = _lang_labels.get(lang, lang.upper()) %}
+        {% set _article_url = 'https://autoblogspot.com/blog/' ~ article.slug %}
+        {% set _gt_langs = {'en':'en','fr':'fr','it':'it'} %}
+        {% set _gt_tl = _gt_langs.get(lang, 'en') %}
+        <div style="background:#1c2028;border:1px solid #f0883e40;border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <i class="bi bi-translate" style="color:#f0883e;font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
+          <div style="flex:1;min-width:200px;">
+            <p style="margin:0 0 8px;color:#c9d1d9;font-size:.88rem;">
+              {% if lang == 'en' %}This article is currently only available in Vietnamese.{% elif lang == 'fr' %}Cet article n'est disponible qu'en vietnamien pour l'instant.{% elif lang == 'it' %}Questo articolo è disponibile solo in vietnamita per ora.{% endif %}
+            </p>
+            <a href="https://translate.google.com/translate?sl=vi&tl={{ _gt_tl }}&u={{ _article_url | urlencode }}"
+               target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:6px;background:#f0883e15;border:1px solid #f0883e50;color:#f0883e;padding:6px 14px;border-radius:7px;font-size:.82rem;font-weight:600;text-decoration:none;transition:.15s;"
+               onmouseover="this.style.background='#f0883e25'" onmouseout="this.style.background='#f0883e15'">
+              <img src="https://www.google.com/favicon.ico" width="14" height="14" alt="">
+              {% if lang == 'en' %}Read in {{ _lang_label }} via Google Translate{% elif lang == 'fr' %}Lire en {{ _lang_label }} via Google Traduction{% elif lang == 'it' %}Leggi in {{ _lang_label }} tramite Google Traduzione{% endif %}
+            </a>
+          </div>
+        </div>
+        {% endif %}
         <div class="article-body">
           {{ article.content | safe }}
         </div>

@@ -209,15 +209,20 @@ def _cat_map(lang: str) -> dict[str, str]:
 
 
 def _localized(article: dict, lang: str, cmap: dict[str, str]) -> dict:
-    """Return article with localized title, description, display_category."""
+    """Return article with localized title, description, content, display_category."""
     cat_vi = article["category"]
-    result = {**article, "display_category": cmap.get(cat_vi, cat_vi)}
+    result = {**article, "display_category": cmap.get(cat_vi, cat_vi), "content_lang": "vi"}
     if lang != "vi":
-        title_k, desc_k = f"title_{lang}", f"desc_{lang}"
+        title_k   = f"title_{lang}"
+        desc_k    = f"desc_{lang}"
+        content_k = f"content_{lang}"
         if article.get(title_k):
             result["title"] = article[title_k]
         if article.get(desc_k):
             result["description"] = article[desc_k]
+        if article.get(content_k):
+            result["content"] = article[content_k]
+            result["content_lang"] = lang
     return result
 
 
