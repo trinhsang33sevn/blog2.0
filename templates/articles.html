@@ -3,7 +3,12 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h1 class="fw-bold mb-0 h4"><i class="bi bi-file-earmark-text me-2"></i>{{ _("art_title") }}</h1>
-  <span class="text-muted small">{{ _("art_total") }}: {{ total }} {{ _("art_items") }}</span>
+  <div class="d-flex align-items-center gap-2">
+    <span class="text-muted small">{{ _("art_total") }}: {{ total }} {{ _("art_items") }}</span>
+    <a href="/articles/export" class="btn btn-sm btn-outline-secondary" title="Xuất CSV">
+      <i class="bi bi-download me-1"></i>CSV
+    </a>
+  </div>
 </div>
 
 {% if request.query_params.get('success') %}

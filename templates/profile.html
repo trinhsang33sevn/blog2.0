@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Hồ sơ cá nhân — AutoBlogspot{% endblock %}
+{% block content %}
+<h1 class="mb-4 fw-bold h4"><i class="bi bi-person-gear me-2"></i>Hồ sơ cá nhân</h1>
+
+{% if success %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <i class="bi bi-check-circle me-2"></i>{{ success }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+  <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row g-4" style="max-width:720px;">
+  <!-- Account info -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-person-circle me-1 text-primary"></i>Thông tin tài khoản
+      </div>
+      <div class="card-body">
+        <form method="post" action="/profile">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+            <div class="form-text">Email đăng nhập không thể thay đổi.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Họ và tên</label>
+            <input type="text" name="full_name" class="form-control"
+                   value="{{ current_user.full_name or '' }}" placeholder="Nhập họ tên của bạn" maxlength="200">
+          </div>
+
+          <hr class="my-4">
+          <p class="fw-semibold mb-3"><i class="bi bi-lock me-1"></i>Đổi mật khẩu <span class="text-muted fw-normal small">(để trống nếu không muốn thay đổi)</span></p>
+
+          <div class="mb-3">
+            <label class="form-label">Mật khẩu hiện tại</label>
+            <input type="password" name="current_password" class="form-control" autocomplete="current-password">
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Mật khẩu mới</label>
+              <input type="password" name="new_password" class="form-control" minlength="6" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Xác nhận mật khẩu mới</label>
+              <input type="password" name="new_password_confirm" class="form-control" autocomplete="new-password">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-check2 me-1"></i>Lưu thay đổi
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan info -->
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-award me-1 text-warning"></i>Gói dịch vụ
+      </div>
+      <div class="card-body">
+        {% set sub = current_user.subscription %}
+        {% if sub %}
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span class="badge fs-6 px-3 py-2
+            {% if sub.plan == 'business' %}bg-warning text-dark
+            {% elif sub.plan == 'pro' %}bg-primary
+            {% else %}bg-secondary{% endif %}">
+            {{ sub.plan | upper }}
+          </span>
+          <span class="badge {% if sub.is_active_plan %}bg-success{% else %}bg-danger{% endif %}">
+            {% if sub.is_active_plan %}Đang hoạt động{% else %}Hết hạn{% endif %}
+          </span>
+        </div>
+        <div class="row g-2 text-muted small">
+          <div class="col-sm-4"><strong>Dự án:</strong>
+            {{ sub.projects_limit if sub.projects_limit else '∞' }}
+          </div>
+          <div class="col-sm-4"><strong>Website:</strong>
+            {{ sub.sites_limit if sub.sites_limit else '∞' }}
+          </div>
+          <div class="col-sm-4"><strong>Bài/ngày:</strong>
+            {{ sub.articles_per_day_limit if sub.articles_per_day_limit else '∞' }}
+          </div>
+          {% if sub.expires_at %}
+          <div class="col-12 mt-1"><strong>Hết hạn:</strong>
+            {{ sub.expires_at.strftime('%d/%m/%Y') }}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        <a href="/billing" class="btn btn-outline-primary btn-sm mt-3">
+          <i class="bi bi-arrow-up-circle me-1"></i>Nâng cấp gói
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="col-12">
+    <div class="card shadow-sm border-danger" style="border-color:#f85149!important;">
+      <div class="card-header fw-semibold text-danger">
+        <i class="bi bi-exclamation-triangle me-1"></i>Vùng nguy hiểm
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">Xóa tài khoản sẽ xóa toàn bộ dự án, bài viết và dữ liệu liên quan. Hành động này không thể hoàn tác.</p>
+        <a href="mailto:hoangvandonglx@gmail.com?subject=Yêu cầu xóa tài khoản&body=Email tài khoản: {{ current_user.email }}"
+           class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-trash me-1"></i>Yêu cầu xóa tài khoản
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

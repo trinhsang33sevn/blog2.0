@@ -15,6 +15,7 @@ from .database import init_db, get_db, SessionLocal
 from .dependencies import get_current_user
 from .i18n import set_lang, SUPPORTED_LANGUAGES
 from .models import Project, Article, IndexTask, BlogspotSite
+from sqlalchemy import func as _func
 from .services.scheduler import start_scheduler, stop_scheduler
 from .services.agent_service import seed_agents
 from .services.auth_service import ensure_superadmin
@@ -39,7 +40,7 @@ logger = logging.getLogger("autoblogspot")
 
 settings = get_settings()
 
-_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact")
+_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact", "/faq", "/compare")
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -188,11 +189,33 @@ def index(request: Request, db: Session = Depends(get_db)):
     q_articles = db.query(Article).join(Project).filter(Project.user_id == current_user.id)
     q_index    = db.query(IndexTask).join(Article).join(Project).filter(Project.user_id == current_user.id)
 
+    from datetime import date, timedelta
     recent_articles = (
         q_articles.filter(Article.status == "published")
         .order_by(Article.published_at.desc())
         .limit(8).all()
     )
+
+    # Chart: articles published per day for the last 14 days
+    today = date.today()
+    chart_days = [(today - timedelta(days=i)) for i in range(13, -1, -1)]
+    chart_labels = [d.strftime("%d/%m") for d in chart_days]
+    chart_rows = (
+        db.query(
+            _func.date(Article.published_at).label("day"),
+            _func.count(Article.id).label("cnt"),
+        )
+        .join(Project, Article.project_id == Project.id)
+        .filter(
+            Project.user_id == current_user.id,
+            Article.status == "published",
+            Article.published_at >= today - timedelta(days=13),
+        )
+        .group_by(_func.date(Article.published_at))
+        .all()
+    )
+    row_map = {str(r.day): r.cnt for r in chart_rows}
+    chart_data = [row_map.get(str(d), 0) for d in chart_days]
 
     return templates.TemplateResponse(request, "dashboard.html", {
         "total_sites":           q_sites.count(),
@@ -204,6 +227,8 @@ def index(request: Request, db: Session = Depends(get_db)):
         "pending_index":         q_index.filter(IndexTask.status.in_(["pending", "submitted"])).count(),
         "recent_articles":       recent_articles,
         "running_projects_list": q_projects.filter(Project.status == "running").all(),
+        "chart_labels":          chart_labels,
+        "chart_data":            chart_data,
         "current_user":          current_user,
         "active_page":           "dashboard",
     })

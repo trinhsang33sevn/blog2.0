@@ -1,7 +1,9 @@
+import csv
+import io
 from threading import Thread
 
 from fastapi import APIRouter, Depends, Request, Query, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -129,3 +131,29 @@ def retry_article(article_id: int, request: Request, db: Session = Depends(get_d
         db.commit()
         Thread(target=write_articles_now, args=([article.id],), daemon=True).start()
     return RedirectResponse("/articles?success=Dang+viet+lai+bai+viet", status_code=303)
+
+
+@router.get("/articles/export")
+def export_articles_csv(request: Request, db: Session = Depends(get_db)):
+    """Export all user articles as CSV."""
+    current_user = get_current_user(request, db)
+    rows = (
+        db.query(Article).join(Project)
+        .filter(Project.user_id == current_user.id)
+        .order_by(Article.published_at.desc())
+        .all()
+    )
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["ID", "Tiêu đề", "Website", "Dự án", "Trạng thái", "Ngôn ngữ", "Ngày đăng", "URL"])
+    for a in rows:
+        site_name  = a.site.blog_name  if a.site    else ""
+        proj_name  = a.project.name    if a.project else ""
+        pub_at     = a.published_at.strftime("%Y-%m-%d %H:%M") if a.published_at else ""
+        writer.writerow([a.id, a.title or "", site_name, proj_name, a.status, a.language, pub_at, a.url or ""])
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": "attachment; filename=articles.csv"},
+    )

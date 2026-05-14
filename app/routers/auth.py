@@ -8,7 +8,7 @@ from ..config import get_settings
 from ..database import get_db
 from ..i18n import _ as t
 from ..services.auth_service import (
-    create_user, get_user_by_email, verify_password,
+    create_user, get_user_by_email, verify_password, hash_password,
     generate_reset_token, validate_reset_token, consume_reset_token,
 )
 from ..services.email_service import send_password_reset
@@ -152,3 +152,44 @@ def reset_password(
     return templates.TemplateResponse(request, "reset_password.html", {
         "token": "", "done": True,
     })
+
+
+@router.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request, db: Session = Depends(get_db)):
+    from ..dependencies import get_current_user
+    user = get_current_user(request, db)
+    return templates.TemplateResponse(request, "profile.html", {
+        "current_user": user,
+        "active_page": "profile",
+        "success": request.query_params.get("success"),
+        "error": request.query_params.get("error"),
+    })
+
+
+@router.post("/profile")
+def update_profile(
+    request: Request,
+    full_name: str = Form(""),
+    current_password: str = Form(""),
+    new_password: str = Form(""),
+    new_password_confirm: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    from urllib.parse import quote_plus
+    from ..dependencies import get_current_user
+    user = get_current_user(request, db)
+
+    user.full_name = full_name.strip() or user.full_name
+
+    if new_password:
+        if not verify_password(current_password, user.password_hash):
+            return RedirectResponse(f"/profile?error={quote_plus('Mật khẩu hiện tại không đúng')}", status_code=303)
+        if len(new_password) < 6:
+            return RedirectResponse(f"/profile?error={quote_plus('Mật khẩu mới phải có ít nhất 6 ký tự')}", status_code=303)
+        if new_password != new_password_confirm:
+            return RedirectResponse(f"/profile?error={quote_plus('Mật khẩu mới không khớp')}", status_code=303)
+        user.password_hash = hash_password(new_password)
+        logger.info("Password changed for user %s", user.email)
+
+    db.commit()
+    return RedirectResponse(f"/profile?success={quote_plus('Cập nhật thành công')}", status_code=303)

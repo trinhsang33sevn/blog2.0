@@ -304,3 +304,13 @@ def terms_page(request: Request):
 @router.get("/privacy", response_class=HTMLResponse)
 def privacy_page(request: Request):
     return templates.TemplateResponse(request, "privacy.html", {})
+
+
+@router.get("/faq", response_class=HTMLResponse)
+def faq_page(request: Request):
+    return templates.TemplateResponse(request, "faq.html", {})
+
+
+@router.get("/compare", response_class=HTMLResponse)
+def compare_page(request: Request):
+    return templates.TemplateResponse(request, "compare.html", {})

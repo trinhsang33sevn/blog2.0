@@ -2618,6 +2618,792 @@ Sitemap: https://yourblog.blogspot.com/sitemap.xml</pre>
 <p><a href="/register" class="btn btn-primary mt-2">Kết nối Tumblr vào blog network của bạn →</a></p>
 """,
     },
+
+    # ── Article 21 ──────────────────────────────────────────────────────────
+    {
+        "slug": "ai-model-tot-nhat-de-viet-content-seo-claude-gpt-gemini",
+        "title": "AI Model Tốt Nhất để Viết Content SEO: So Sánh Claude vs GPT vs Gemini 2025",
+        "title_en": "Best AI Models for SEO Content Writing: Claude vs GPT vs Gemini 2025",
+        "title_fr": "Meilleurs modèles IA pour rédiger du contenu SEO : Claude vs GPT vs Gemini 2025",
+        "title_it": "Migliori modelli AI per scrivere contenuti SEO: Claude vs GPT vs Gemini 2025",
+        "description": "So sánh chi tiết Claude, ChatGPT và Gemini để viết content SEO: chất lượng nội dung, tốc độ, giá cả, giới hạn. Tìm hiểu model nào phù hợp nhất với từng loại dự án blog.",
+        "desc_en": "Detailed comparison of Claude, ChatGPT, and Gemini for SEO content writing: quality, speed, pricing, and limits. Find the best AI model for your blogging project.",
+        "desc_fr": "Comparaison détaillée de Claude, ChatGPT et Gemini pour la rédaction de contenu SEO : qualité, vitesse, prix et limites. Trouvez le meilleur modèle pour votre blog.",
+        "desc_it": "Confronto dettagliato tra Claude, ChatGPT e Gemini per la scrittura di contenuti SEO: qualità, velocità, prezzi e limiti. Trova il modello migliore per il tuo blog.",
+        "keywords": "claude vs gpt vs gemini, ai viết content seo, so sánh ai model, chatgpt viết bài, gemini flash content, claude sonnet seo",
+        "date": "2026-05-02",
+        "thumbnail": _thumb("ai-model-tot-nhat-de-viet-content-seo-claude-gpt-gemini"),
+        "category": "So sánh",
+        "read_time": 8,
+        "content": """
+<p>Với sự bùng nổ của AI viết nội dung, câu hỏi lớn nhất cho blogger và marketer hiện nay là: <strong>Claude, ChatGPT (GPT-4o) hay Gemini</strong> — model nào viết content SEO tốt nhất? Bài viết này so sánh chi tiết dựa trên thực tế sử dụng để tạo hàng nghìn bài blog tự động.</p>
+
+<h2>Tổng quan ba AI model hàng đầu</h2>
+<ul>
+  <li><strong>Claude (Anthropic)</strong>: Claude 3.5 Sonnet, Claude 3 Haiku — nổi tiếng về văn phong tự nhiên, ít hallucination</li>
+  <li><strong>ChatGPT / GPT-4o (OpenAI)</strong>: Model phổ biến nhất thị trường, GPT-4o mini cho chi phí thấp</li>
+  <li><strong>Gemini (Google)</strong>: Gemini 1.5 Flash, Gemini 2.0 Flash — tích hợp Google Search, nhanh và rẻ</li>
+</ul>
+
+<h2>So sánh chất lượng nội dung SEO</h2>
+
+<h3>Claude — Văn phong tự nhiên nhất</h3>
+<p>Claude nổi bật với khả năng viết văn xuôi tự nhiên, mạch lạc. Bài viết ít bị phát hiện là AI-generated bởi các tool như GPTZero. Đặc biệt tốt với:</p>
+<ul>
+  <li>Bài review sản phẩm chi tiết</li>
+  <li>Bài hướng dẫn step-by-step</li>
+  <li>Nội dung có ngữ điệu mang cảm xúc (health, lifestyle)</li>
+</ul>
+<p><strong>Nhược điểm</strong>: API đắt hơn GPT-4o mini/Gemini Flash; giới hạn context window ở gói thấp.</p>
+
+<h3>GPT-4o / GPT-4o mini — Đa năng và phổ biến</h3>
+<p>GPT-4o là model cân bằng nhất: chất lượng tốt, tốc độ nhanh, ecosystem API rộng. GPT-4o mini cực rẻ (0.15$/1M tokens) phù hợp cho blog automation quy mô lớn. Mạnh về:</p>
+<ul>
+  <li>Bài kỹ thuật (lập trình, tech, SaaS)</li>
+  <li>Bài so sánh sản phẩm (có cấu trúc rõ)</li>
+  <li>Content tiếng Anh chất lượng cao</li>
+</ul>
+<p><strong>Nhược điểm</strong>: Tiếng Việt đôi khi hơi "cứng", cần prompt tinh chỉnh.</p>
+
+<h3>Gemini Flash — Nhanh và miễn phí</h3>
+<p>Gemini 1.5 Flash và 2.0 Flash là lựa chọn tuyệt vời cho auto blog quy mô lớn nhờ:</p>
+<ul>
+  <li>Free tier rất rộng: 1,500 requests/ngày miễn phí</li>
+  <li>Tốc độ cực nhanh: 100-200 token/giây</li>
+  <li>Hỗ trợ tiếng Việt tốt nhờ training data từ Google Search</li>
+  <li>Context window 1M token — xử lý bài dài không giới hạn</li>
+</ul>
+<p><strong>Nhược điểm</strong>: Đôi khi verbose, cần prompt yêu cầu súc tích hơn.</p>
+
+<h2>Bảng so sánh tổng hợp</h2>
+<table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+  <tr style="background:#f0f4ff;">
+    <th style="padding:8px;border:1px solid #ddd;">Tiêu chí</th>
+    <th style="padding:8px;border:1px solid #ddd;">Claude Sonnet</th>
+    <th style="padding:8px;border:1px solid #ddd;">GPT-4o mini</th>
+    <th style="padding:8px;border:1px solid #ddd;">Gemini Flash</th>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Chất lượng văn phong</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">⭐⭐⭐⭐⭐</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">⭐⭐⭐⭐</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">⭐⭐⭐⭐</td>
+  </tr>
+  <tr style="background:#f9faff;">
+    <td style="padding:8px;border:1px solid #ddd;">Giá (per 1M token)</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">$3–15</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">$0.15</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Miễn phí</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Tốc độ</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Trung bình</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Nhanh</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Rất nhanh</td>
+  </tr>
+  <tr style="background:#f9faff;">
+    <td style="padding:8px;border:1px solid #ddd;">Tiếng Việt</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Rất tốt</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Tốt</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Rất tốt</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Phù hợp auto blog</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Quy mô nhỏ–vừa</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Quy mô vừa–lớn</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Quy mô lớn</td>
+  </tr>
+</table>
+
+<h2>Khuyến nghị thực tế</h2>
+<ul>
+  <li><strong>Bắt đầu miễn phí</strong>: Dùng Gemini Flash free tier → 1,500 bài/ngày không tốn xu</li>
+  <li><strong>Cần chất lượng cao hơn</strong>: Nâng lên Claude Haiku hoặc GPT-4o mini với chi phí rất thấp</li>
+  <li><strong>Project premium</strong>: Claude Sonnet cho nội dung cần E-E-A-T cao (health, finance)</li>
+</ul>
+<p>AutoBlogspot hỗ trợ tất cả 3 nhà cung cấp — bạn có thể cài API key riêng hoặc dùng model mặc định miễn phí của hệ thống.</p>
+
+<p>Xem thêm: <a href="/blog/groq-openrouter-api-free-de-viet-blog-tu-dong">Dùng Groq/OpenRouter API miễn phí để viết blog tự động</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Thử AutoBlogspot với Gemini Flash miễn phí →</a></p>
+""",
+    },
+
+    # ── Article 22 ──────────────────────────────────────────────────────────
+    {
+        "slug": "cach-kiem-tien-tu-blog-google-adsense-2025",
+        "title": "Cách Kiếm Tiền từ Blog với Google AdSense 2025: Hướng Dẫn Từ A-Z",
+        "title_en": "How to Make Money from a Blog with Google AdSense 2025: A to Z Guide",
+        "title_fr": "Comment gagner de l'argent avec un blog via Google AdSense 2025 : Guide de A à Z",
+        "title_it": "Come guadagnare con un blog tramite Google AdSense 2025: Guida dalla A alla Z",
+        "description": "Hướng dẫn kiếm tiền từ blog với Google AdSense 2025: cách đăng ký, yêu cầu chấp thuận, tối ưu vị trí quảng cáo, tăng RPM và kết hợp với blog tự động để tối đa thu nhập thụ động.",
+        "desc_en": "Guide to making money from a blog with Google AdSense 2025: how to apply, approval requirements, ad placement optimization, increasing RPM, and combining with auto blogging for maximum passive income.",
+        "desc_fr": "Guide pour gagner de l'argent avec Google AdSense en 2025 : comment s'inscrire, conditions d'approbation, optimisation des emplacements publicitaires et combinaison avec le blog automatique.",
+        "desc_it": "Guida per guadagnare con Google AdSense nel 2025: come fare domanda, requisiti di approvazione, ottimizzazione dei posizionamenti degli annunci e combinazione con il blog automatico.",
+        "keywords": "kiếm tiền từ blog, google adsense 2025, đăng ký adsense, rpm adsense, blog tự động adsense, thu nhập thụ động blog",
+        "date": "2026-05-03",
+        "thumbnail": _thumb("cach-kiem-tien-tu-blog-google-adsense-2025"),
+        "category": "Affiliate Marketing",
+        "read_time": 9,
+        "content": """
+<p><strong>Google AdSense</strong> vẫn là nguồn thu nhập thụ động phổ biến nhất cho blogger năm 2025. Với mô hình blog tự động, bạn có thể scale nhanh số bài viết → tăng traffic → tăng thu nhập AdSense mà không cần làm thủ công từng bài.</p>
+
+<h2>Google AdSense là gì và hoạt động thế nào?</h2>
+<p>AdSense là mạng quảng cáo của Google, trả tiền cho publisher (chủ blog) khi người đọc xem hoặc click quảng cáo. Hai chỉ số quan trọng:</p>
+<ul>
+  <li><strong>RPM (Revenue per 1,000 impressions)</strong>: Thu nhập trên 1,000 lượt xem trang. Trung bình 1–5$/RPM với traffic Việt Nam, 5–20$/RPM với traffic Mỹ/Anh</li>
+  <li><strong>CTR (Click-Through Rate)</strong>: Tỷ lệ người click quảng cáo. Trung bình 1–3%</li>
+</ul>
+
+<h2>Yêu cầu để được duyệt AdSense</h2>
+<p>Nhiều blog bị từ chối AdSense do không đáp ứng tiêu chí. Checklist cần có:</p>
+<ul>
+  <li><strong>Nội dung gốc, chất lượng</strong>: Tối thiểu 20–30 bài viết dài 500+ từ, không sao chép</li>
+  <li><strong>Domain riêng</strong>: Blogspot/WordPress.com subdomain ít được duyệt hơn domain .com/.vn</li>
+  <li><strong>Tuổi domain</strong>: Tốt nhất domain 3+ tháng tuổi</li>
+  <li><strong>Trang thiết yếu</strong>: About Us, Contact, Privacy Policy, Terms of Service</li>
+  <li><strong>Không vi phạm content policy</strong>: Không nội dung 18+, không bạo lực, không vi phạm bản quyền</li>
+  <li><strong>Traffic thực</strong>: Không traffic ảo, không click farm</li>
+</ul>
+
+<h2>Cách đăng ký Google AdSense</h2>
+<ol>
+  <li>Truy cập <strong>adsense.google.com</strong> → Đăng ký tài khoản</li>
+  <li>Nhập URL website muốn monetize</li>
+  <li>Đặt đoạn code AdSense vào thẻ &lt;head&gt; của website</li>
+  <li>Chờ Google review (thường 1–14 ngày)</li>
+  <li>Nhận email chấp thuận → Tạo ad units và đặt lên blog</li>
+</ol>
+
+<h2>Tối ưu vị trí quảng cáo để tăng RPM</h2>
+<p>Vị trí quảng cáo ảnh hưởng lớn đến thu nhập. Các vị trí hiệu quả nhất:</p>
+<ul>
+  <li><strong>In-article ads</strong>: Đặt trong nội dung bài — CTR cao nhất vì người đọc đang engaged</li>
+  <li><strong>Below title</strong>: Ngay dưới tiêu đề bài viết</li>
+  <li><strong>Sidebar sticky</strong>: Sidebar dán theo khi scroll</li>
+  <li><strong>Auto ads</strong>: Bật tính năng Auto Ads của Google — AI tự chọn vị trí tối ưu</li>
+</ul>
+<p><strong>Tránh</strong>: Đặt quảng cáo che nội dung, popup quảng cáo — Google phạt điểm page experience.</p>
+
+<h2>Kết hợp AdSense với Blog Tự Động</h2>
+<p>Đây là combo mạnh nhất để tối đa thu nhập thụ động:</p>
+<ul>
+  <li>AutoBlogspot viết và đăng 10–35 bài/ngày → 300–1,000 bài/tháng</li>
+  <li>Mỗi bài rank được 50–200 visits/tháng từ long-tail keywords</li>
+  <li>1,000 bài × 100 visits trung bình = 100,000 pageviews/tháng</li>
+  <li>RPM 3$ × 100,000/1,000 = <strong>300$/tháng thụ động</strong></li>
+</ul>
+<p>Scale lên nhiều website → thu nhập tăng tuyến tính.</p>
+
+<h2>Các sai lầm cần tránh</h2>
+<ul>
+  <li>Click quảng cáo của chính mình — bị ban vĩnh viễn</li>
+  <li>Dùng traffic bot/PTC để tăng impressions giả — Google phát hiện và suspend</li>
+  <li>Đặt quá nhiều quảng cáo (hơn 3 ad units/trang) — giảm UX và SEO</li>
+  <li>Bỏ qua tối ưu Core Web Vitals — trang chậm = RPM thấp</li>
+</ul>
+
+<p>Xem thêm: <a href="/blog/huong-dan-kiem-tien-affiliate-marketing-voi-auto-blog">Kiếm tiền Affiliate Marketing với Auto Blog</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Xây blog AdSense với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 23 ──────────────────────────────────────────────────────────
+    {
+        "slug": "schema-markup-la-gi-va-cach-them-vao-blog",
+        "title": "Schema Markup là gì? Cách Thêm Schema vào Blog để Có Rich Snippet trên Google",
+        "title_en": "What is Schema Markup? How to Add Schema to Your Blog for Google Rich Snippets",
+        "title_fr": "Qu'est-ce que le Schema Markup ? Comment ajouter le Schema à votre blog pour les Rich Snippets Google",
+        "title_it": "Cos'è il Schema Markup? Come aggiungere Schema al tuo blog per i Rich Snippet di Google",
+        "description": "Schema markup là gì và tại sao quan trọng với SEO? Hướng dẫn thêm JSON-LD schema vào blog để có rich snippet, FAQ snippet, HowTo snippet trên Google giúp tăng CTR.",
+        "desc_en": "What is schema markup and why is it important for SEO? Guide to adding JSON-LD schema to your blog to get rich snippets, FAQ snippets, and HowTo snippets on Google to increase CTR.",
+        "desc_fr": "Qu'est-ce que le schema markup et pourquoi est-il important pour le SEO ? Guide pour ajouter le schema JSON-LD à votre blog pour obtenir des rich snippets, FAQ snippets sur Google.",
+        "desc_it": "Cos'è il schema markup e perché è importante per il SEO? Guida all'aggiunta del schema JSON-LD al tuo blog per ottenere rich snippet, FAQ snippet e HowTo snippet su Google.",
+        "keywords": "schema markup là gì, json-ld schema blog, rich snippet google, faq schema, howto schema, structured data seo",
+        "date": "2026-05-04",
+        "thumbnail": _thumb("schema-markup-la-gi-va-cach-them-vao-blog"),
+        "category": "Kỹ thuật SEO",
+        "read_time": 7,
+        "content": """
+<p><strong>Schema markup</strong> (còn gọi là Structured Data) là đoạn code thêm vào trang web để giúp Google hiểu nội dung trang một cách chính xác hơn. Kết quả: bài viết có thể xuất hiện dưới dạng <strong>rich snippet</strong> — đẹp hơn, bắt mắt hơn, CTR cao hơn trên trang kết quả tìm kiếm.</p>
+
+<h2>Rich Snippet là gì?</h2>
+<p>Rich snippet là kết quả tìm kiếm được mở rộng với thông tin bổ sung. Ví dụ:</p>
+<ul>
+  <li><strong>FAQ snippet</strong>: Hiển thị câu hỏi và trả lời ngay trên SERP</li>
+  <li><strong>HowTo snippet</strong>: Liệt kê các bước hướng dẫn</li>
+  <li><strong>Article schema</strong>: Hiển thị ngày đăng, tác giả, ảnh</li>
+  <li><strong>Review schema</strong>: Sao đánh giá (⭐⭐⭐⭐⭐) ngay trên kết quả</li>
+  <li><strong>Breadcrumb schema</strong>: Đường dẫn phân cấp URL</li>
+</ul>
+<p>Rich snippet tăng CTR trung bình <strong>20–30%</strong> so với kết quả thông thường.</p>
+
+<h2>Các loại Schema quan trọng nhất cho Blog</h2>
+
+<h3>1. Article Schema</h3>
+<p>Dùng cho mọi bài blog. Thông báo cho Google biết đây là bài viết, tác giả, ngày đăng.</p>
+
+<h3>2. FAQPage Schema</h3>
+<p>Cực kỳ hiệu quả — FAQ snippet chiếm nhiều diện tích trên SERP, đẩy kết quả đối thủ xuống thấp.</p>
+
+<h3>3. HowTo Schema</h3>
+<p>Dùng cho bài hướng dẫn step-by-step. Google có thể hiển thị các bước trực tiếp trên kết quả.</p>
+
+<h3>4. BreadcrumbList Schema</h3>
+<p>Hiển thị đường dẫn "Trang chủ &gt; Danh mục &gt; Bài viết" trên SERP — giúp người dùng hiểu cấu trúc site.</p>
+
+<h2>Cách thêm Schema bằng JSON-LD (Khuyến nghị)</h2>
+<p>Google khuyến nghị dùng JSON-LD — đặt trong thẻ &lt;script&gt; trong &lt;head&gt;, không ảnh hưởng HTML content.</p>
+
+<p>Ví dụ FAQ Schema:</p>
+<pre style="background:#21262d;padding:12px;border-radius:8px;overflow-x:auto;font-size:.82rem;color:#c9d1d9;">
+&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Schema markup là gì?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Schema markup là structured data giúp Google hiểu nội dung trang web."
+      }
+    }
+  ]
+}
+&lt;/script&gt;
+</pre>
+
+<h2>Cách thêm Schema vào các nền tảng phổ biến</h2>
+<ul>
+  <li><strong>WordPress</strong>: Plugin Rank Math hoặc Yoast SEO tự động thêm schema cho từng bài viết</li>
+  <li><strong>Blogspot</strong>: Thêm JSON-LD thủ công vào template HTML hoặc vào từng bài viết qua HTML editor</li>
+  <li><strong>AutoBlogspot</strong>: Tự động chèn Article schema và FAQ schema cho bài viết khi publish</li>
+</ul>
+
+<h2>Kiểm tra Schema có hoạt động không</h2>
+<ul>
+  <li><strong>Google Rich Results Test</strong>: search.google.com/test/rich-results — paste URL hoặc code để test</li>
+  <li><strong>Schema.org Validator</strong>: validator.schema.org — kiểm tra syntax JSON-LD</li>
+  <li><strong>Google Search Console</strong>: Enhancements tab → xem rich results được Google nhận diện</li>
+</ul>
+
+<h2>Lưu ý quan trọng</h2>
+<ul>
+  <li>Chỉ thêm schema cho nội dung thực sự có trên trang — không được "spam" schema</li>
+  <li>FAQ schema chỉ hiệu quả khi bài có ít nhất 2–3 câu hỏi thực sự liên quan</li>
+  <li>Google không guarantee rich snippet dù schema đúng — phụ thuộc vào authority trang</li>
+</ul>
+
+<p><a href="/register" class="btn btn-primary mt-2">Tự động hóa schema với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 24 ──────────────────────────────────────────────────────────
+    {
+        "slug": "content-pillar-la-gi-xay-dung-he-thong-pillar-content",
+        "title": "Content Pillar là gì? Cách Xây Dựng Hệ Thống Pillar Content Hiệu Quả cho Blog SEO",
+        "title_en": "What is Content Pillar? How to Build an Effective Pillar Content System for SEO Blogging",
+        "title_fr": "Qu'est-ce qu'un Content Pillar ? Comment construire un système de contenu pilier efficace pour le SEO",
+        "title_it": "Cos'è un Content Pillar? Come costruire un sistema di contenuto pilastro efficace per il SEO",
+        "description": "Content Pillar là gì và tại sao quan trọng với chiến lược SEO? Hướng dẫn xây dựng hệ thống pillar content và cluster content để dominate một chủ đề trên Google.",
+        "desc_en": "What is a content pillar and why is it important for SEO strategy? Guide to building a pillar content and cluster content system to dominate a topic on Google.",
+        "desc_fr": "Qu'est-ce qu'un content pillar et pourquoi est-il important pour la stratégie SEO ? Guide pour construire un système de contenu pilier et cluster pour dominer un sujet sur Google.",
+        "desc_it": "Cos'è un content pillar e perché è importante per la strategia SEO? Guida per costruire un sistema di contenuto pilastro e cluster per dominare un argomento su Google.",
+        "keywords": "content pillar là gì, pillar content seo, topic cluster, cluster content, xây dựng pillar content, chiến lược content seo",
+        "date": "2026-05-05",
+        "thumbnail": _thumb("content-pillar-la-gi-xay-dung-he-thong-pillar-content"),
+        "category": "Chiến lược SEO",
+        "read_time": 8,
+        "content": """
+<p>Nếu bạn muốn blog của mình trở thành <strong>authority</strong> trong một lĩnh vực, Content Pillar là chiến lược không thể bỏ qua. Đây là cách Google đánh giá website của bạn có thực sự am hiểu một chủ đề hay không.</p>
+
+<h2>Content Pillar là gì?</h2>
+<p>Content Pillar (bài viết trụ cột) là bài viết dài, toàn diện về một chủ đề lớn, thường 2,000–5,000+ từ. Xung quanh nó là nhiều <strong>Cluster Content</strong> (bài viết vệ tinh) bàn sâu về từng khía cạnh nhỏ của chủ đề đó.</p>
+<p>Ví dụ trong niche SEO:</p>
+<ul>
+  <li><strong>Pillar</strong>: "Hướng dẫn SEO toàn diện 2025" (5,000 từ)</li>
+  <li><strong>Cluster</strong>: "Keyword research là gì", "On-page SEO checklist", "Cách xây dựng backlink", "Technical SEO cơ bản"...</li>
+</ul>
+
+<h2>Tại sao Content Pillar quan trọng với SEO?</h2>
+<ul>
+  <li><strong>Topical Authority</strong>: Google đánh giá website có chuyên môn thật sự không — pillar content chứng minh bạn bao phủ chủ đề đầy đủ</li>
+  <li><strong>Internal linking tự nhiên</strong>: Cluster bài link về pillar → tập trung PageRank vào trang quan trọng</li>
+  <li><strong>Semantic SEO</strong>: Google hiểu ngữ nghĩa và mối quan hệ giữa các bài → rank tốt hơn</li>
+  <li><strong>User journey</strong>: Người đọc tìm thấy mọi thông tin cần thiết trong một hệ thống có liên kết</li>
+</ul>
+
+<h2>Cách xây dựng hệ thống Pillar Content</h2>
+
+<h3>Bước 1: Chọn Pillar Topic</h3>
+<p>Pillar topic phải đủ rộng để có nhiều subtopic, đủ cụ thể để không quá chung chung. Ví dụ tốt: "SEO cho blog", "Kiếm tiền online", "Lập trình Python cho người mới".</p>
+
+<h3>Bước 2: Research Cluster Topics</h3>
+<p>Dùng Ahrefs, Semrush, hoặc Google "People Also Ask" để tìm tất cả câu hỏi liên quan đến pillar topic. Mỗi câu hỏi = 1 bài cluster.</p>
+
+<h3>Bước 3: Viết Pillar Page trước</h3>
+<p>Bài pillar phải bao quát toàn bộ chủ đề nhưng không đi sâu quá. Mỗi section trong pillar = 1 bài cluster. Đặt internal link đến cluster ở cuối mỗi section.</p>
+
+<h3>Bước 4: Viết Cluster Content</h3>
+<p>Mỗi bài cluster đi sâu vào 1 subtopic cụ thể. Luôn có link back về pillar page với anchor text phù hợp.</p>
+
+<h3>Bước 5: Tự động hóa với AutoBlogspot</h3>
+<p>Nhập danh sách cluster topic vào AutoBlogspot — AI tự động viết 100+ bài cluster, mỗi bài đều có link về pillar. Công việc tốn cả tháng rút gọn còn vài ngày.</p>
+
+<h2>Số lượng cluster cần thiết</h2>
+<ul>
+  <li><strong>Niche nhỏ</strong>: 10–20 cluster bài là đủ để build authority</li>
+  <li><strong>Niche trung bình</strong>: 30–50 cluster bài</li>
+  <li><strong>Niche cạnh tranh cao</strong>: 50–100+ cluster bài mới đủ topical coverage</li>
+</ul>
+
+<p>Xem thêm: <a href="/blog/internal-linking-cho-auto-blog-seo">Internal Linking cho Auto Blog SEO</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Xây pillar content tự động với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 25 ──────────────────────────────────────────────────────────
+    {
+        "slug": "e-e-a-t-la-gi-toi-uu-bai-viet-theo-tieu-chi-google",
+        "title": "E-E-A-T là gì? Cách Tối Ưu Bài Viết Theo Tiêu Chí Google để Rank Cao Hơn",
+        "title_en": "What is E-E-A-T? How to Optimize Content According to Google's Criteria to Rank Higher",
+        "title_fr": "Qu'est-ce que l'E-E-A-T ? Comment optimiser le contenu selon les critères de Google pour mieux se classer",
+        "title_it": "Cos'è l'E-E-A-T? Come ottimizzare i contenuti secondo i criteri di Google per posizionarsi più in alto",
+        "description": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) là gì và tác động thế nào đến SEO? Hướng dẫn tối ưu nội dung theo tiêu chí E-E-A-T để Google đánh giá cao hơn.",
+        "desc_en": "What is E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) and how does it affect SEO? Guide to optimizing content according to E-E-A-T criteria for higher Google ratings.",
+        "desc_fr": "Qu'est-ce que l'E-E-A-T et comment affecte-t-il le SEO ? Guide pour optimiser le contenu selon les critères E-E-A-T afin d'obtenir une meilleure évaluation de Google.",
+        "desc_it": "Cos'è l'E-E-A-T e come influisce sulla SEO? Guida all'ottimizzazione dei contenuti secondo i criteri E-E-A-T per ottenere valutazioni più alte da Google.",
+        "keywords": "e-e-a-t là gì, eeat seo, experience expertise authoritativeness trust, google quality rater, tối ưu eeat, content quality google",
+        "date": "2026-05-06",
+        "thumbnail": _thumb("e-e-a-t-la-gi-toi-uu-bai-viet-theo-tieu-chi-google"),
+        "category": "Chiến lược SEO",
+        "read_time": 7,
+        "content": """
+<p>Năm 2022, Google nâng cấp từ E-A-T thành <strong>E-E-A-T</strong>, thêm chữ E đầu tiên là "Experience" (Kinh nghiệm thực tế). Đây là bộ tiêu chí mà Google Quality Raters dùng để đánh giá chất lượng nội dung — ảnh hưởng trực tiếp đến thuật toán ranking.</p>
+
+<h2>E-E-A-T là viết tắt của gì?</h2>
+<ul>
+  <li><strong>E — Experience (Kinh nghiệm)</strong>: Tác giả có kinh nghiệm thực tế với chủ đề không? Ví dụ: review sản phẩm phải do người đã dùng sản phẩm đó viết</li>
+  <li><strong>E — Expertise (Chuyên môn)</strong>: Tác giả có kiến thức chuyên sâu về lĩnh vực không? Bác sĩ viết về y tế, luật sư viết về pháp lý...</li>
+  <li><strong>A — Authoritativeness (Uy tín)</strong>: Website và tác giả có được ngành công nhận không? Được cite, được mention bởi các nguồn uy tín</li>
+  <li><strong>T — Trustworthiness (Độ tin cậy)</strong>: Website có HTTPS, thông tin liên hệ rõ ràng, chính sách bảo mật đầy đủ</li>
+</ul>
+
+<h2>E-E-A-T ảnh hưởng thế nào đến SEO?</h2>
+<p>E-E-A-T quan trọng nhất với nội dung <strong>YMYL</strong> (Your Money or Your Life) — y tế, tài chính, pháp lý. Các niche này cần E-E-A-T cao để rank được. Với blog thông thường (lifestyle, travel, technology), E-E-A-T vẫn quan trọng nhưng ít nghiêm ngặt hơn.</p>
+
+<h2>Cách tối ưu E-E-A-T cho blog</h2>
+
+<h3>1. Thêm Author Profile rõ ràng</h3>
+<p>Mỗi bài viết phải có thông tin tác giả: tên, ảnh, bio chuyên môn. Tạo trang Author riêng với:</p>
+<ul>
+  <li>Thông tin nghề nghiệp, bằng cấp liên quan</li>
+  <li>Link đến social media (LinkedIn, Twitter)</li>
+  <li>Danh sách bài viết đã đăng</li>
+</ul>
+
+<h3>2. Trích dẫn nguồn đáng tin cậy</h3>
+<p>Link đến nghiên cứu, báo cáo từ nguồn uy tín (Google, Wikipedia, tổ chức chính phủ, báo lớn). Điều này tăng T (Trustworthiness).</p>
+
+<h3>3. Cập nhật nội dung thường xuyên</h3>
+<p>Thêm ngày cập nhật "Last updated: [date]" vào bài. Google ưu tiên nội dung fresh, đặc biệt với topic thay đổi nhanh.</p>
+
+<h3>4. Trang About Us và Contact đầy đủ</h3>
+<p>Phải có địa chỉ, số điện thoại hoặc email liên hệ thực. Đây là tín hiệu trust cơ bản nhất.</p>
+
+<h3>5. Nhận được mentions từ site khác</h3>
+<p>Được báo, blog khác đề cập → tăng Authoritativeness. Đây thực chất là backlink/brand mention building.</p>
+
+<h2>E-E-A-T với Auto Blog</h2>
+<p>Blog tự động vẫn có thể tối ưu E-E-A-T tốt nếu:</p>
+<ul>
+  <li>Tạo author profile chuyên nghiệp cho từng niche blog</li>
+  <li>AI viết bài có trích dẫn số liệu thực tế</li>
+  <li>Website có đầy đủ trang About, Contact, Privacy Policy</li>
+  <li>Nội dung có cấu trúc rõ ràng, thực sự hữu ích</li>
+</ul>
+
+<p><a href="/register" class="btn btn-primary mt-2">Tạo content E-E-A-T cao với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 26 ──────────────────────────────────────────────────────────
+    {
+        "slug": "long-tail-keyword-la-gi-nghien-cuu-tu-khoa-duoi-dai",
+        "title": "Long-tail Keyword là gì? Cách Nghiên Cứu và Nhắm Mục Tiêu Từ Khóa Đuôi Dài hiệu quả",
+        "title_en": "What are Long-tail Keywords? How to Research and Target Long-tail Keywords Effectively",
+        "title_fr": "Que sont les mots-clés longue traîne ? Comment rechercher et cibler efficacement les mots-clés longue traîne",
+        "title_it": "Cosa sono le parole chiave long-tail? Come ricercare e targetizzare efficacemente le parole chiave a coda lunga",
+        "description": "Long-tail keyword là gì, tại sao quan trọng hơn short-tail với blog mới? Hướng dẫn nghiên cứu và khai thác từ khóa đuôi dài để có traffic chất lượng và dễ rank hơn trên Google.",
+        "desc_en": "What are long-tail keywords and why are they more important than short-tail for new blogs? Guide to researching and exploiting long-tail keywords for quality traffic that is easier to rank on Google.",
+        "desc_fr": "Que sont les mots-clés longue traîne et pourquoi sont-ils plus importants que les mots-clés courts pour un nouveau blog ? Guide pour rechercher et exploiter les mots-clés longue traîne.",
+        "desc_it": "Cosa sono le parole chiave long-tail e perché sono più importanti di quelle short-tail per i nuovi blog? Guida alla ricerca e sfruttamento delle parole chiave a coda lunga.",
+        "keywords": "long tail keyword là gì, từ khóa đuôi dài, nghiên cứu long tail, keyword research, short tail vs long tail, từ khóa ít cạnh tranh",
+        "date": "2026-05-07",
+        "thumbnail": _thumb("long-tail-keyword-la-gi-nghien-cuu-tu-khoa-duoi-dai"),
+        "category": "Kiến thức SEO",
+        "read_time": 6,
+        "content": """
+<p>Với blog mới có authority thấp, cạnh tranh với từ khóa ngắn như "giảm cân" hay "SEO" gần như vô vọng. <strong>Long-tail keyword</strong> (từ khóa đuôi dài) là con đường thực tế hơn nhiều để có traffic từ Google trong thời gian ngắn.</p>
+
+<h2>Long-tail Keyword là gì?</h2>
+<p>Long-tail keyword là cụm từ tìm kiếm dài (thường 3–6+ từ), cụ thể hơn, intent rõ hơn so với từ khóa ngắn (short-tail). Ví dụ:</p>
+<ul>
+  <li><strong>Short-tail</strong>: "giảm cân" (1 từ, 100,000+ tìm kiếm/tháng, cạnh tranh cực cao)</li>
+  <li><strong>Long-tail</strong>: "cách giảm cân tại nhà sau sinh nhanh nhất" (6 từ, 500–2,000 tìm kiếm/tháng, cạnh tranh thấp)</li>
+</ul>
+
+<h2>Tại sao Long-tail quan trọng hơn với blog mới?</h2>
+<ul>
+  <li><strong>Dễ rank hơn</strong>: Ít website cạnh tranh trực tiếp cho cụm từ dài</li>
+  <li><strong>Intent rõ ràng</strong>: Người tìm kiếm cụm dài thường đã quyết định → conversion rate cao hơn</li>
+  <li><strong>Tổng traffic lớn</strong>: 70% tổng lượng tìm kiếm Google là long-tail — nhiều hơn short-tail</li>
+  <li><strong>Rẻ hơn với Google Ads</strong>: CPC long-tail thấp hơn nếu chạy quảng cáo</li>
+</ul>
+
+<h2>Cách nghiên cứu Long-tail Keyword</h2>
+
+<h3>1. Google Autocomplete và Related Searches</h3>
+<p>Gõ từ khóa gốc vào Google, xem gợi ý dropdown và "Searches related to" ở cuối trang. Đây là long-tail keyword thực tế người dùng đang tìm.</p>
+
+<h3>2. Google "People Also Ask"</h3>
+<p>Hộp "Mọi người cũng hỏi" trên SERP là kho long-tail vô tận. Mỗi câu hỏi = 1 ý tưởng bài viết long-tail.</p>
+
+<h3>3. Tool miễn phí: Ubersuggest / AnswerThePublic</h3>
+<p>Ubersuggest (miễn phí giới hạn) và AnswerThePublic tổng hợp hàng trăm long-tail keyword từ 1 từ gốc theo dạng câu hỏi, so sánh, preposition.</p>
+
+<h3>4. Tool trả phí: Ahrefs / Semrush</h3>
+<p>Dùng Keyword Explorer, lọc KD (Keyword Difficulty) &lt; 20 và Volume &gt; 100 để tìm long-tail có thể rank được.</p>
+
+<h3>5. Khai thác từ đối thủ</h3>
+<p>Dùng Ahrefs Site Explorer → Organic Keywords của đối thủ → lọc từ khóa vị trí 5–20 → đây là long-tail đang rank yếu, bạn có thể vượt qua.</p>
+
+<h2>Khai thác Long-tail với Auto Blog</h2>
+<p>Long-tail keyword là "nhiên liệu" lý tưởng cho auto blog. Quy trình:</p>
+<ol>
+  <li>Research 200–500 long-tail keywords trong niche</li>
+  <li>Nhập toàn bộ vào AutoBlogspot</li>
+  <li>Mỗi keyword = 1 bài viết được AI viết tự động, đăng lên 5 nền tảng</li>
+  <li>Với 500 bài → 500 cơ hội rank trên Google, tổng traffic có thể lên 10,000–50,000/tháng</li>
+</ol>
+
+<p>Xem thêm: <a href="/blog/content-pillar-la-gi-xay-dung-he-thong-pillar-content">Content Pillar và hệ thống Cluster Content</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Khai thác long-tail keyword với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 27 ──────────────────────────────────────────────────────────
+    {
+        "slug": "cach-tang-toc-do-index-google-indexnow-search-console",
+        "title": "Cách Tăng Tốc Độ Index Google: IndexNow, Search Console và Chiến Thuật 2025",
+        "title_en": "How to Speed Up Google Indexing: IndexNow, Search Console and 2025 Strategies",
+        "title_fr": "Comment accélérer l'indexation Google : IndexNow, Search Console et stratégies 2025",
+        "title_it": "Come velocizzare l'indicizzazione di Google: IndexNow, Search Console e strategie 2025",
+        "description": "Hướng dẫn đầy đủ cách tăng tốc độ index bài viết mới lên Google: sử dụng IndexNow, Google Search Console URL Inspection, sitemap ping, và các kỹ thuật advanced để index trong 24 giờ.",
+        "desc_en": "Complete guide to speeding up the indexing of new posts on Google: using IndexNow, Google Search Console URL Inspection, sitemap ping, and advanced techniques to index within 24 hours.",
+        "desc_fr": "Guide complet pour accélérer l'indexation des nouveaux articles sur Google : IndexNow, Google Search Console URL Inspection, ping sitemap et techniques avancées.",
+        "desc_it": "Guida completa per accelerare l'indicizzazione dei nuovi articoli su Google: IndexNow, Google Search Console URL Inspection, ping sitemap e tecniche avanzate.",
+        "keywords": "tăng tốc index google, indexnow là gì, google search console index, sitemap ping, index bài viết nhanh, url inspection tool",
+        "date": "2026-05-08",
+        "thumbnail": _thumb("cach-tang-toc-do-index-google-indexnow-search-console"),
+        "category": "Kỹ thuật SEO",
+        "read_time": 7,
+        "content": """
+<p>Auto blog publish hàng chục bài/ngày, nhưng nếu Google không index thì traffic = 0. <strong>Tốc độ index</strong> là yếu tố quan trọng nhất với auto blog — bài mới cần được index trong 24–72 giờ để bắt đầu sinh traffic.</p>
+
+<h2>Tại sao bài viết index chậm?</h2>
+<ul>
+  <li><strong>Website mới, authority thấp</strong>: Googlebot crawl ít hơn</li>
+  <li><strong>Crawl budget hạn chế</strong>: Google phân bổ ngân sách crawl dựa trên authority — site yếu bị crawl thưa</li>
+  <li><strong>Không có sitemap</strong>: Googlebot không biết có URL mới</li>
+  <li><strong>Internal link kém</strong>: Bài mới không có link từ bài khác → bot khó tìm thấy</li>
+</ul>
+
+<h2>Phương pháp 1: Google Search Console URL Inspection</h2>
+<p>Cách nhanh nhất để request index thủ công:</p>
+<ol>
+  <li>Vào Google Search Console → URL Inspection</li>
+  <li>Paste URL bài mới vào ô tìm kiếm</li>
+  <li>Click <strong>"Request Indexing"</strong></li>
+  <li>Google thường crawl trong 1–48 giờ sau khi request</li>
+</ol>
+<p><strong>Giới hạn</strong>: Chỉ có thể request ~10–50 URL/ngày thủ công. Không phù hợp khi publish hàng chục bài mỗi ngày.</p>
+
+<h2>Phương pháp 2: IndexNow — Tương lai của việc submit URL</h2>
+<p>IndexNow là protocol mới được Microsoft Bing, Yandex và nhiều search engine hỗ trợ. Khi bạn publish bài mới, website tự động "ping" cho search engine biết ngay lập tức.</p>
+<p>Cách hoạt động: Tạo API key → đặt file key trên domain → gửi POST request đến IndexNow API khi có bài mới. Search engine nhận được ping → crawl ngay.</p>
+<p><strong>Lưu ý</strong>: Google chưa chính thức hỗ trợ IndexNow nhưng Bing index nhanh qua IndexNow và Bing index có ảnh hưởng một phần đến Google.</p>
+
+<h2>Phương pháp 3: Sitemap Auto-ping</h2>
+<p>Khi publish bài mới, ping sitemap đến Google:</p>
+<pre style="background:#21262d;padding:10px;border-radius:8px;overflow-x:auto;font-size:.82rem;color:#c9d1d9;">
+https://www.google.com/ping?sitemap=https://yourblog.com/sitemap.xml
+</pre>
+<p>WordPress plugin (Yoast, Rank Math) tự động ping khi publish. AutoBlogspot cũng tự động ping sitemap sau mỗi bài đăng.</p>
+
+<h2>Phương pháp 4: Backlink từ domain có authority cao</h2>
+<p>Khi bài mới được link từ trang đã được index (ví dụ trang chủ, trang danh mục), Googlebot sẽ crawl theo link đến bài mới. Đây là lý do auto blog đăng đồng thời lên nhiều nền tảng (Tumblr DA95, Hashnode DA80) rất hiệu quả — bài mới được link từ domain mạnh → index nhanh.</p>
+
+<h2>Phương pháp 5: Tối ưu Crawl Budget</h2>
+<ul>
+  <li>Tránh duplicate content — Google lãng phí crawl budget vào trang trùng lặp</li>
+  <li>Fix 404 errors — crawl budget bị dùng vào URL lỗi</li>
+  <li>Noindex các trang không cần thiết (tag, archive cũ)</li>
+  <li>Tăng tốc độ tải trang — page load chậm làm bot crawl ít hơn</li>
+</ul>
+
+<h2>AutoBlogspot và tốc độ index</h2>
+<p>AutoBlogspot tích hợp Sinbyte để tự động submit URL mới lên Google ngay sau khi đăng. Kết hợp với đăng bài lên Tumblr, Hashnode (domain authority cao), URL mới thường được index trong 24–48 giờ.</p>
+
+<p><a href="/register" class="btn btn-primary mt-2">Tự động hóa index với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 28 ──────────────────────────────────────────────────────────
+    {
+        "slug": "cach-xay-dung-blog-network-tang-authority",
+        "title": "Cách Xây Dựng Blog Network để Tăng Authority và Traffic Organic Bền Vững",
+        "title_en": "How to Build a Blog Network to Increase Authority and Sustainable Organic Traffic",
+        "title_fr": "Comment construire un réseau de blogs pour augmenter l'autorité et le trafic organique durable",
+        "title_it": "Come costruire una rete di blog per aumentare l'autorità e il traffico organico sostenibile",
+        "description": "Hướng dẫn xây dựng blog network hiệu quả: chiến lược White Hat, chọn nền tảng, tạo nội dung liên kết, quản lý nhiều blog cùng lúc với AutoBlogspot để tăng authority tổng thể.",
+        "desc_en": "Guide to building an effective blog network: white hat strategy, platform selection, creating linked content, managing multiple blogs with AutoBlogspot to increase overall authority.",
+        "desc_fr": "Guide pour construire un réseau de blogs efficace : stratégie white hat, choix des plateformes, création de contenu lié, gestion de plusieurs blogs avec AutoBlogspot.",
+        "desc_it": "Guida alla costruzione di una rete di blog efficace: strategia white hat, scelta delle piattaforme, creazione di contenuti collegati, gestione di più blog con AutoBlogspot.",
+        "keywords": "blog network là gì, xây dựng blog network, white hat blog network, multi blog seo, quản lý nhiều blog, mạng lưới blog tăng authority",
+        "date": "2026-05-09",
+        "thumbnail": _thumb("cach-xay-dung-blog-network-tang-authority"),
+        "category": "Chiến lược SEO",
+        "read_time": 8,
+        "content": """
+<p>Blog network là chiến lược xây dựng nhiều blog liên kết với nhau để tăng topical authority, diversify traffic, và tạo backlink ecosystem tự nhiên. Khác với PBN (Private Blog Network) rủi ro cao, <strong>White Hat Blog Network</strong> tập trung vào giá trị nội dung thực sự.</p>
+
+<h2>Blog Network là gì?</h2>
+<p>Blog network là tập hợp nhiều blog hoạt động trong cùng niche hoặc niche liên quan, liên kết với nhau qua internal/external links, cùng nhắm mục tiêu đến một audience. Mỗi blog trong network:</p>
+<ul>
+  <li>Có nội dung chất lượng, unique</li>
+  <li>Được đặt trên domain/platform riêng biệt</li>
+  <li>Link đến nhau theo ngữ cảnh tự nhiên</li>
+  <li>Cùng hướng về 1 "money site" chính</li>
+</ul>
+
+<h2>White Hat vs PBN — Sự khác biệt quan trọng</h2>
+<p><strong>PBN (Private Blog Network)</strong> dùng domain hết hạn với authority cũ, đăng nội dung thin chỉ để đặt backlink. Google phạt nặng — deindex toàn bộ network nếu phát hiện.</p>
+<p><strong>White Hat Blog Network</strong>: Mỗi blog có nội dung thực sự có giá trị, link tự nhiên, platform đa dạng (Blogspot, WordPress, Tumblr, Hashnode). Google không phạt vì đây là content marketing bình thường.</p>
+
+<h2>Xây dựng Blog Network với AutoBlogspot</h2>
+
+<h3>Bước 1: Chọn cấu trúc network</h3>
+<p>Cấu trúc phổ biến nhất: Hub and Spoke</p>
+<ul>
+  <li><strong>Money site (Hub)</strong>: Blog chính domain .com với nội dung premium, đây là nơi bạn muốn rank và convert</li>
+  <li><strong>Spoke blogs</strong>: 5–10 blog vệ tinh (Blogspot, WordPress.com, Tumblr, Hashnode) viết về subtopic và link về hub</li>
+</ul>
+
+<h3>Bước 2: Phân công nội dung</h3>
+<ul>
+  <li>Hub: Pillar content dài 2,000–5,000 từ, nội dung sâu, multimedia</li>
+  <li>Spoke: Cluster content 800–1,500 từ, mỗi bài link về 1–2 bài trên hub</li>
+</ul>
+
+<h3>Bước 3: Kết nối tất cả vào AutoBlogspot</h3>
+<p>AutoBlogspot quản lý toàn bộ blog trong network qua 1 dashboard:</p>
+<ol>
+  <li>Thêm tất cả blog (Blogspot, WordPress, Tumblr, Hashnode) vào "Tài khoản Blog"</li>
+  <li>Tạo dự án riêng cho từng blog hoặc nhóm blog cùng niche</li>
+  <li>Cài backlink URL của hub vào phần Backlinks của spoke projects</li>
+  <li>AI tự động chèn link về hub trong nội dung spoke</li>
+</ol>
+
+<h3>Bước 4: Lịch đăng và phân phối</h3>
+<ul>
+  <li>Hub: 1–3 bài/ngày chất lượng cao</li>
+  <li>Spoke: 3–10 bài/ngày, đăng phân tán qua nhiều platform</li>
+  <li>Tổng network: 50–100 bài/ngày với gói Pro</li>
+</ul>
+
+<h2>Quản lý Blog Network không bị Google Sandbox</h2>
+<ul>
+  <li>Mỗi blog phải có ít nhất 20 bài trước khi bắt đầu link về hub</li>
+  <li>Không link toàn bộ bài về 1 URL — diversify anchor text và target page</li>
+  <li>Xen kẽ external link đến nguồn uy tín khác (Wikipedia, báo lớn)</li>
+  <li>Mỗi blog nên có trang About, Contact riêng biệt</li>
+</ul>
+
+<p>Xem thêm: <a href="/blog/content-pillar-la-gi-xay-dung-he-thong-pillar-content">Content Pillar và chiến lược Cluster Content</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Quản lý blog network với AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 29 ──────────────────────────────────────────────────────────
+    {
+        "slug": "groq-openrouter-api-free-de-viet-blog-tu-dong",
+        "title": "Groq và OpenRouter API Miễn Phí: Cách Dùng để Viết Blog Tự Động với Chi Phí 0đ",
+        "title_en": "Groq and OpenRouter Free API: How to Use for Automated Blog Writing at Zero Cost",
+        "title_fr": "API Groq et OpenRouter gratuits : Comment les utiliser pour écrire des blogs automatisés à coût zéro",
+        "title_it": "API Groq e OpenRouter gratuiti: Come usarli per scrivere blog automatizzati a costo zero",
+        "description": "Hướng dẫn sử dụng Groq API (Llama 3.3 70B miễn phí) và OpenRouter API để viết blog tự động không tốn xu. So sánh các model free tier và cách tích hợp vào AutoBlogspot.",
+        "desc_en": "Guide to using Groq API (free Llama 3.3 70B) and OpenRouter API for automated blog writing at zero cost. Compare free tier models and how to integrate with AutoBlogspot.",
+        "desc_fr": "Guide pour utiliser l'API Groq (Llama 3.3 70B gratuit) et l'API OpenRouter pour écrire des blogs automatisés sans frais. Comparaison des modèles gratuits et intégration avec AutoBlogspot.",
+        "desc_it": "Guida all'utilizzo dell'API Groq (Llama 3.3 70B gratuito) e dell'API OpenRouter per scrivere blog automatizzati a costo zero. Confronto dei modelli free tier e integrazione con AutoBlogspot.",
+        "keywords": "groq api miễn phí, openrouter api free, llama 3.3 70b, viết blog tự động miễn phí, free ai api, autoblogspot groq",
+        "date": "2026-05-10",
+        "thumbnail": _thumb("groq-openrouter-api-free-de-viet-blog-tu-dong"),
+        "category": "Kiến thức",
+        "read_time": 6,
+        "content": """
+<p>Một trong những câu hỏi phổ biến nhất về auto blog là: <em>"Chi phí AI có đắt không?"</em>. Câu trả lời: <strong>Hoàn toàn có thể viết blog tự động với chi phí 0đ</strong> nhờ Groq và OpenRouter cung cấp free tier rất rộng rãi.</p>
+
+<h2>Groq API — Nhanh nhất, miễn phí nhất</h2>
+<p>Groq không phải công ty AI model, họ là công ty chip AI chuyên cho inference cực nhanh. Groq chạy các open-source model (Llama, Mixtral, Gemma) với tốc độ 300–700 token/giây — nhanh hơn OpenAI 10–20 lần.</p>
+
+<h3>Free tier của Groq (tháng 5/2026):</h3>
+<ul>
+  <li><strong>Llama 3.3 70B</strong>: 14,400 requests/ngày, 500,000 tokens/ngày miễn phí</li>
+  <li><strong>Llama 3.1 8B</strong>: 14,400 requests/ngày miễn phí</li>
+  <li><strong>Gemma 2 9B</strong>: 14,400 requests/ngày miễn phí</li>
+  <li><strong>Mixtral 8x7B</strong>: 14,400 requests/ngày miễn phí</li>
+</ul>
+<p>Với 500,000 tokens/ngày free, bạn có thể viết khoảng <strong>500–700 bài blog</strong> 800 từ mỗi ngày hoàn toàn miễn phí.</p>
+
+<h3>Cách lấy Groq API key:</h3>
+<ol>
+  <li>Truy cập <strong>console.groq.com</strong></li>
+  <li>Đăng ký tài khoản miễn phí</li>
+  <li>Vào API Keys → Create API Key</li>
+  <li>Copy key và nhập vào AutoBlogspot (Cài đặt → API Keys → Groq)</li>
+</ol>
+
+<h2>OpenRouter — Marketplace AI API</h2>
+<p>OpenRouter là "siêu thị" API, tổng hợp nhiều nhà cung cấp AI qua 1 endpoint thống nhất. Tính năng hay nhất: nhiều model free tier và tự động fallback khi 1 model bị rate limit.</p>
+
+<h3>Các model free trên OpenRouter:</h3>
+<ul>
+  <li><strong>Meta Llama 3.3 70B Free</strong>: Không giới hạn (có rate limit mềm)</li>
+  <li><strong>Google Gemma 3 27B Free</strong>: Miễn phí</li>
+  <li><strong>Mistral 7B Free</strong>: Miễn phí</li>
+  <li><strong>DeepSeek R1 (distill)</strong>: Free với context dài</li>
+</ul>
+
+<h3>Cách dùng OpenRouter với AutoBlogspot:</h3>
+<ol>
+  <li>Đăng ký tại <strong>openrouter.ai</strong></li>
+  <li>Vào Keys → Create key (có thể thêm credit $5 để dùng model trả phí)</li>
+  <li>Trong AutoBlogspot → Cài đặt → OpenRouter API Key → Paste key</li>
+  <li>Chọn model trong dự án: "openrouter/meta-llama/llama-3.3-70b-instruct:free"</li>
+</ol>
+
+<h2>So sánh Groq vs OpenRouter cho auto blog</h2>
+<ul>
+  <li><strong>Tốc độ</strong>: Groq nhanh hơn 3–5 lần (chip inference chuyên dụng)</li>
+  <li><strong>Độ ổn định</strong>: OpenRouter ổn định hơn nhờ multi-provider fallback</li>
+  <li><strong>Lựa chọn model</strong>: OpenRouter đa dạng hơn nhiều</li>
+  <li><strong>Chi phí</strong>: Cả hai đều có free tier đủ dùng cho scale trung bình</li>
+</ul>
+<p><strong>Khuyến nghị</strong>: Dùng Groq làm primary (nhanh hơn), OpenRouter làm fallback khi Groq hết rate limit.</p>
+
+<p>Xem thêm: <a href="/blog/ai-model-tot-nhat-de-viet-content-seo-claude-gpt-gemini">So sánh Claude vs GPT vs Gemini cho viết content SEO</a>.</p>
+<p><a href="/register" class="btn btn-primary mt-2">Cấu hình Groq miễn phí trên AutoBlogspot →</a></p>
+""",
+    },
+
+    # ── Article 30 ──────────────────────────────────────────────────────────
+    {
+        "slug": "autoblogspot-vs-rankiq-vs-koala-ai-so-sanh-cong-cu",
+        "title": "AutoBlogspot vs RankIQ vs Koala AI: So Sánh Chi Tiết Công Cụ Viết Blog Tự Động 2025",
+        "title_en": "AutoBlogspot vs RankIQ vs Koala AI: Detailed Comparison of Automated Blog Writing Tools 2025",
+        "title_fr": "AutoBlogspot vs RankIQ vs Koala AI : Comparaison détaillée des outils de rédaction automatique de blogs 2025",
+        "title_it": "AutoBlogspot vs RankIQ vs Koala AI: Confronto dettagliato degli strumenti di scrittura automatica di blog 2025",
+        "description": "So sánh AutoBlogspot, RankIQ và Koala AI về tính năng, giá cả, chất lượng nội dung, khả năng đăng tự động và phù hợp với từng loại người dùng để chọn công cụ blog AI tốt nhất 2025.",
+        "desc_en": "Compare AutoBlogspot, RankIQ and Koala AI on features, pricing, content quality, auto-posting capabilities and suitability for different user types to choose the best AI blog tool in 2025.",
+        "desc_fr": "Comparez AutoBlogspot, RankIQ et Koala AI sur les fonctionnalités, les prix, la qualité du contenu, les capacités de publication automatique pour choisir le meilleur outil de blog IA en 2025.",
+        "desc_it": "Confronta AutoBlogspot, RankIQ e Koala AI su funzionalità, prezzi, qualità dei contenuti, capacità di pubblicazione automatica per scegliere il miglior strumento di blog AI nel 2025.",
+        "keywords": "autoblogspot vs rankiq, autoblogspot vs koala ai, so sánh công cụ blog ai, rankiq review, koala ai review, công cụ viết blog tự động tốt nhất 2025",
+        "date": "2026-05-11",
+        "thumbnail": _thumb("autoblogspot-vs-rankiq-vs-koala-ai-so-sanh-cong-cu"),
+        "category": "So sánh",
+        "read_time": 9,
+        "content": """
+<p>Thị trường công cụ AI viết blog ngày càng cạnh tranh. Ba cái tên nổi bật nhất đầu 2025: <strong>AutoBlogspot</strong> (Việt Nam), <strong>RankIQ</strong> và <strong>Koala AI</strong>. Bài viết so sánh chi tiết để bạn chọn đúng công cụ phù hợp với nhu cầu.</p>
+
+<h2>Tổng quan từng công cụ</h2>
+
+<h3>AutoBlogspot</h3>
+<p>Nền tảng auto blogging toàn diện từ Việt Nam, tập trung vào <strong>đăng bài tự động lên nhiều nền tảng</strong> (Blogspot, WordPress, Tumblr, Hashnode, WordPress self-hosted). Hỗ trợ nhiều AI provider (Groq, OpenRouter, Gemini, Claude, GPT) và có free tier mạnh.</p>
+
+<h3>RankIQ</h3>
+<p>Công cụ SEO content của Mỹ, nổi tiếng với tính năng <strong>Content Brief</strong> — phân tích SERP đối thủ và tạo outline tối ưu. Tập trung vào chất lượng từng bài hơn là volume lớn. Giá 49$/tháng, target người dùng Anh ngữ.</p>
+
+<h3>Koala AI</h3>
+<p>Công cụ viết bài AI của Mỹ, nổi bật với <strong>KoalaWriter</strong> — tự động research, viết và format bài dài 2,000+ từ. Hỗ trợ publish thẳng lên WordPress. Giá từ 9$/tháng.</p>
+
+<h2>So sánh chi tiết</h2>
+<table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+  <tr style="background:#f0f4ff;">
+    <th style="padding:8px;border:1px solid #ddd;text-align:left;">Tiêu chí</th>
+    <th style="padding:8px;border:1px solid #ddd;">AutoBlogspot</th>
+    <th style="padding:8px;border:1px solid #ddd;">RankIQ</th>
+    <th style="padding:8px;border:1px solid #ddd;">Koala AI</th>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Giá khởi điểm</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Miễn phí</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">$49/tháng</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">$9/tháng</td>
+  </tr>
+  <tr style="background:#f9faff;">
+    <td style="padding:8px;border:1px solid #ddd;">Đăng tự động</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ 5 nền tảng</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">❌ Không</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ WordPress only</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Bài/ngày</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Không giới hạn*</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">16 bài/tháng</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">15 bài/tháng (gói $9)</td>
+  </tr>
+  <tr style="background:#f9faff;">
+    <td style="padding:8px;border:1px solid #ddd;">Tiếng Việt</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ Tốt</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">❌ Tiếng Anh</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">⚠️ Hạn chế</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">SEO Research</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">⚠️ Cơ bản</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ Rất mạnh</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ Tốt</td>
+  </tr>
+  <tr style="background:#f9faff;">
+    <td style="padding:8px;border:1px solid #ddd;">Multi-platform</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">✅ 5 nền tảng</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">❌</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">❌</td>
+  </tr>
+  <tr>
+    <td style="padding:8px;border:1px solid #ddd;">Phù hợp với</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">Blog volume lớn, tiết kiệm</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">SEO agency, EN blog</td>
+    <td style="padding:8px;border:1px solid #ddd;text-align:center;">WordPress blogger EN</td>
+  </tr>
+</table>
+<p style="font-size:.8rem;color:#666;">* Giới hạn bởi gói và rate limit API</p>
+
+<h2>Nên chọn công cụ nào?</h2>
+<ul>
+  <li><strong>Chọn AutoBlogspot nếu</strong>: Muốn build blog network lớn, tiết kiệm chi phí, blog tiếng Việt, cần đăng lên nhiều nền tảng tự động</li>
+  <li><strong>Chọn RankIQ nếu</strong>: Blog tiếng Anh, cần SEO research sâu, chú trọng chất lượng từng bài hơn số lượng, có ngân sách cao</li>
+  <li><strong>Chọn Koala AI nếu</strong>: WordPress blogger tiếng Anh, cần bài dài chất lượng, ngân sách thấp, không cần multi-platform</li>
+</ul>
+
+<h2>Kết luận</h2>
+<p>Với người dùng Việt Nam muốn xây dựng blog network quy mô lớn và tối đa hóa số lượng bài viết với chi phí thấp nhất, <strong>AutoBlogspot</strong> vẫn là lựa chọn số 1. Kết hợp với Groq/Gemini API miễn phí, bạn có thể vận hành hệ thống hoàn toàn không tốn chi phí AI.</p>
+
+<p><a href="/register" class="btn btn-primary mt-2">Dùng thử AutoBlogspot miễn phí →</a></p>
+""",
+    },
 ]
 
 ARTICLES_BY_SLUG = {a["slug"]: a for a in ARTICLES}
