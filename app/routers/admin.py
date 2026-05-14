@@ -18,7 +18,7 @@ router = APIRouter()
 
 _START_TIME = time.time()
 
-PLAN_PRICES = {"free": 0, "pro": 200_000, "business": 500_000}
+PLAN_PRICES = {"free": 0, "pro": 200_000, "business": 500_000, "gift": 0}
 
 
 def _require_admin(request: Request, db: Session):
@@ -29,10 +29,11 @@ def _require_admin(request: Request, db: Session):
 
 def _user_stats(db: Session) -> dict:
     total = db.query(User).count()
-    by_plan = {p: 0 for p in ("free", "pro", "business")}
+    by_plan = {p: 0 for p in ("free", "pro", "business", "gift")}
     active_count = 0
     expired_count = 0
     trial_count = 0
+    gift_count = 0
     now = datetime.utcnow()
     month_ago = now - timedelta(days=30)
     new_this_month = db.query(User).filter(User.created_at >= month_ago).count()
@@ -44,6 +45,8 @@ def _user_stats(db: Session) -> dict:
         if s.is_active_plan:
             if s.status == "trial":
                 trial_count += 1
+            elif s.status == "gift":
+                gift_count += 1
             else:
                 active_count += 1
         else:
@@ -54,6 +57,7 @@ def _user_stats(db: Session) -> dict:
         "by_plan": by_plan,
         "active": active_count,
         "trial": trial_count,
+        "gift": gift_count,
         "expired": expired_count,
         "new_this_month": new_this_month,
     }
@@ -62,7 +66,7 @@ def _user_stats(db: Session) -> dict:
 def _revenue_stats(db: Session) -> dict:
     now = datetime.utcnow()
     mrr = 0
-    subs = db.query(Subscription).filter(Subscription.status != "trial").all()
+    subs = db.query(Subscription).filter(Subscription.status.notin_(["trial", "gift"])).all()
     for s in subs:
         if s.is_active_plan and s.plan in PLAN_PRICES:
             mrr += PLAN_PRICES[s.plan]

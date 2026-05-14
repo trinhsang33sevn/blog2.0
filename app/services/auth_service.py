@@ -118,24 +118,28 @@ def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subsc
     sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
 
+    is_gift = plan == "gift"
     now = datetime.utcnow()
-    # Extend from current expiry if still active, else from now
-    base = sub.expires_at if (sub and sub.expires_at and sub.expires_at > now) else now
-
-    expires = base + timedelta(days=30 * months)
+    if is_gift:
+        expires = None          # gift never expires
+        status  = "gift"
+    else:
+        base    = sub.expires_at if (sub and sub.expires_at and sub.expires_at > now) else now
+        expires = base + timedelta(days=30 * months)
+        status  = "active"
 
     if sub:
-        sub.plan = plan
-        sub.status = "active"
+        sub.plan       = plan
+        sub.status     = status
         sub.expires_at = expires
-        sub.projects_limit = limits["projects"]
-        sub.sites_limit = limits["sites"]
+        sub.projects_limit         = limits["projects"]
+        sub.sites_limit            = limits["sites"]
         sub.articles_per_day_limit = limits["articles_per_day"]
     else:
         sub = Subscription(
             user_id=user_id,
             plan=plan,
-            status="active",
+            status=status,
             expires_at=expires,
             projects_limit=limits["projects"],
             sites_limit=limits["sites"],

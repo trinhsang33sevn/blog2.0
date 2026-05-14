@@ -11,6 +11,7 @@ PLAN_LIMITS = {
     "free":     {"projects": 1,    "sites": 1,   "articles_per_day": 5},
     "pro":      {"projects": 5,    "sites": 10,  "articles_per_day": 35},
     "business": {"projects": None, "sites": None, "articles_per_day": None},
+    "gift":     {"projects": 5,    "sites": 10,  "articles_per_day": 35},
 }
 
 

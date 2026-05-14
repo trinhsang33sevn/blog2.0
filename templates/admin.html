@@ -162,6 +162,7 @@
                   {% if u.subscription %}
                     {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
                     {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
+                    {% elif u.subscription.plan == 'gift' %}<span class="badge bg-success">Gift 🎁</span>
                     {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
                   {% else %}—{% endif %}
                 </td>
@@ -212,6 +213,14 @@
       <div class="text-muted small">Business</div>
     </div>
   </div>
+  {% if user_stats.by_plan.gift > 0 %}
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-success">{{ user_stats.by_plan.gift }}</div>
+      <div class="text-muted small">Gift 🎁</div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <div class="card shadow-sm border-0">
@@ -239,6 +248,7 @@
               {% if u.subscription %}
                 {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
                 {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
+                {% elif u.subscription.plan == 'gift' %}<span class="badge bg-success">Gift 🎁</span>
                 {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
               {% else %}<span class="text-muted small">—</span>{% endif %}
             </td>
@@ -247,6 +257,8 @@
                 {% if u.subscription.is_active_plan %}
                   {% if u.subscription.status == 'trial' %}
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ _("adm_badge_trial") }}</span>
+                  {% elif u.subscription.status == 'gift' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Dùng thử 🎁</span>
                   {% else %}
                     <span class="badge bg-success-subtle text-success border border-success-subtle">{{ _("adm_badge_active") }}</span>
                   {% endif %}
@@ -295,13 +307,15 @@
                       <div class="modal-body">
                         <div class="mb-3">
                           <label class="form-label fw-semibold">{{ _("adm_col_plan") }}</label>
-                          <select name="plan" class="form-select">
+                          <select name="plan" class="form-select" id="planSelect{{ u.id }}"
+                            onchange="toggleMonths(this, 'monthsRow{{ u.id }}')">
                             <option value="free">Free</option>
                             <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro — 300.000₫/tháng</option>
                             <option value="business" {% if u.subscription and u.subscription.plan == 'business' %}selected{% endif %}>Business — 1.000.000₫/tháng</option>
+                            <option value="gift" {% if u.subscription and u.subscription.plan == 'gift' %}selected{% endif %}>🎁 Gift — Miễn phí (không tính doanh thu)</option>
                           </select>
                         </div>
-                        <div>
+                        <div id="monthsRow{{ u.id }}" {% if u.subscription and u.subscription.plan == 'gift' %}style="display:none"{% endif %}>
                           <label class="form-label fw-semibold">{{ _("adm_months") }}</label>
                           <input type="number" name="months" class="form-control" value="1" min="1" max="24">
                           <div class="form-text">{{ _("adm_months_hint") }}</div>
@@ -346,6 +360,13 @@
           <span><span class="badge bg-warning text-dark me-2">Business</span>{{ user_stats.by_plan.business }} người × 1.000.000₫</span>
           <strong>{{ "{:,}".format(user_stats.by_plan.business * 1000000) }}₫</strong>
         </div>
+        {% if user_stats.by_plan.gift > 0 %}
+        <div class="d-flex justify-content-between py-1">
+          <span><span class="badge bg-success me-2">Gift 🎁</span>{{ user_stats.by_plan.gift }} người × 0₫
+            <span class="text-muted small ms-1">(không tính doanh thu)</span></span>
+          <strong class="text-muted">0₫</strong>
+        </div>
+        {% endif %}
         <hr>
         <div class="d-flex justify-content-between">
           <span class="fw-semibold">Tổng MRR</span>
@@ -759,6 +780,11 @@ if (urlParams.get('success')) {
     url.searchParams.delete('success');
     window.history.replaceState({}, '', url);
   }, 3000);
+}
+
+function toggleMonths(selectEl, rowId) {
+  const row = document.getElementById(rowId);
+  if (row) row.style.display = selectEl.value === 'gift' ? 'none' : '';
 }
 </script>
 {% endblock %}
