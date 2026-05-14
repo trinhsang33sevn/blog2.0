@@ -19,18 +19,18 @@
   <meta property="og:url" content="https://autoblogspot.com/blog/{{ article.slug }}">
   <meta property="og:title" content="{{ article.title }}">
   <meta property="og:description" content="{{ article.description }}">
-  <meta property="og:image" content="https://autoblogspot.com/blog/image/{{ article.slug }}">
+  <meta property="og:image" content="https://autoblogspot.com/blog/og/{{ article.slug }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ article.title }}">
   <meta name="twitter:description" content="{{ article.description }}">
-  <meta name="twitter:image" content="https://autoblogspot.com/blog/image/{{ article.slug }}">
+  <meta name="twitter:image" content="https://autoblogspot.com/blog/og/{{ article.slug }}">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": "{{ article.title }}",
     "description": "{{ article.description }}",
-    "image": "https://autoblogspot.com/blog/image/{{ article.slug }}",
+    "image": "https://autoblogspot.com/blog/og/{{ article.slug }}",
     "datePublished": "{{ article.date }}",
     "author": {"@type": "Organization", "name": "AutoBlogspot"},
     "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"},

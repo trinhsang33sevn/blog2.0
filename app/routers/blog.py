@@ -1,4 +1,5 @@
 from html import escape as _esc
+import io
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, Response
@@ -22,6 +23,15 @@ _CAT_STYLES: dict[str, tuple[str, str, str]] = {
     "Affiliate Marketing": ("#1c1100", "#854d0e", "#fde047"),
 }
 _DEFAULT_STYLE = ("#0d1117", "#161b22", "#58a6ff")
+
+_PNG_CACHE: dict[str, bytes] = {}
+_FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+_FONT_REG  = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+
+def _hex_to_rgb(h: str) -> tuple[int, int, int]:
+    h = h.lstrip("#")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
 
 
 def _wrap(text: str, max_chars: int = 24) -> list[str]:
@@ -107,6 +117,88 @@ def _generate_svg(article: dict) -> str:
 </svg>"""
 
 
+def _generate_png(article: dict) -> bytes:
+    """Return a 1200×630 PNG OG image for social sharing (Facebook, Zalo, etc.)."""
+    slug = article.get("slug", "")
+    if slug and slug in _PNG_CACHE:
+        return _PNG_CACHE[slug]
+
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        return b""
+
+    cat   = article["category"]
+    title = article["title"]
+    c1, c2, accent = _CAT_STYLES.get(cat, _DEFAULT_STYLE)
+    r1, g1, b1 = _hex_to_rgb(c1)
+    r2, g2, b2 = _hex_to_rgb(c2)
+    ar, ag, ab = _hex_to_rgb(accent)
+
+    W, H = 1200, 630
+
+    # Gradient background
+    bg = Image.new("RGB", (W, H))
+    bg_draw = ImageDraw.Draw(bg)
+    for y in range(H):
+        t = y / H
+        bg_draw.line([(0, y), (W, y)], fill=(
+            int(r1 + (r2 - r1) * t),
+            int(g1 + (g2 - g1) * t),
+            int(b1 + (b2 - b1) * t),
+        ))
+
+    # Decorative accent circles via transparent overlay
+    ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ov_d = ImageDraw.Draw(ov)
+    ov_d.ellipse([860, -120, 1340, 360], fill=(ar, ag, ab, 18))
+    ov_d.ellipse([920, -40,  1200, 240], fill=(ar, ag, ab, 28))
+    ov_d.ellipse([-30, 460,  250,  740], fill=(ar, ag, ab, 15))
+
+    img = Image.alpha_composite(bg.convert("RGBA"), ov)
+    draw = ImageDraw.Draw(img)
+
+    try:
+        f_title = ImageFont.truetype(_FONT_BOLD, 56)
+        f_cat   = ImageFont.truetype(_FONT_BOLD, 22)
+        f_brand = ImageFont.truetype(_FONT_REG,  20)
+    except OSError:
+        f_title = f_cat = f_brand = ImageFont.load_default()
+
+    # Category badge
+    cat_text = cat.upper()
+    cb = draw.textbbox((0, 0), cat_text, font=f_cat)
+    bx, by = 80, 96
+    draw.rounded_rectangle(
+        [bx - 2, by - 10, bx + (cb[2] - cb[0]) + 34, by + (cb[3] - cb[1]) + 10],
+        radius=20,
+        fill=(ar, ag, ab, 45),
+        outline=(ar, ag, ab, 160),
+        width=1,
+    )
+    draw.text((bx + 16, by), cat_text, font=f_cat, fill=(ar, ag, ab, 255))
+
+    # Title text
+    lines = _wrap(title, 32)
+    ty = 300 - len(lines) * 38
+    for line in lines:
+        draw.text((80, ty), line, font=f_title, fill=(230, 237, 243, 255))
+        ty += 76
+
+    # Brand watermark
+    draw.text((80, 583), "autoblogspot.com", font=f_brand, fill=(110, 118, 129, 255))
+
+    # Flatten RGBA → RGB and encode
+    final = Image.new("RGB", (W, H), (r1, g1, b1))
+    final.paste(img.convert("RGB"), mask=img.split()[3])
+    buf = io.BytesIO()
+    final.save(buf, format="PNG", optimize=True)
+    result = buf.getvalue()
+    if slug:
+        _PNG_CACHE[slug] = result
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -144,6 +236,22 @@ def blog_image(slug: str):
     return Response(
         content=svg,
         media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@router.get("/blog/og/{slug}")
+def blog_og_png(slug: str):
+    """Serve a PNG OG image (1200×630) suitable for Facebook, Zalo, Twitter previews."""
+    article = ARTICLES_BY_SLUG.get(slug)
+    if not article:
+        article = {"slug": slug, "category": "Blog", "title": slug.replace("-", " ").title(), "date": ""}
+    png = _generate_png(article)
+    if not png:
+        return Response(status_code=404)
+    return Response(
+        content=png,
+        media_type="image/png",
         headers={"Cache-Control": "public, max-age=86400"},
     )
 
