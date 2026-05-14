@@ -5,8 +5,11 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, Response
 
 from ..blog_data import ARTICLES, ARTICLES_BY_SLUG, CATEGORIES, CATEGORY_TRANSLATIONS
+from ..content_translations import EN as _CT_EN, FR as _CT_FR, IT as _CT_IT
 from ..i18n import get_lang
 from ..templates import templates
+
+_CONTENT_TRANS: dict[str, dict[str, str]] = {"en": _CT_EN, "fr": _CT_FR, "it": _CT_IT}
 
 router = APIRouter()
 
@@ -211,17 +214,20 @@ def _cat_map(lang: str) -> dict[str, str]:
 def _localized(article: dict, lang: str, cmap: dict[str, str]) -> dict:
     """Return article with localized title, description, content, display_category."""
     cat_vi = article["category"]
+    slug   = article.get("slug", "")
     result = {**article, "display_category": cmap.get(cat_vi, cat_vi), "content_lang": "vi"}
     if lang != "vi":
-        title_k   = f"title_{lang}"
-        desc_k    = f"desc_{lang}"
-        content_k = f"content_{lang}"
-        if article.get(title_k):
-            result["title"] = article[title_k]
-        if article.get(desc_k):
-            result["description"] = article[desc_k]
-        if article.get(content_k):
-            result["content"] = article[content_k]
+        if article.get(f"title_{lang}"):
+            result["title"] = article[f"title_{lang}"]
+        if article.get(f"desc_{lang}"):
+            result["description"] = article[f"desc_{lang}"]
+        # Content: check inline field first, then content_translations module
+        content_translated = (
+            article.get(f"content_{lang}")
+            or _CONTENT_TRANS.get(lang, {}).get(slug)
+        )
+        if content_translated:
+            result["content"] = content_translated
             result["content_lang"] = lang
     return result
 
