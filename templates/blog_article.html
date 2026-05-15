@@ -52,9 +52,23 @@
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
 
-    .site-header { background:rgba(13,17,23,.95); border-bottom:1px solid #30363d; padding:14px 0; position:sticky; top:0; z-index:100; }
-    .brand { font-weight:800; font-size:1.15rem; color:#e6edf3; display:flex; align-items:center; gap:8px; }
-    .brand-icon { width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center; }
+    .pub-navbar{background:rgba(13,17,23,.95);border-bottom:1px solid #30363d;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:0;z-index:1000;}
+    .pub-brand{font-weight:800;font-size:1.15rem;color:#e6edf3!important;display:flex;align-items:center;gap:8px;text-decoration:none!important;}
+    .pub-brand-icon{width:30px;height:30px;background:linear-gradient(135deg,#EA4335,#1877F2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .pub-toggler{border:1px solid #30363d!important;background:transparent;color:#8b949e!important;}
+    .pub-toggler:focus{box-shadow:none!important;}
+    .pub-nav-link{color:#8b949e!important;font-size:.9rem;padding:6px 10px!important;border-radius:6px;transition:.15s;}
+    .pub-nav-link:hover{color:#e6edf3!important;background:rgba(255,255,255,.05);}
+    .pub-lang-btn{background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 10px;font-size:.82rem;}
+    .pub-lang-btn:hover,.pub-lang-btn:focus{border-color:#58a6ff;color:#e6edf3;box-shadow:none;}
+    .pub-lang-menu{background:#161b22!important;border:1px solid #30363d!important;}
+    .pub-lang-menu .dropdown-item{color:#8b949e;font-size:.88rem;}
+    .pub-lang-menu .dropdown-item:hover,.pub-lang-menu .dropdown-item:focus{background:rgba(88,166,255,.1)!important;color:#e6edf3;}
+    .pub-nav-pill{border:1px solid #30363d;border-radius:6px;color:#8b949e!important;padding:5px 14px;font-size:.875rem;text-decoration:none!important;transition:.2s;white-space:nowrap;}
+    .pub-nav-pill:hover{border-color:#58a6ff;color:#58a6ff!important;}
+    .pub-nav-cta{background:linear-gradient(135deg,#EA4335,#1877F2);color:#fff!important;border:none;border-radius:6px;padding:5px 16px;font-size:.875rem;font-weight:600;text-decoration:none!important;white-space:nowrap;}
+    .pub-nav-cta:hover{opacity:.88;}
+    @media(max-width:991px){#pubNav{border-top:1px solid #21262d;margin-top:8px;padding:8px 0;}.pub-nav-link{padding:10px 4px!important;border-bottom:1px solid rgba(255,255,255,.04);}}
 
     .article-hero { background:var(--dark2); border-bottom:1px solid #30363d; padding:48px 0 36px; }
     .article-category { font-size:.8rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
@@ -111,35 +125,38 @@
 </head>
 <body>
 
-<header class="site-header">
-  <div class="container d-flex align-items-center justify-content-between gap-2 flex-wrap">
-    <a href="/" class="brand text-decoration-none">
-      <div class="brand-icon"><i class="bi bi-send-fill text-white" style="font-size:.8rem;"></i></div>
+<nav class="navbar navbar-expand-lg pub-navbar">
+  <div class="container">
+    <a href="/" class="navbar-brand pub-brand">
+      <div class="pub-brand-icon"><i class="bi bi-send-fill" style="font-size:.75rem;color:#fff;"></i></div>
       AutoBlogspot
     </a>
-    <nav class="d-flex gap-3 align-items-center flex-wrap">
-      <a href="/#features" class="text-secondary" style="font-size:.9rem;">{{ _("blog_features") }}</a>
-      <a href="/#pricing" class="text-secondary" style="font-size:.9rem;">{{ _("blog_pricing") }}</a>
-      <a href="/blog" class="fw-semibold" style="font-size:.9rem;">Blog</a>
-
-      <!-- Language switcher -->
-      <div class="dropdown">
-        <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-          {{ get_lang()|upper }}
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          {% for code, label in LANGUAGE_LABELS.items() %}
-          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}"
-                 href="/set-lang?lang={{ code }}&next=/blog/{{ article.slug }}">{{ label }}</a></li>
-          {% endfor %}
-        </ul>
+    <button class="navbar-toggler pub-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pubNav" aria-controls="pubNav" aria-expanded="false" aria-label="Menu">
+      <i class="bi bi-list" style="font-size:1.4rem;"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="pubNav">
+      <ul class="navbar-nav me-auto gap-0 gap-lg-1 mt-1 mt-lg-0">
+        <li class="nav-item"><a href="/#features" class="nav-link pub-nav-link">{{ _("land_nav_features") }}</a></li>
+        <li class="nav-item"><a href="/#pricing" class="nav-link pub-nav-link">{{ _("land_nav_pricing") }}</a></li>
+        <li class="nav-item"><a href="/blog" class="nav-link pub-nav-link" style="color:#58a6ff!important;">Blog</a></li>
+        <li class="nav-item"><a href="/faq" class="nav-link pub-nav-link">FAQ</a></li>
+        <li class="nav-item"><a href="/contact" class="nav-link pub-nav-link">{{ _("land_nav_contact") }}</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0 flex-wrap">
+        <div class="dropdown">
+          <button class="pub-lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">{{ get_lang()|upper }}</button>
+          <ul class="dropdown-menu dropdown-menu-end pub-lang-menu">
+            {% for code, label in LANGUAGE_LABELS.items() %}
+            <li><a class="dropdown-item {% if get_lang()==code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/blog/{{ article.slug }}">{{ label }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <a href="/login" class="pub-nav-pill">{{ _("land_nav_login") }}</a>
+        <a href="/register" class="pub-nav-cta">{{ _("land_nav_free_trial") }}</a>
       </div>
-
-      <a href="/login" class="btn btn-sm btn-outline-secondary">{{ _("blog_login") }}</a>
-      <a href="/register" class="btn btn-sm btn-primary">{{ _("blog_try_free") }}</a>
-    </nav>
+    </div>
   </div>
-</header>
+</nav>
 
 <section class="article-hero">
   <div class="container">

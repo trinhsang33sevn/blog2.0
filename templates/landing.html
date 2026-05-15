@@ -97,71 +97,23 @@
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
 
     /* ===== NAVBAR ===== */
-    .navbar {
-      background: rgba(13,17,23,.92);
-      border-bottom: 1px solid #21262d;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .navbar-brand {
-      font-weight: 800;
-      font-size: 1.25rem;
-      color: #e6edf3 !important;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .brand-icon {
-      width: 32px; height: 32px;
-      background: linear-gradient(135deg, var(--g-red), var(--fb-blue), var(--wp-blue));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
-    }
-    .nav-pill {
-      background: transparent;
-      border: 1px solid #30363d;
-      color: #8b949e !important;
-      border-radius: 6px;
-      padding: 5px 14px;
-      font-size: .875rem;
-      transition: all .2s;
-      text-decoration: none;
-    }
-    .nav-pill:hover { border-color: var(--accent); color: var(--accent) !important; }
-    .nav-cta {
-      background: linear-gradient(135deg, #EA4335 0%, #1877F2 50%, #0073AA 100%);
-      color: #fff !important;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 18px;
-      font-size: .875rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: opacity .2s;
-    }
-    .nav-cta:hover { opacity: .88; color: #fff !important; }
-
+    .navbar{background:rgba(13,17,23,.92);border-bottom:1px solid #21262d;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:sticky;top:0;z-index:1000;}
+    .navbar-brand{font-weight:800;font-size:1.2rem;color:#e6edf3!important;display:flex;align-items:center;gap:8px;text-decoration:none;}
+    .brand-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--g-red),var(--fb-blue),var(--wp-blue));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+    .nav-pill{background:transparent;border:1px solid #30363d;color:#8b949e!important;border-radius:6px;padding:5px 14px;font-size:.875rem;transition:all .2s;text-decoration:none;}
+    .nav-pill:hover{border-color:var(--accent);color:var(--accent)!important;}
+    .nav-cta{background:linear-gradient(135deg,#EA4335 0%,#1877F2 50%,#0073AA 100%);color:#fff!important;border:none;border-radius:6px;padding:5px 18px;font-size:.875rem;font-weight:600;text-decoration:none;transition:opacity .2s;white-space:nowrap;}
+    .nav-cta:hover{opacity:.88;color:#fff!important;}
+    .navbar-toggler{border:1px solid #30363d!important;background:transparent;color:#8b949e!important;padding:4px 8px;}
+    .navbar-toggler:focus{box-shadow:none!important;}
     /* ===== LANG SWITCHER ===== */
-    .lang-btn {
-      background: transparent;
-      border: 1px solid #30363d;
-      color: #8b949e;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: .875rem;
-      cursor: pointer;
-      transition: border-color .2s;
-      line-height: 1.4;
-    }
-    .lang-btn:hover { border-color: var(--accent); }
-    .lang-dropdown { background: #161b22 !important; border: 1px solid #30363d !important; }
-    .lang-dropdown .dropdown-item { color: #8b949e !important; font-size: .85rem; }
-    .lang-dropdown .dropdown-item:hover { background: rgba(88,166,255,.1) !important; color: #e6edf3 !important; }
-    .lang-dropdown .dropdown-item.fw-bold { color: var(--accent) !important; }
+    .lang-btn{background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 10px;font-size:.875rem;cursor:pointer;transition:border-color .2s;line-height:1.4;}
+    .lang-btn:hover{border-color:var(--accent);}
+    .lang-dropdown{background:#161b22!important;border:1px solid #30363d!important;}
+    .lang-dropdown .dropdown-item{color:#8b949e!important;font-size:.85rem;}
+    .lang-dropdown .dropdown-item:hover{background:rgba(88,166,255,.1)!important;color:#e6edf3!important;}
+    .lang-dropdown .dropdown-item.fw-bold{color:var(--accent)!important;}
+    @media(max-width:991px){#landingNav{border-top:1px solid #21262d;margin-top:8px;padding:8px 0;}.nav-pill,.nav-cta{width:100%;text-align:center;display:block;}}
 
     /* ===== HERO ===== */
     .hero {
@@ -690,33 +642,36 @@
 <body>
 
 <!-- =============================== NAVBAR =============================== -->
-<nav class="navbar">
-  <div class="container d-flex align-items-center justify-content-between py-2">
+<nav class="navbar navbar-expand-lg">
+  <div class="container py-1">
     <a href="/" class="navbar-brand">
-      <div class="brand-icon"><i class="bi bi-send-fill text-white"></i></div>
+      <div class="brand-icon"><i class="bi bi-send-fill text-white" style="font-size:.85rem;"></i></div>
       AutoBlogspot
     </a>
-    <div class="d-none d-md-flex align-items-center gap-3">
-      <a href="#platforms" class="nav-pill">{{ _("land_nav_platforms") }}</a>
-      <a href="#features" class="nav-pill">{{ _("land_nav_features") }}</a>
-      <a href="#pricing" class="nav-pill">{{ _("land_nav_pricing") }}</a>
-      <a href="#faq" class="nav-pill">FAQ</a>
-      <a href="/blog" class="nav-pill">Blog</a>
-      <a href="/contact" class="nav-pill">{{ _("land_nav_contact") }}</a>
-    </div>
-    <div class="d-flex gap-2 align-items-center">
-      <div class="dropdown">
-        <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">
-          {{ get_lang()|upper }}
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
-          {% for code, label in LANGUAGE_LABELS.items() %}
-          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/?lang={{ code }}">{{ label }}</a></li>
-          {% endfor %}
-        </ul>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="Menu">
+      <i class="bi bi-list" style="font-size:1.4rem;"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="landingNav">
+      <ul class="navbar-nav me-auto gap-0 gap-lg-1 mt-1 mt-lg-0">
+        <li class="nav-item"><a href="#platforms" class="nav-link nav-pill border-0 bg-transparent">{{ _("land_nav_platforms") }}</a></li>
+        <li class="nav-item"><a href="#features" class="nav-link nav-pill border-0 bg-transparent">{{ _("land_nav_features") }}</a></li>
+        <li class="nav-item"><a href="#pricing" class="nav-link nav-pill border-0 bg-transparent">{{ _("land_nav_pricing") }}</a></li>
+        <li class="nav-item"><a href="#faq" class="nav-link nav-pill border-0 bg-transparent">FAQ</a></li>
+        <li class="nav-item"><a href="/blog" class="nav-link nav-pill border-0 bg-transparent">Blog</a></li>
+        <li class="nav-item"><a href="/contact" class="nav-link nav-pill border-0 bg-transparent">{{ _("land_nav_contact") }}</a></li>
+      </ul>
+      <div class="d-flex gap-2 align-items-center mt-2 mt-lg-0 flex-wrap">
+        <div class="dropdown">
+          <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">{{ get_lang()|upper }}</button>
+          <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
+            {% for code, label in LANGUAGE_LABELS.items() %}
+            <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/">{{ label }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <a href="/login" class="nav-pill">{{ _("land_nav_login") }}</a>
+        <a href="/register" class="nav-cta">{{ _("land_nav_free_trial") }}</a>
       </div>
-      <a href="/login" class="nav-pill">{{ _("land_nav_login") }}</a>
-      <a href="/register" class="nav-cta">{{ _("land_nav_free_trial") }}</a>
     </div>
   </div>
 </nav>
