@@ -64,6 +64,34 @@ def _cap_articles_per_day(value: int, user) -> int:
     return min(value, sub.articles_per_day_limit)
 
 
+def _build_site_groups(sites: list) -> list[dict]:
+    """Group sites by Google account or platform account for display."""
+    seen: dict[str, dict] = {}
+    result: list[dict] = []
+    for site in sites:
+        platform = site.platform or "blogspot"
+        if platform == "blogspot":
+            acct = site.account
+            key = f"google_{acct.id}" if acct else "blogspot_other"
+            if key not in seen:
+                label = (acct.name or acct.email) if acct else "Blogspot"
+                sub_label = acct.email if acct and acct.name else ""
+                entry = {"label": label, "sub_label": sub_label, "icon": "blogspot", "sites": []}
+                seen[key] = entry
+                result.append(entry)
+            seen[key]["sites"].append(site)
+        else:
+            acct = site.platform_account
+            key = f"{platform}_{acct.id}" if acct else f"{platform}_other"
+            if key not in seen:
+                label = (acct.name or platform.title()) if acct else platform.title()
+                entry = {"label": label, "sub_label": "", "icon": platform, "sites": []}
+                seen[key] = entry
+                result.append(entry)
+            seen[key]["sites"].append(site)
+    return result
+
+
 @router.get("/projects", response_class=HTMLResponse)
 def projects_page(request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
@@ -81,7 +109,7 @@ def new_project_page(request: Request, db: Session = Depends(get_db)):
     ).all()
     model_groups = _get_available_models(db, current_user.id)
     return templates.TemplateResponse(request, "project_form.html", {
-        "sites": sites, "languages": LANGUAGES,
+        "sites": sites, "site_groups": _build_site_groups(sites), "languages": LANGUAGES,
         "models": FREE_MODELS,
         "model_groups": model_groups,
         "default_model": _get_default_model(model_groups),
@@ -267,7 +295,7 @@ def edit_project_page(project_id: int, request: Request, db: Session = Depends(g
         current_labels = ""
     model_groups = _get_available_models(db, current_user.id)
     return templates.TemplateResponse(request, "project_form.html", {
-        "sites": sites, "languages": LANGUAGES,
+        "sites": sites, "site_groups": _build_site_groups(sites), "languages": LANGUAGES,
         "models": FREE_MODELS,
         "model_groups": model_groups,
         "default_model": _get_default_model(model_groups, project.ai_model),

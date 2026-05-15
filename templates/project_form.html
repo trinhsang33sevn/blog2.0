@@ -151,40 +151,76 @@
     <div class="col-md-5">
       <!-- Sites -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header fw-semibold"><i class="bi bi-globe2 me-1"></i>{{ _("projf_sites") }}</div>
-        <div class="card-body">
-          {% if sites %}
+        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-globe2 me-1"></i>{{ _("projf_sites") }}</span>
+          <span id="siteCountBadge" class="badge bg-secondary" style="font-size:0.7rem;"></span>
+        </div>
+        <div class="card-body pb-2">
+          {% if site_groups %}
           <div class="text-muted small mb-2">Chọn website và ngôn ngữ viết bài cho từng site</div>
-          {% for site in sites %}
-          {% set is_selected = selected_site_ids is defined and site.id in selected_site_ids %}
-          {% set lang_val = site_languages[site.id] if site_languages is defined and site.id in site_languages else site.default_language %}
-          <div class="site-selector mb-3 p-3 border rounded">
-            <div class="form-check mb-2">
-              <input class="form-check-input site-check" type="checkbox" name="site_ids"
-                value="{{ site.id }}" id="site{{ site.id }}"
-                onchange="toggleLang(this)"
-                {{ 'checked' if is_selected }}>
-              <label class="form-check-label fw-semibold" for="site{{ site.id }}">
-                {{ site.blog_name }}
-                {% set plat = site.platform or 'blogspot' %}
-                {% if plat == 'wordpress' %}<span class="badge bg-primary ms-1 small">WP</span>
-                {% elif plat == 'tumblr' %}<span class="badge ms-1 small" style="background:#35465c">Tumblr</span>
-                {% elif plat == 'hashnode' %}<span class="badge bg-warning text-dark ms-1 small">Hashnode</span>
-                {% else %}<span class="badge bg-danger ms-1 small">Blogspot</span>{% endif %}
-                {% if site.category %}<span class="badge bg-secondary ms-1 small">{{ site.category }}</span>{% endif %}
-              </label>
-            </div>
-            <div class="text-muted small mb-2">{{ site.blog_url }}</div>
-            <div class="lang-selector {% if not is_selected %}d-none{% endif %}" id="lang{{ site.id }}">
-              <label class="form-label small fw-semibold mb-1">{{ _("projf_language") }}:</label>
-              <select name="site_languages" class="form-select form-select-sm">
-                {% for code, label in languages %}
-                <option value="{{ code }}" {{ 'selected' if code == lang_val }}>{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="mb-2">
+            <input type="text" id="siteSearch" class="form-control form-control-sm"
+              placeholder="Tìm tên hoặc URL website...">
           </div>
-          {% endfor %}
+          <div id="siteList" style="max-height:440px;overflow-y:auto;padding-right:2px;">
+            {% for group in site_groups %}
+            {% set group_idx = loop.index %}
+            <div class="site-group mb-2">
+              <!-- Group header -->
+              <div class="d-flex align-items-center justify-content-between rounded px-2 py-1 mb-1"
+                   style="background:#f0f2f5;border:1px solid #e0e3e7;">
+                <div class="d-flex align-items-center gap-2">
+                  <input class="form-check-input group-select-all mt-0" type="checkbox"
+                    id="grp{{ group_idx }}" data-group="{{ group_idx }}"
+                    onchange="toggleGroupAll(this)" title="Chọn tất cả trong nhóm">
+                  <label for="grp{{ group_idx }}" class="d-flex align-items-center gap-1 mb-0 fw-semibold small" style="cursor:pointer;">
+                    {% if group.icon == 'wordpress' %}<span class="badge bg-primary" style="font-size:0.62rem;">WP</span>
+                    {% elif group.icon == 'tumblr' %}<span class="badge" style="background:#35465c;font-size:0.62rem;">T</span>
+                    {% elif group.icon == 'hashnode' %}<span class="badge bg-warning text-dark" style="font-size:0.62rem;">H</span>
+                    {% else %}<span class="badge bg-danger" style="font-size:0.62rem;">B</span>{% endif %}
+                    {{ group.label }}
+                    {% if group.sub_label %}<span class="text-muted fw-normal" style="font-size:0.73rem;">({{ group.sub_label }})</span>{% endif %}
+                  </label>
+                </div>
+                <span class="badge bg-secondary" style="font-size:0.62rem;">{{ group.sites|length }} site{% if group.sites|length > 1 %}s{% endif %}</span>
+              </div>
+              <!-- Sites in group -->
+              {% for site in group.sites %}
+              {% set is_selected = selected_site_ids is defined and site.id in selected_site_ids %}
+              {% set lang_val = site_languages[site.id] if site_languages is defined and site.id in site_languages else site.default_language %}
+              <div class="site-item ms-3 mb-1 p-2 border rounded" data-group="{{ group_idx }}"
+                   data-site-name="{{ site.blog_name|lower }} {{ site.blog_url|lower }}">
+                <div class="d-flex align-items-start gap-2">
+                  <input class="form-check-input site-check mt-1 flex-shrink-0" type="checkbox" name="site_ids"
+                    value="{{ site.id }}" id="site{{ site.id }}"
+                    onchange="toggleLang(this); updateGroupCheck({{ group_idx }})"
+                    {{ 'checked' if is_selected }}>
+                  <label class="form-check-label w-100" for="site{{ site.id }}" style="cursor:pointer;">
+                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                      <span class="fw-semibold" style="font-size:0.85rem;">{{ site.blog_name }}</span>
+                      {% set plat = site.platform or 'blogspot' %}
+                      {% if plat == 'wordpress' %}<span class="badge bg-primary" style="font-size:0.6rem;">WP</span>
+                      {% elif plat == 'tumblr' %}<span class="badge" style="background:#35465c;font-size:0.6rem;">Tumblr</span>
+                      {% elif plat == 'hashnode' %}<span class="badge bg-warning text-dark" style="font-size:0.6rem;">Hashnode</span>
+                      {% else %}<span class="badge bg-danger" style="font-size:0.6rem;">Blogspot</span>{% endif %}
+                      {% if site.category %}<span class="badge bg-secondary" style="font-size:0.6rem;">{{ site.category }}</span>{% endif %}
+                    </div>
+                    <div class="text-muted" style="font-size:0.72rem;">{{ site.blog_url }}</div>
+                  </label>
+                </div>
+                <div class="lang-selector mt-1 ps-4 {% if not is_selected %}d-none{% endif %}" id="lang{{ site.id }}">
+                  <label class="form-label small fw-semibold mb-1">{{ _("projf_language") }}:</label>
+                  <select name="site_languages" class="form-select form-select-sm" data-for-site="{{ site.id }}">
+                    {% for code, label in languages %}
+                    <option value="{{ code }}" {{ 'selected' if code == lang_val }}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
           {% else %}
           <div class="text-center text-muted py-3">
             <i class="bi bi-info-circle d-block mb-1"></i>
@@ -260,7 +296,73 @@ function toggleLang(checkbox) {
   } else {
     langDiv.classList.add('d-none');
   }
+  updateSiteCount();
 }
+
+function toggleGroupAll(groupCb) {
+  const g = groupCb.dataset.group;
+  document.querySelectorAll('.site-item[data-group="' + g + '"] .site-check').forEach(function(cb) {
+    if (cb.closest('.site-item').style.display !== 'none') {
+      cb.checked = groupCb.checked;
+      const langDiv = document.getElementById('lang' + cb.value);
+      if (langDiv) {
+        langDiv.classList.toggle('d-none', !groupCb.checked);
+      }
+    }
+  });
+  updateSiteCount();
+}
+
+function updateGroupCheck(g) {
+  const items = Array.from(document.querySelectorAll('.site-item[data-group="' + g + '"]'))
+    .filter(function(el) { return el.style.display !== 'none'; });
+  const cbs = items.map(function(el) { return el.querySelector('.site-check'); });
+  const checked = cbs.filter(function(cb) { return cb && cb.checked; });
+  const grpCb = document.querySelector('.group-select-all[data-group="' + g + '"]');
+  if (!grpCb) return;
+  grpCb.checked = cbs.length > 0 && checked.length === cbs.length;
+  grpCb.indeterminate = checked.length > 0 && checked.length < cbs.length;
+}
+
+function updateSiteCount() {
+  const checked = document.querySelectorAll('.site-check:checked').length;
+  const total = document.querySelectorAll('.site-check').length;
+  const badge = document.getElementById('siteCountBadge');
+  if (badge) badge.textContent = checked + '/' + total;
+}
+
+(function initSiteGroups() {
+  document.querySelectorAll('.group-select-all').forEach(function(grpCb) {
+    updateGroupCheck(grpCb.dataset.group);
+  });
+  updateSiteCount();
+
+  const searchEl = document.getElementById('siteSearch');
+  if (searchEl) {
+    searchEl.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('.site-item').forEach(function(item) {
+        const name = (item.dataset.siteName || '');
+        item.style.display = (!q || name.includes(q)) ? '' : 'none';
+      });
+      document.querySelectorAll('.site-group').forEach(function(grp) {
+        const hasVisible = Array.from(grp.querySelectorAll('.site-item'))
+          .some(function(el) { return el.style.display !== 'none'; });
+        grp.style.display = hasVisible ? '' : 'none';
+      });
+      document.querySelectorAll('.group-select-all').forEach(function(grpCb) {
+        updateGroupCheck(grpCb.dataset.group);
+      });
+    });
+  }
+
+  document.getElementById('projectForm').addEventListener('submit', function() {
+    document.querySelectorAll('select[data-for-site]').forEach(function(sel) {
+      const cb = document.getElementById('site' + sel.dataset.forSite);
+      if (cb && !cb.checked) sel.disabled = true;
+    });
+  });
+})();
 
 let backlinkCount = 0;
 
