@@ -181,6 +181,7 @@ class ProjectSite(Base):
     site_id = Column(Integer, ForeignKey("blogspot_sites.id"), nullable=False)
     language = Column(String(20), default="vi")
     last_published_at = Column(DateTime)
+    next_publish_at   = Column(DateTime)
     articles_today = Column(Integer, default=0)
     last_count_reset = Column(Date)
 

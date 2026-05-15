@@ -452,12 +452,16 @@ def _publish_article(db: Session, project, ps, article) -> None:
     else:
         raise ValueError(f"Platform không được hỗ trợ: {platform}")
 
+    now = datetime.utcnow()
     article.url             = post_data.get("url", "")
     article.blogger_post_id = post_data.get("id", "")
     article.status          = "published"
-    article.published_at    = datetime.utcnow()
+    article.published_at    = now
     ps.articles_today      += 1
-    ps.last_published_at    = datetime.utcnow()
+    ps.last_published_at    = now
+    # Tính thời điểm đăng bài tiếp theo cho CÙNG site này (1 lần, cố định)
+    next_gap = random.randint(project.min_interval_minutes, project.max_interval_minutes)
+    ps.next_publish_at = now + timedelta(minutes=next_gap)
     db.commit()
 
     db.add(IndexTask(
@@ -501,13 +505,9 @@ def publish_ready_articles():
                 if ps.articles_today >= project.articles_per_day:
                     continue
 
-                if ps.last_published_at:
-                    interval_minutes = random.randint(
-                        project.min_interval_minutes,
-                        project.max_interval_minutes,
-                    )
-                    if now < ps.last_published_at + timedelta(minutes=interval_minutes):
-                        continue
+                # Chờ đến next_publish_at của chính site này (per-domain, không ảnh hưởng site khác)
+                if ps.next_publish_at and now < ps.next_publish_at:
+                    continue
 
                 # Ưu tiên bài đã viết sẵn (ready) — tương thích với dữ liệu cũ
                 article = (
