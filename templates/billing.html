@@ -137,47 +137,46 @@
 <div class="row g-3 mb-4">
 
   <!-- Vietnamese Bank Transfer + SePay QR -->
-  <div class="col-md-6">
-    <div class="card shadow-sm border-0 h-100">
-      <div class="card-header fw-semibold border-0 bg-light">
-        <i class="bi bi-bank me-2 text-success"></i>{{ _("bill_payment_title") }}
-        <span class="badge bg-success ms-2 small">{{ _("bill_vn_badge") }}</span>
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold border-0 bg-light d-flex align-items-center gap-2 flex-wrap">
+        <span><i class="bi bi-bank me-2 text-success"></i>{{ _("bill_payment_title") }}</span>
+        <span class="badge bg-success small">{{ _("bill_vn_badge") }}</span>
         {% if sepay_configured %}
-        <span class="badge bg-info ms-1 small">{{ _("bill_auto_activate") }}</span>
+        <span class="badge bg-info small">{{ _("bill_auto_activate") }}</span>
         {% endif %}
       </div>
       <div class="card-body">
         {% if vn_bank_ready %}
 
-        {# ── Tab chọn gói ── #}
-        <ul class="nav nav-pills nav-fill mb-3" id="vnPlanTabs">
-          <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#vnPro">
-              Pro <span class="fw-bold">200.000₫</span>
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#vnBiz">
-              Business <span class="fw-bold">500.000₫</span>
-            </button>
-          </li>
-        </ul>
+        <div class="row g-3">
+          {# ── Cột trái: chọn gói + chọn tháng ── #}
+          <div class="col-md-5">
 
-        <div class="tab-content">
-          {% for plan_key, label in [("pro", "Pro"), ("business", "Business")] %}
-          {% set pd = vn_payment.get(plan_key) %}
-          {% if pd %}
-          <div class="tab-pane fade {% if plan_key == 'pro' %}show active{% endif %}" id="vn{{ plan_key | capitalize }}">
-
-            {# QR code #}
-            <div class="text-center mb-3">
-              <img src="{{ pd.qr_url }}" alt="VietQR {{ label }}"
-                   class="rounded border" style="max-width:180px;height:auto">
-              <div class="text-muted small mt-1">{{ _("bill_scan_qr") }}</div>
+            {# Chọn gói #}
+            <div class="mb-3">
+              <div class="text-muted small fw-semibold mb-2">1. Chọn gói</div>
+              <div class="btn-group w-100" role="group" id="vnPlanBtns">
+                <input type="radio" class="btn-check" name="vnPlan" id="vnPlanPro" value="pro" checked>
+                <label class="btn btn-outline-primary" for="vnPlanPro">Pro</label>
+                <input type="radio" class="btn-check" name="vnPlan" id="vnPlanBiz" value="business">
+                <label class="btn btn-outline-warning" for="vnPlanBiz">Business</label>
+              </div>
             </div>
 
-            {# Bank details #}
-            <div class="bg-light rounded p-3 font-monospace small mb-3">
+            {# Chọn số tháng #}
+            <div class="mb-3">
+              <div class="text-muted small fw-semibold mb-2">2. Chọn thời hạn</div>
+              <div class="btn-group w-100 flex-wrap" role="group" id="vnMonthBtns">
+                {% for m in month_options %}
+                <input type="radio" class="btn-check" name="vnMonths" id="vnM{{ m }}" value="{{ m }}" {% if m == 1 %}checked{% endif %}>
+                <label class="btn btn-outline-secondary" for="vnM{{ m }}">{{ m }} tháng</label>
+                {% endfor %}
+              </div>
+            </div>
+
+            {# Thông tin thanh toán #}
+            <div class="bg-light rounded p-3 font-monospace small">
               <div><strong>{{ _("bill_bank") }}:</strong> {{ payment_config.bank_name }}</div>
               <div><strong>{{ _("bill_account_number") }}:</strong>
                 <span class="user-select-all fw-bold">{{ payment_config.account_number }}</span>
@@ -187,26 +186,30 @@
               {% endif %}
               <div class="mt-2 pt-2 border-top">
                 <strong>{{ _("bill_amount") }}:</strong>
-                <span class="text-danger fw-bold">{{ "{:,.0f}".format(pd.amount) }}₫</span>
+                <span id="vnAmount" class="text-danger fw-bold">—</span>
               </div>
               <div>
                 <strong>{{ _("bill_transfer_note") }}:</strong>
-                <span class="text-primary fw-bold user-select-all">{{ pd.reference }}</span>
+                <span id="vnRef" class="text-primary fw-bold user-select-all">—</span>
               </div>
             </div>
 
             {% if sepay_configured %}
-            <div class="alert alert-success py-2 mb-0 small">
+            <div class="alert alert-success py-2 mt-3 mb-0 small">
               <i class="bi bi-lightning-charge-fill me-1"></i>
               <strong>{{ _("bill_auto_note_title") }}</strong> {{ _("bill_auto_note_body") }}
             </div>
             {% else %}
-            <p class="text-muted small mb-0">{{ _("bill_payment_after") }}</p>
+            <p class="text-muted small mt-2 mb-0">{{ _("bill_payment_after") }}</p>
             {% endif %}
-
           </div>
-          {% endif %}
-          {% endfor %}
+
+          {# ── Cột phải: QR code ── #}
+          <div class="col-md-7 d-flex flex-column align-items-center justify-content-center">
+            <img id="vnQrImg" src="" alt="VietQR"
+                 class="rounded border mb-2" style="max-width:220px;height:auto;min-height:180px">
+            <div class="text-muted small">{{ _("bill_scan_qr") }}</div>
+          </div>
         </div>
 
         {% else %}
@@ -219,19 +222,16 @@
   </div>
 
   <!-- LemonSqueezy International -->
-  <div class="col-md-6">
-    <div class="card shadow-sm border-0 h-100">
+  {% if ls_configured %}
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
       <div class="card-header fw-semibold border-0 bg-light">
         <i class="bi bi-credit-card me-2 text-primary"></i>{{ _("bill_intl_payment_title") }}
         <span class="badge bg-primary ms-2 small">{{ _("bill_intl_badge") }}</span>
       </div>
-      <div class="card-body d-flex flex-column">
-        {% if ls_configured %}
-        <p class="text-muted small mb-3">{{ _("bill_intl_desc") }}</p>
-        <div class="d-flex align-items-center gap-2 mb-3 small text-muted">
-          <i class="bi bi-shield-check text-success"></i>{{ _("bill_intl_powered_by") }}
-        </div>
-        <div class="d-grid gap-2 mt-auto">
+      <div class="card-body">
+        <p class="text-muted small mb-3">{{ _("bill_intl_desc") }} <i class="bi bi-shield-check text-success me-1"></i>{{ _("bill_intl_powered_by") }}</p>
+        <div class="d-flex gap-2 flex-wrap">
           {% if not (sub and sub.plan == 'pro') %}
           <a href="/billing/checkout/pro" class="btn btn-outline-primary">
             <i class="bi bi-arrow-up-circle me-2"></i>Pro — {{ ls_pro_price }}
@@ -243,20 +243,38 @@
           </a>
           {% endif %}
           {% if sub and sub.plan in ('pro', 'business') %}
-          <div class="alert alert-success py-2 mb-0 small text-center">
+          <div class="alert alert-success py-2 mb-0 small">
             <i class="bi bi-check-circle me-1"></i>{{ _("bill_already_on_plan") }} {{ sub.plan | capitalize }}
           </div>
           {% endif %}
         </div>
-        {% else %}
-        <div class="text-center py-4 text-muted flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-          <i class="bi bi-credit-card fs-1 mb-3 opacity-25"></i>
-          <p class="mb-0 small">{{ _("bill_intl_not_configured") }}</p>
-        </div>
-        {% endif %}
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
+
+{% if vn_bank_ready %}
+<script>
+(function () {
+  const DATA = {{ vn_payment_json | safe }};
+  function fmt(n) { return n.toLocaleString('vi-VN') + '₫'; }
+
+  function update() {
+    const plan   = document.querySelector('input[name="vnPlan"]:checked')?.value || 'pro';
+    const months = parseInt(document.querySelector('input[name="vnMonths"]:checked')?.value || '1');
+    const d = DATA[plan]?.[months];
+    if (!d) return;
+    document.getElementById('vnAmount').textContent = fmt(d.amount);
+    document.getElementById('vnRef').textContent    = d.reference;
+    document.getElementById('vnQrImg').src          = d.qr_url;
+  }
+
+  document.querySelectorAll('input[name="vnPlan"], input[name="vnMonths"]')
+    .forEach(el => el.addEventListener('change', update));
+  update();
+})();
+</script>
+{% endif %}
 
 {% endblock %}

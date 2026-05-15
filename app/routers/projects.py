@@ -363,8 +363,9 @@ def delete_project(project_id: int, request: Request, db: Session = Depends(get_
 
 @router.get("/billing", response_class=HTMLResponse)
 def billing_page(request: Request, db: Session = Depends(get_db)):
+    import json as _json
     from ..models import PLAN_LIMITS
-    from ..services.sepay import generate_reference, build_qr_url, expected_amount
+    from ..services.sepay import generate_reference, build_qr_url, expected_amount, MONTH_OPTIONS
     current_user = get_current_user(request, db)
 
     bank_name   = get_setting(db, "payment_bank_name") or ""
@@ -382,16 +383,19 @@ def billing_page(request: Request, db: Session = Depends(get_db)):
     vn_bank_ready    = bool(bank_name and acct_number)
 
     uid = current_user.id
+    # vn_payment[plan][months] = {reference, amount, qr_url}
     vn_payment = {}
     if vn_bank_ready:
         for plan in ("pro", "business"):
-            ref = generate_reference(uid, plan)
-            amt = expected_amount(plan)
-            vn_payment[plan] = {
-                "reference": ref,
-                "amount":    amt,
-                "qr_url":    build_qr_url(acct_number, bank_name, amt, ref) if vn_bank_ready else "",
-            }
+            vn_payment[plan] = {}
+            for months in MONTH_OPTIONS:
+                ref = generate_reference(uid, plan, months)
+                amt = expected_amount(plan, months)
+                vn_payment[plan][months] = {
+                    "reference": ref,
+                    "amount":    amt,
+                    "qr_url":    build_qr_url(acct_number, bank_name, amt, ref),
+                }
 
     ls_configured = bool(
         get_setting(db, "ls_api_key") and
@@ -406,6 +410,8 @@ def billing_page(request: Request, db: Session = Depends(get_db)):
         "payment_config":    payment_config,
         "vn_bank_ready":     vn_bank_ready,
         "vn_payment":        vn_payment,
+        "vn_payment_json":   _json.dumps(vn_payment),
+        "month_options":     MONTH_OPTIONS,
         "sepay_configured":  sepay_configured,
         "ls_configured":     ls_configured,
         "ls_pro_price":      get_setting(db, "ls_pro_price") or "$8/month",
@@ -474,11 +480,11 @@ async def sepay_webhook(request: Request, db: Session = Depends(get_db)):
         logger.info("SePay webhook: unrecognized content=%r", content[:100])
         return Response(status_code=200)
 
-    user_id, plan = parsed
-    required = expected_amount(plan)
+    user_id, plan, months = parsed
+    required = expected_amount(plan, months)
     if transfer_amount < required:
-        logger.warning("SePay webhook: insufficient amount %d < %d for user %d plan %s",
-                       transfer_amount, required, user_id, plan)
+        logger.warning("SePay webhook: insufficient amount %d < %d for user %d plan=%s months=%d",
+                       transfer_amount, required, user_id, plan, months)
         return Response(status_code=200)
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -486,9 +492,9 @@ async def sepay_webhook(request: Request, db: Session = Depends(get_db)):
         logger.warning("SePay webhook: user_id=%d not found", user_id)
         return Response(status_code=200)
 
-    upgrade_plan(db, user.id, plan, months=1)
-    logger.info("SePay webhook: upgraded user %d (%s) to plan=%s amount=%d",
-                user.id, user.email, plan, transfer_amount)
+    upgrade_plan(db, user.id, plan, months=months)
+    logger.info("SePay webhook: upgraded user %d (%s) to plan=%s months=%d amount=%d",
+                user.id, user.email, plan, months, transfer_amount)
     return Response(content='{"success":true}', media_type="application/json")
 
 
