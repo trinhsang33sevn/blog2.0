@@ -57,7 +57,7 @@
     .pub-brand-icon{width:30px;height:30px;background:linear-gradient(135deg,#EA4335,#1877F2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .pub-toggler{border:1px solid #30363d!important;background:transparent;color:#8b949e!important;}
     .pub-toggler:focus{box-shadow:none!important;}
-    .pub-nav-link{color:#8b949e!important;font-size:.9rem;padding:6px 10px!important;border-radius:6px;transition:.15s;}
+    .pub-nav-link{color:#8b949e!important;font-size:1rem;padding:6px 14px!important;border-radius:6px;transition:.15s;font-weight:500;}
     .pub-nav-link:hover{color:#e6edf3!important;background:rgba(255,255,255,.05);}
     .pub-lang-btn{background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 10px;font-size:.82rem;}
     .pub-lang-btn:hover,.pub-lang-btn:focus{border-color:#58a6ff;color:#e6edf3;box-shadow:none;}
@@ -131,9 +131,19 @@
       <div class="pub-brand-icon"><i class="bi bi-send-fill" style="font-size:.75rem;color:#fff;"></i></div>
       AutoBlogspot
     </a>
-    <button class="navbar-toggler pub-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pubNav" aria-controls="pubNav" aria-expanded="false" aria-label="Menu">
-      <i class="bi bi-list" style="font-size:1.4rem;"></i>
-    </button>
+    <div class="d-flex d-lg-none align-items-center gap-2 ms-auto">
+      <div class="dropdown">
+        <button class="pub-lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">{{ get_lang()|upper }}</button>
+        <ul class="dropdown-menu dropdown-menu-end pub-lang-menu">
+          {% for code, label in LANGUAGE_LABELS.items() %}
+          <li><a class="dropdown-item {% if get_lang()==code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/blog/{{ article.slug }}">{{ label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <button class="navbar-toggler pub-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pubNav" aria-controls="pubNav" aria-expanded="false" aria-label="Menu">
+        <i class="bi bi-list" style="font-size:1.4rem;"></i>
+      </button>
+    </div>
     <div class="collapse navbar-collapse" id="pubNav">
       <ul class="navbar-nav me-auto gap-0 gap-lg-1 mt-1 mt-lg-0">
         <li class="nav-item"><a href="/#features" class="nav-link pub-nav-link">{{ _("land_nav_features") }}</a></li>
@@ -142,7 +152,7 @@
         <li class="nav-item"><a href="/faq" class="nav-link pub-nav-link">FAQ</a></li>
         <li class="nav-item"><a href="/contact" class="nav-link pub-nav-link">{{ _("land_nav_contact") }}</a></li>
       </ul>
-      <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0 flex-wrap">
+      <div class="d-none d-lg-flex align-items-center gap-2">
         <div class="dropdown">
           <button class="pub-lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">{{ get_lang()|upper }}</button>
           <ul class="dropdown-menu dropdown-menu-end pub-lang-menu">
@@ -151,6 +161,10 @@
             {% endfor %}
           </ul>
         </div>
+        <a href="/login" class="pub-nav-pill">{{ _("land_nav_login") }}</a>
+        <a href="/register" class="pub-nav-cta">{{ _("land_nav_free_trial") }}</a>
+      </div>
+      <div class="d-flex d-lg-none align-items-center gap-2 mt-2 pb-2 flex-wrap">
         <a href="/login" class="pub-nav-pill">{{ _("land_nav_login") }}</a>
         <a href="/register" class="pub-nav-cta">{{ _("land_nav_free_trial") }}</a>
       </div>
