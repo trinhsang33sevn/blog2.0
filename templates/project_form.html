@@ -242,7 +242,12 @@
           <div id="backlinks-container"></div>
           <input type="hidden" name="backlinks_json" id="backlinks_json"
             value="{{ project.backlinks if project else '[]' }}">
-          <div class="form-text">Backlink sẽ được AI chèn tự nhiên vào nội dung bài viết</div>
+          <div class="form-text">
+            Backlink sẽ được AI chèn tự nhiên vào nội dung bài viết.<br>
+            <span class="text-primary fw-semibold">Spin anchor text:</span>
+            dùng <code>{A|B|C|D}</code> để đa dạng anchor — mỗi bài tự động chọn 1 từ.<br>
+            <span class="text-muted">VD: <code>{ghế công viên|ghế ngoài trời|ghế sân vườn|ghế gỗ đẹp}</code></span>
+          </div>
         </div>
       </div>
     </div>
@@ -379,7 +384,7 @@ function renderBacklinks(data) {
       <div class="row g-2 align-items-end">
         <div class="col-5">
           <input type="text" class="form-control form-control-sm bl-anchor"
-            placeholder="{{ _("projf_anchor") }}" value="${bl.anchor || ''}" oninput="updateBacklinks()">
+            placeholder="Anchor hoặc {A|B|C}" value="${bl.anchor || ''}" oninput="updateBacklinks()">
         </div>
         <div class="col-6">
           <input type="url" class="form-control form-control-sm bl-url"
@@ -404,7 +409,7 @@ function addBacklink() {
   div.innerHTML = `
     <div class="row g-2 align-items-end">
       <div class="col-5">
-        <input type="text" class="form-control form-control-sm bl-anchor" placeholder="{{ _("projf_anchor") }}" oninput="updateBacklinks()">
+        <input type="text" class="form-control form-control-sm bl-anchor" placeholder="Anchor hoặc {A|B|C}" oninput="updateBacklinks()">
       </div>
       <div class="col-6">
         <input type="url" class="form-control form-control-sm bl-url" placeholder="https://example.com" oninput="updateBacklinks()">

@@ -19,6 +19,16 @@ logger = logging.getLogger(__name__)
 
 _scheduler: BackgroundScheduler = None
 
+
+def _spin(text: str) -> str:
+    """Resolve {A|B|C} spin syntax — randomly picks one option per group."""
+    import re
+    return re.sub(
+        r'\{([^{}]+)\}',
+        lambda m: random.choice([o.strip() for o in m.group(1).split("|")]),
+        text,
+    )
+
 # ─── Writing Constants ────────────────────────────────────────────────────────
 
 MAX_WRITE_RETRIES = 3        # số lần retry tối đa cho bài failed
@@ -144,7 +154,10 @@ def _write_single_article(db: Session, article: Article) -> None:
         if a.id != article.id and a.title
     ]
     keywords = [kw.keyword for kw in cluster.keywords]
-    backlinks = json.loads(project.backlinks or "[]")
+    backlinks = [
+        {**bl, "anchor": _spin(bl["anchor"])} if bl.get("anchor") else bl
+        for bl in json.loads(project.backlinks or "[]")
+    ]
 
     published_on_site = (
         db.query(Article)
@@ -833,7 +846,10 @@ def _rewrite_article_for_task(db: Session, task: IndexTask):
             return
 
         keywords = [kw.keyword for kw in article.cluster.keywords]
-        backlinks = json.loads(article.project.backlinks or "[]")
+        backlinks = [
+            {**bl, "anchor": _spin(bl["anchor"])} if bl.get("anchor") else bl
+            for bl in json.loads(article.project.backlinks or "[]")
+        ]
 
         result = openrouter.rewrite_article(
             db=db,
