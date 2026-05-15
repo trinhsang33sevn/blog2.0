@@ -36,9 +36,9 @@
     "url": "https://autoblogspot.com",
     "description": "Phần mềm AI tự động viết bài chuẩn SEO và đăng lên 5 nền tảng blog: Blogspot, WordPress.com, WordPress self-hosted, Tumblr, Hashnode.",
     "offers": [
-      {"@type": "Offer", "name": "Free Trial", "price": "0", "priceCurrency": "VND", "description": "3 ngày dùng thử miễn phí"},
-      {"@type": "Offer", "name": "Pro", "price": "200000", "priceCurrency": "VND"},
-      {"@type": "Offer", "name": "Business", "price": "500000", "priceCurrency": "VND"}
+      {"@type": "Offer", "name": "Free Trial", "price": "0", "priceCurrency": "{% if get_lang() == 'vi' %}VND{% else %}USD{% endif %}", "description": "3 ngày dùng thử miễn phí"},
+      {"@type": "Offer", "name": "Pro", "price": "{% if get_lang() == 'vi' %}200000{% else %}8{% endif %}", "priceCurrency": "{% if get_lang() == 'vi' %}VND{% else %}USD{% endif %}"},
+      {"@type": "Offer", "name": "Business", "price": "{% if get_lang() == 'vi' %}500000{% else %}20{% endif %}", "priceCurrency": "{% if get_lang() == 'vi' %}VND{% else %}USD{% endif %}"}
     ],
     "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"}
   }
@@ -1428,7 +1428,7 @@
           <div class="plan-header">
             <div class="plan-badge-top">{{ _("land_plan_pro_badge") }}</div>
             <div class="plan-name">Pro</div>
-            <div class="plan-price-big">200.000₫<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
+            <div class="plan-price-big">{% if get_lang() == 'vi' %}200.000₫{% else %}$8{% endif %}<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
             <div class="plan-desc">{{ _("land_plan_pro_desc") }}</div>
           </div>
           <div class="plan-body">
@@ -1450,7 +1450,7 @@
           <div class="plan-header">
             <div class="plan-badge-top gold">{{ _("land_plan_biz_badge") }}</div>
             <div class="plan-name">Business</div>
-            <div class="plan-price-big">500.000₫<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
+            <div class="plan-price-big">{% if get_lang() == 'vi' %}500.000₫{% else %}$20{% endif %}<span class="plan-period">/{{ _("bill_per_month") }}</span></div>
             <div class="plan-desc">{{ _("land_plan_biz_desc") }}</div>
           </div>
           <div class="plan-body">

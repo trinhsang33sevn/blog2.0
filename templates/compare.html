@@ -90,7 +90,13 @@
         <tbody>
           <tr>
             <td><div class="feature-name">Giá khởi điểm</div><div class="feature-sub">mỗi tháng</div></td>
-            <td class="highlight text-center"><span class="win">200.000đ</span><br><small class="text-muted">~8 USD</small></td>
+            <td class="highlight text-center">
+              {% if get_lang() == 'vi' %}
+              <span class="win">200.000đ</span><br><small class="text-muted">~$8 USD</small>
+              {% else %}
+              <span class="win">$8</span><br><small class="text-muted">~200.000₫ VND</small>
+              {% endif %}
+            </td>
             <td class="text-center">$9/tháng</td>
             <td class="text-center">$39/tháng</td>
             <td class="text-center">$36/tháng</td>
@@ -187,8 +193,13 @@
         </div>
         <div class="col-md-6 col-lg-4">
           <div class="card-why">
+            {% if get_lang() == 'vi' %}
             <h3><i class="bi bi-currency-exchange me-2"></i>Giá Việt Nam</h3>
             <p>Chỉ từ 200.000đ/tháng — rẻ hơn 5–10 lần so với các công cụ nước ngoài. Thanh toán bằng chuyển khoản ngân hàng, không cần thẻ Visa quốc tế.</p>
+            {% else %}
+            <h3><i class="bi bi-currency-exchange me-2"></i>Affordable Pricing</h3>
+            <p>Starting at just $8/month — 5–10× cheaper than competing tools. Pay with international card via secure checkout. No hidden fees.</p>
+            {% endif %}
           </div>
         </div>
         <div class="col-md-6 col-lg-4">

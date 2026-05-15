@@ -91,7 +91,7 @@
       <div class="card-header bg-primary text-white fw-semibold border-0">{{ _("bill_most_popular") }}</div>
       <div class="card-body">
         <h5 class="fw-bold">Pro</h5>
-        <div class="display-6 fw-bold mb-1">200.000₫</div>
+        <div class="display-6 fw-bold mb-1">{% if get_lang() == 'vi' %}200.000₫{% else %}$8{% endif %}</div>
         <div class="text-muted small mb-3">{{ _("bill_per_month") }}</div>
         <ul class="list-unstyled">
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.projects }} dự án</li>
@@ -112,7 +112,7 @@
       <div class="card-header bg-warning text-dark fw-semibold border-0">{{ _("bill_unlimited") }}</div>
       <div class="card-body">
         <h5 class="fw-bold">Business</h5>
-        <div class="display-6 fw-bold mb-1">500.000₫</div>
+        <div class="display-6 fw-bold mb-1">{% if get_lang() == 'vi' %}500.000₫{% else %}$20{% endif %}</div>
         <div class="text-muted small mb-3">{{ _("bill_per_month") }}</div>
         <ul class="list-unstyled">
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_unlimited_projects") }}</li>
