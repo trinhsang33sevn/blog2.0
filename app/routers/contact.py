@@ -6,7 +6,7 @@ from ..services.email_service import send_contact_email
 
 logger = logging.getLogger("autoblogspot.contact")
 
-ADMIN_EMAIL = "hoangvandonglx@gmail.com"
+ADMIN_EMAIL = "info@autoblogspot.com"
 
 router = APIRouter()
 

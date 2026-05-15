@@ -88,7 +88,7 @@
             <div class="info-icon" style="background:rgba(79,70,229,.15);color:#818cf8;"><i class="bi bi-envelope-fill"></i></div>
             <div>
               <div style="font-size:.8rem;color:#8b949e;font-weight:600;margin-bottom:3px;">EMAIL</div>
-              <a href="mailto:hoangvandonglx@gmail.com" style="color:#e6edf3;font-size:.9rem;text-decoration:none;">hoangvandonglx@gmail.com</a>
+              <a href="mailto:info@autoblogspot.com" style="color:#e6edf3;font-size:.9rem;text-decoration:none;">info@autoblogspot.com</a>
             </div>
           </div>
 
@@ -110,7 +110,7 @@
             </div>
           </div>
 
-          <div class="info-item mb-0">
+          <div class="info-item">
             <div class="info-icon" style="background:rgba(88,166,255,.15);color:#58a6ff;"><i class="bi bi-globe2"></i></div>
             <div>
               <div style="font-size:.8rem;color:#8b949e;font-weight:600;margin-bottom:3px;">WEBSITE</div>
@@ -118,15 +118,29 @@
             </div>
           </div>
 
-          {% if TELEGRAM_USERNAME %}
+          <div class="info-item mb-0">
+            <div class="info-icon" style="background:rgba(24,119,242,.15);color:#1877f2;"><i class="bi bi-facebook"></i></div>
+            <div>
+              <div style="font-size:.8rem;color:#8b949e;font-weight:600;margin-bottom:3px;">FACEBOOK</div>
+              <a href="https://www.facebook.com/autoblogspot" target="_blank" rel="noopener" style="color:#e6edf3;font-size:.9rem;text-decoration:none;">facebook.com/autoblogspot</a>
+            </div>
+          </div>
+
           <div style="margin-top:28px;padding-top:20px;border-top:1px solid #30363d;">
             <p style="font-size:.8rem;color:#8b949e;margin-bottom:12px;font-weight:600;">{{ _("contact_follow_label") }}</p>
-            <a href="https://t.me/{{ TELEGRAM_USERNAME }}" target="_blank" rel="noopener"
-               style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,136,204,.15);border:1px solid rgba(0,136,204,.3);color:#0088cc;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:600;">
-              <i class="bi bi-telegram"></i>Telegram
-            </a>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a href="https://www.facebook.com/autoblogspot" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:6px;background:rgba(24,119,242,.15);border:1px solid rgba(24,119,242,.3);color:#1877f2;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:600;">
+                <i class="bi bi-facebook"></i>Facebook
+              </a>
+              {% if TELEGRAM_USERNAME %}
+              <a href="https://t.me/{{ TELEGRAM_USERNAME }}" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,136,204,.15);border:1px solid rgba(0,136,204,.3);color:#0088cc;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:600;">
+                <i class="bi bi-telegram"></i>Telegram
+              </a>
+              {% endif %}
+            </div>
           </div>
-          {% endif %}
         </div>
       </div>
 
