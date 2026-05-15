@@ -86,7 +86,7 @@
           {% endif %}
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">
-              {% if get_lang() == 'vi' %}🇻🇳{% elif get_lang() == 'en' %}🇬🇧{% elif get_lang() == 'fr' %}🇫🇷{% elif get_lang() == 'it' %}🇮🇹{% endif %}
+              {{ get_lang()|upper }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
               {% for code, label in LANGUAGE_LABELS.items() %}

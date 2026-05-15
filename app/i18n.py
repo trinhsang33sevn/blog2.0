@@ -12,7 +12,7 @@ _current_lang: ContextVar[str] = ContextVar("current_lang", default=DEFAULT_LANG
 
 LANGUAGE_LABELS = {
     "vi": "🇻🇳 Tiếng Việt",
-    "en": "🇬🇧 English",
+    "en": "🇺🇸 English",
     "fr": "🇫🇷 Français",
     "it": "🇮🇹 Italiano",
 }

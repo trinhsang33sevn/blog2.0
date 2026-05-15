@@ -89,7 +89,6 @@
       <!-- Language switcher -->
       <div class="dropdown">
         <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-          {% if get_lang() == 'vi' %}🇻🇳{% elif get_lang() == 'en' %}🇬🇧{% elif get_lang() == 'fr' %}🇫🇷{% elif get_lang() == 'it' %}🇮🇹{% endif %}
           {{ get_lang()|upper }}
         </button>
         <ul class="dropdown-menu dropdown-menu-end">

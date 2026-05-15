@@ -707,7 +707,7 @@
     <div class="d-flex gap-2 align-items-center">
       <div class="dropdown">
         <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">
-          {% if get_lang() == 'vi' %}🇻🇳{% elif get_lang() == 'en' %}🇬🇧{% elif get_lang() == 'fr' %}🇫🇷{% elif get_lang() == 'it' %}🇮🇹{% endif %}
+          {{ get_lang()|upper }}
         </button>
         <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
           {% for code, label in LANGUAGE_LABELS.items() %}
