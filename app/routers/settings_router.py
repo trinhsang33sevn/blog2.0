@@ -78,6 +78,7 @@ def save_settings(
     claude_api_key:          str = Form(""),
     openai_api_key:          str = Form(""),
     groq_api_key:            str = Form(""),
+    active_tab:              str = Form("ai"),
     db: Session = Depends(get_db),
 ):
     current_user = get_current_user(request, db)
@@ -103,7 +104,8 @@ def save_settings(
         ("groq_api_key",          groq_api_key.strip()),
     ]:
         set_setting(db, key, val, user_id=uid)
-    return RedirectResponse("/settings?success=Da+luu+cai+dat", status_code=303)
+    tab = active_tab.strip() or "ai"
+    return RedirectResponse(f"/settings?success=Da+luu+cai+dat&tab={tab}", status_code=303)
 
 
 @router.post("/settings/refresh-models")

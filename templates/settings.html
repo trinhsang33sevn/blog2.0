@@ -63,6 +63,7 @@
 </ul>
 
 <form method="post" action="/settings" id="settingsForm">
+<input type="hidden" name="active_tab" id="active_tab" value="ai">
 <div class="tab-content border border-top-0 rounded-bottom p-4 bg-white shadow-sm">
 
   <!-- ═══════════════════ TAB AI MODELS ═══════════════════ -->
@@ -632,14 +633,20 @@
 {% endblock %}
 {% block scripts %}
 <script>
-// Khôi phục tab đang active từ URL hash hoặc query param
+// Khôi phục tab đang active từ URL query param, sau đó sync hidden input
 (function(){
   const params = new URLSearchParams(location.search);
   const tab = params.get('tab');
   if (tab) {
     const el = document.querySelector(`[href="#tab-${tab}"]`);
     if (el) bootstrap.Tab.getOrCreateInstance(el).show();
+    document.getElementById('active_tab').value = tab;
   }
+  // Cập nhật hidden input mỗi khi user đổi tab
+  document.getElementById('settingsTabs').addEventListener('shown.bs.tab', function(e) {
+    const tabId = e.target.getAttribute('href').replace('#tab-', '');
+    document.getElementById('active_tab').value = tabId;
+  });
 })();
 
 function refreshModels() {

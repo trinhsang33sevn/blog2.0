@@ -195,7 +195,10 @@ def update_site(
     site.default_language = default_language
     site.is_active        = is_active == "on"
     db.commit()
-    return RedirectResponse("/accounts?success=Site+updated", status_code=303)
+    platform = site.platform or "blogspot"
+    tab = {"wordpress": "wordpress", "tumblr": "tumblr", "hashnode": "hashnode",
+           "wordpress_selfhosted": "wpselfhosted"}.get(platform, "blogspot")
+    return RedirectResponse(f"/accounts?success=Site+updated&tab={tab}", status_code=303)
 
 
 # ─── WordPress.com ────────────────────────────────────────────────────────────
@@ -492,8 +495,11 @@ def delete_platform_account(account_id: int, request: Request, db: Session = Dep
     pa = db.query(PlatformAccount).filter(
         PlatformAccount.id == account_id, PlatformAccount.user_id == current_user.id
     ).first()
+    tab = "blogspot"
     if pa:
+        tab = {"wordpress": "wordpress", "tumblr": "tumblr", "hashnode": "hashnode",
+               "wordpress_selfhosted": "wpselfhosted"}.get(pa.platform or "", "blogspot")
         db.query(BlogspotSite).filter(BlogspotSite.platform_account_id == account_id).delete()
         db.delete(pa)
         db.commit()
-    return RedirectResponse("/accounts?success=Account+deleted", status_code=303)
+    return RedirectResponse(f"/accounts?success=Account+deleted&tab={tab}", status_code=303)
