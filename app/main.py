@@ -134,7 +134,7 @@ app.add_middleware(
     secret_key=settings.SECRET_KEY,
     session_cookie="abs_session",
     https_only=not settings.DEBUG,
-    same_site="strict",
+    same_site="lax",
 )
 
 
