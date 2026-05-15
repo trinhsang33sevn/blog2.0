@@ -327,6 +327,40 @@
         </div>
       </div>
 
+      <!-- imgbb — permanent image hosting -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#1e90ff;">
+                <i class="bi bi-cloud-arrow-up text-white"></i>
+              </div>
+              <div>
+                <div class="fw-bold">{{ _("sett_imgbb_name") }} <span class="badge bg-danger ms-1" style="font-size:0.65rem;">{{ _("sett_imgbb_required") }}</span></div>
+                <div class="text-muted small">{{ _("sett_imgbb_desc") }}</div>
+              </div>
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="password" name="imgbb_api_key" class="form-control"
+                value="{{ imgbb_api_key }}" placeholder="imgbb API Key">
+              <button class="btn btn-outline-secondary" type="button" onclick="togglePwd(this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text mb-3">{{ _("sett_imgbb_guide") }} <a href="https://api.imgbb.com/" target="_blank">api.imgbb.com</a></div>
+            {% if not imgbb_api_key %}
+            <div class="alert alert-warning small mb-0 py-2">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              {{ _("sett_imgbb_warning") }}
+            </div>
+            {% else %}
+            <div class="alert alert-success small mb-0 py-2">
+              <i class="bi bi-check-circle me-1"></i>
+              {{ _("sett_imgbb_active") }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 

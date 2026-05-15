@@ -249,12 +249,14 @@ def _write_single_article(db: Session, article: Article) -> None:
 
     # Chèn ảnh vào bài viết (HTTP call, không cần DB lock)
     pixabay_key = openrouter.get_setting(db, "pixabay_api_key", user_id=user_id)
+    imgbb_key   = openrouter.get_setting(db, "imgbb_api_key",   user_id=user_id)
     final_content = image_service.insert_images_into_content(
         content=processed,
         title=title,
         image_prompt=result.get("image_prompt", ""),
         image_queries=result.get("image_queries", []),
         pixabay_api_key=pixabay_key,
+        imgbb_api_key=imgbb_key,
     )
 
     # ── Ghi kết quả vào DB — write lock ngắn ─────────────────────────────────
