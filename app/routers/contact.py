@@ -1,4 +1,5 @@
 import logging
+import os
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse
 from ..templates import templates
@@ -6,7 +7,7 @@ from ..services.email_service import send_contact_email
 
 logger = logging.getLogger("autoblogspot.contact")
 
-ADMIN_EMAIL = "info@autoblogspot.com"
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "info@autoblogspot.com")
 
 router = APIRouter()
 
