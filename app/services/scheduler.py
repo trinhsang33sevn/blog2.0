@@ -9,6 +9,7 @@ import psutil
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
@@ -18,6 +19,22 @@ from . import openrouter, blogger, wordpress, tumblr, hashnode, sinbyte, index_c
 logger = logging.getLogger(__name__)
 
 _scheduler: BackgroundScheduler = None
+
+# ─── PostgreSQL Advisory Locks ────────────────────────────────────────────────
+# Prevents multiple gunicorn workers from running the same scheduler job simultaneously.
+_LOCK_CLUSTER_KW        = 20260001
+_LOCK_PUBLISH_ARTICLES  = 20260002
+
+
+def _try_advisory_lock(db: Session, lock_id: int) -> bool:
+    return bool(db.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": lock_id}).scalar())
+
+
+def _release_advisory_lock(db: Session, lock_id: int) -> None:
+    try:
+        db.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_id})
+    except Exception:
+        pass
 
 
 def _spin(text: str) -> str:
@@ -493,7 +510,12 @@ def publish_ready_articles():
     Khi tới giờ đăng: viết bài → đăng ngay. Nếu viết lỗi → thử lại lần sau.
     """
     db = get_db()
+    lock_acquired = False
     try:
+        lock_acquired = _try_advisory_lock(db, _LOCK_PUBLISH_ARTICLES)
+        if not lock_acquired:
+            logger.debug("publish_ready_articles: skipped (another worker running)")
+            return
         reset_daily_counts(db)
         _recover_stuck_articles(db)
         now = datetime.utcnow()
@@ -580,6 +602,8 @@ def publish_ready_articles():
                     db.commit()
 
     finally:
+        if lock_acquired:
+            _release_advisory_lock(db, _LOCK_PUBLISH_ARTICLES)
         db.close()
 
 
@@ -588,7 +612,12 @@ def publish_ready_articles():
 def process_keyword_clustering():
     """Cluster keywords for projects that have pending keywords."""
     db = get_db()
+    lock_acquired = False
     try:
+        lock_acquired = _try_advisory_lock(db, _LOCK_CLUSTER_KW)
+        if not lock_acquired:
+            logger.debug("process_keyword_clustering: skipped (another worker running)")
+            return
         from ..models import Keyword
         projects_with_pending = (
             db.query(Project)
@@ -646,6 +675,8 @@ def process_keyword_clustering():
                 logger.error(f"Error clustering keywords for project {project.id}: {e}")
 
     finally:
+        if lock_acquired:
+            _release_advisory_lock(db, _LOCK_CLUSTER_KW)
         db.close()
 
 
