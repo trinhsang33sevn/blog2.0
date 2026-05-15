@@ -64,6 +64,14 @@ LANGUAGE_NAMES = {
     "es": "Spanish",
 }
 
+# Model dạng "thinking/reasoning" — xuất chuỗi suy luận thay vì JSON thuần.
+# Bị bỏ qua hoàn toàn khi json_mode=True (clustering, v.v.)
+_THINKING_MODELS = {
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "liquid/lfm-2.5-1.2b-thinking:free",
+}
+
 # Lỗi cho biết model quá tải / không khả dụng → chuyển sang model khác
 _FALLBACK_STATUS_CODES = {429, 500, 502, 503, 504, 524, 529}
 _FALLBACK_ERROR_KEYWORDS = [
@@ -239,7 +247,7 @@ def _is_fallback_error(exc: Exception) -> bool:
     return any(kw in msg for kw in _FALLBACK_ERROR_KEYWORDS)
 
 
-def call_openrouter(api_key: str, model: str, messages: list, max_tokens: int = 4000) -> str:
+def call_openrouter(api_key: str, model: str, messages: list, max_tokens: int = 4000, json_mode: bool = False) -> str:
     """Gọi một model cụ thể. Raise exception nếu lỗi."""
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -253,6 +261,9 @@ def call_openrouter(api_key: str, model: str, messages: list, max_tokens: int = 
         "max_tokens": max_tokens,
         "temperature": 0.8,
     }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+        payload["include_reasoning"] = False
     with httpx.Client(timeout=120) as client:
         resp = client.post(f"{OPENROUTER_BASE_URL}/chat/completions", headers=headers, json=payload)
         resp.raise_for_status()
@@ -276,6 +287,7 @@ def smart_call(
     messages: list,
     max_tokens: int = 4000,
     user_id: int = None,
+    json_mode: bool = False,
 ) -> tuple[str, str]:
     """
     Route AI call đến đúng provider dựa vào prefix model:
@@ -322,7 +334,7 @@ def smart_call(
     or_model = preferred_model
     if preferred_model and ":" in preferred_model and not preferred_model.startswith("http"):
         or_model = get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
-    return call_with_fallback(db, or_key, or_model, messages, max_tokens)
+    return call_with_fallback(db, or_key, or_model, messages, max_tokens, json_mode=json_mode)
 
 
 def call_with_fallback(
@@ -331,6 +343,7 @@ def call_with_fallback(
     preferred_model: str,
     messages: list,
     max_tokens: int = 4000,
+    json_mode: bool = False,
 ) -> tuple[str, str]:
     """
     Gọi AI với circuit breaker + auto-fallback 2 phase:
@@ -350,8 +363,14 @@ def call_with_fallback(
         preferred_model = all_fallback_ids[0] if all_fallback_ids else DEFAULT_OR_MODEL
         all_fallback_ids = [m for m in all_fallback_ids if m != preferred_model]
 
-    # Partition once — each model checked exactly once, preserving order
+    # Khi json_mode=True, loại bỏ thinking model — chúng xuất reasoning text, không phải JSON
     full_order = [preferred_model] + all_fallback_ids
+    if json_mode:
+        skipped = [m for m in full_order if m in _THINKING_MODELS]
+        full_order = [m for m in full_order if m not in _THINKING_MODELS]
+        if skipped:
+            logger.info(f"[json_mode] Bỏ qua thinking models: {skipped}")
+
     phase1, phase2 = [], []
     for m in full_order:
         (phase1 if _model_is_available(m) else phase2).append(m)
@@ -375,7 +394,7 @@ def call_with_fallback(
             )
         for model_id in candidates:
             try:
-                content = call_openrouter(api_key, model_id, messages, max_tokens)
+                content = call_openrouter(api_key, model_id, messages, max_tokens, json_mode=json_mode)
                 _on_model_success(model_id)
                 if model_id != preferred_model:
                     logger.warning(f"[fallback] {preferred_model} → {model_id}")
@@ -729,6 +748,7 @@ Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
   }}
 ]"""
 
+    system_msg = {"role": "system", "content": "You are a JSON API. Output ONLY valid JSON. No explanation, no thinking text, no markdown. Start with [ and end with ]."}
     retry_prompt = (
         "Output ONLY the raw JSON array below. "
         "No explanation, no thinking, no markdown. Start your response with [ and end with ].\n\n"
@@ -741,9 +761,10 @@ Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
             use_prompt = retry_prompt if attempt > 0 else prompt
             content, used_model = smart_call(
                 db, preferred,
-                [{"role": "user", "content": use_prompt}],
+                [system_msg, {"role": "user", "content": use_prompt}],
                 max_tokens=3000,
                 user_id=user_id,
+                json_mode=True,
             )
             logger.info(f"cluster_batch ({len(keywords)} kws) used model: {used_model} attempt={attempt + 1}")
             return _extract_json(content)

@@ -950,6 +950,38 @@ def _rewrite_article_for_task(db: Session, task: IndexTask):
         logger.error(f"Error rewriting article for task {task.id}: {e}")
 
 
+# ─── Auto-refresh free model list ────────────────────────────────────────────
+
+def refresh_openrouter_models_for_all_users():
+    """Cập nhật danh sách free models từ OpenRouter API cho tất cả user có API key."""
+    db: Session = SessionLocal()
+    try:
+        rows = db.execute(text(
+            "SELECT DISTINCT REPLACE(key, '_openrouter_api_key', '') "
+            "FROM app_settings WHERE key LIKE '%openrouter_api_key' AND value != ''"
+        )).fetchall()
+
+        refreshed = 0
+        for (key_prefix,) in rows:
+            try:
+                user_id = int(key_prefix.lstrip("u")) if key_prefix.startswith("u") else None
+                api_key = openrouter.get_setting(db, "openrouter_api_key", user_id=user_id)
+                if not api_key:
+                    continue
+                models = openrouter.fetch_free_models_from_api(api_key)
+                openrouter.set_setting(db, "cached_free_models", json.dumps(models), user_id=user_id)
+                refreshed += 1
+                logger.info(f"Auto-refreshed {len(models)} free models (user_id={user_id})")
+            except Exception as e:
+                logger.warning(f"refresh_openrouter_models failed for prefix '{key_prefix}': {e}")
+        if refreshed == 0:
+            logger.info("refresh_openrouter_models: không có user nào có OpenRouter API key")
+    except Exception as e:
+        logger.error(f"refresh_openrouter_models error: {e}")
+    finally:
+        db.close()
+
+
 # ─── Scheduler Init ───────────────────────────────────────────────────────────
 
 def start_scheduler():
@@ -973,6 +1005,9 @@ def start_scheduler():
 
     # System health check every 30 minutes — sends email alert if thresholds exceeded
     _scheduler.add_job(check_system_health, IntervalTrigger(minutes=30), id="health_check", replace_existing=True)
+
+    # Cập nhật danh sách free models từ OpenRouter mỗi 24 giờ
+    _scheduler.add_job(refresh_openrouter_models_for_all_users, IntervalTrigger(hours=24), id="refresh_or_models", replace_existing=True)
 
     _scheduler.start()
     logger.info("Scheduler started")
