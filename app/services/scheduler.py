@@ -20,19 +20,30 @@ logger = logging.getLogger(__name__)
 
 _scheduler: BackgroundScheduler = None
 
-# ─── PostgreSQL Advisory Locks ────────────────────────────────────────────────
-# Prevents multiple gunicorn workers from running the same scheduler job simultaneously.
-_LOCK_CLUSTER_KW        = 20260001
-_LOCK_PUBLISH_ARTICLES  = 20260002
+# ─── PostgreSQL Advisory Locks (per-project) ─────────────────────────────────
+# Lock namespace — pg_try_advisory_lock(class, id) uses two int4 values.
+# class=1 → clustering jobs, class=2 → publishing jobs
+# Each project gets its own lock so different users' projects run in parallel.
+
+_LOCK_CLASS_CLUSTER  = 1
+_LOCK_CLASS_PUBLISH  = 2
 
 
-def _try_advisory_lock(db: Session, lock_id: int) -> bool:
-    return bool(db.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": lock_id}).scalar())
+def _try_project_lock(db: Session, lock_class: int, project_id: int) -> bool:
+    return bool(
+        db.execute(
+            text("SELECT pg_try_advisory_lock(:c, :p)"),
+            {"c": lock_class, "p": project_id},
+        ).scalar()
+    )
 
 
-def _release_advisory_lock(db: Session, lock_id: int) -> None:
+def _release_project_lock(db: Session, lock_class: int, project_id: int) -> None:
     try:
-        db.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_id})
+        db.execute(
+            text("SELECT pg_advisory_unlock(:c, :p)"),
+            {"c": lock_class, "p": project_id},
+        )
     except Exception:
         pass
 
@@ -508,14 +519,10 @@ def publish_ready_articles():
     """
     Viết và đăng bài theo lịch (just-in-time).
     Khi tới giờ đăng: viết bài → đăng ngay. Nếu viết lỗi → thử lại lần sau.
+    Per-project advisory lock: nhiều user chạy song song, không ai block ai.
     """
     db = get_db()
-    lock_acquired = False
     try:
-        lock_acquired = _try_advisory_lock(db, _LOCK_PUBLISH_ARTICLES)
-        if not lock_acquired:
-            logger.debug("publish_ready_articles: skipped (another worker running)")
-            return
         reset_daily_counts(db)
         _recover_stuck_articles(db)
         now = datetime.utcnow()
@@ -523,102 +530,95 @@ def publish_ready_articles():
         running_projects = db.query(Project).filter(Project.status == "running").all()
 
         for project in running_projects:
-            for ps in project.project_sites:
-                if ps.articles_today >= project.articles_per_day:
-                    continue
+            if not _try_project_lock(db, _LOCK_CLASS_PUBLISH, project.id):
+                continue  # worker khác đang xử lý project này
+            try:
+                for ps in project.project_sites:
+                    if ps.articles_today >= project.articles_per_day:
+                        continue
 
-                # Chờ đến next_publish_at của chính site này (per-domain, không ảnh hưởng site khác)
-                if ps.next_publish_at and now < ps.next_publish_at:
-                    continue
+                    if ps.next_publish_at and now < ps.next_publish_at:
+                        continue
 
-                # Ưu tiên bài đã viết sẵn (ready) — tương thích với dữ liệu cũ
-                article = (
-                    db.query(Article)
-                    .filter(
-                        Article.site_id == ps.site_id,
-                        Article.project_id == project.id,
-                        Article.status == "ready",
-                    )
-                    .order_by(Article.created_at)
-                    .first()
-                )
-
-                # Chưa có bài ready → lấy bài pending để viết mới
-                if not article:
                     article = (
                         db.query(Article)
                         .filter(
                             Article.site_id == ps.site_id,
                             Article.project_id == project.id,
-                            Article.status == "pending",
+                            Article.status == "ready",
                         )
                         .order_by(Article.created_at)
                         .first()
                     )
 
-                # Thử bài failed còn trong giới hạn retry
-                if not article:
-                    article = (
-                        db.query(Article)
-                        .filter(
-                            Article.site_id == ps.site_id,
-                            Article.project_id == project.id,
-                            Article.status == "failed",
-                            Article.retry_count < MAX_WRITE_RETRIES,
+                    if not article:
+                        article = (
+                            db.query(Article)
+                            .filter(
+                                Article.site_id == ps.site_id,
+                                Article.project_id == project.id,
+                                Article.status == "pending",
+                            )
+                            .order_by(Article.created_at)
+                            .first()
                         )
-                        .order_by(Article.updated_at)
-                        .first()
-                    )
 
-                if not article:
-                    continue
+                    if not article:
+                        article = (
+                            db.query(Article)
+                            .filter(
+                                Article.site_id == ps.site_id,
+                                Article.project_id == project.id,
+                                Article.status == "failed",
+                                Article.retry_count < MAX_WRITE_RETRIES,
+                            )
+                            .order_by(Article.updated_at)
+                            .first()
+                        )
 
-                # Viết bài nếu chưa có nội dung
-                if article.status != "ready":
+                    if not article:
+                        continue
+
+                    if article.status != "ready":
+                        try:
+                            article.status = "writing"
+                            article.updated_at = datetime.utcnow()
+                            db.commit()
+                            _write_single_article(db, article)
+                        except Exception as e:
+                            logger.error(f"Write failed for article {article.id}: {e}")
+                            article.status = "failed"
+                            article.error_message = str(e)[:500]
+                            article.retry_count = (article.retry_count or 0) + 1
+                            article.updated_at = datetime.utcnow()
+                            db.commit()
+                            continue
+
                     try:
-                        article.status = "writing"
-                        article.updated_at = datetime.utcnow()
-                        db.commit()
-                        _write_single_article(db, article)
-                        # article.status == "ready" sau khi viết xong
+                        _publish_article(db, project, ps, article)
                     except Exception as e:
-                        logger.error(f"Write failed for article {article.id}: {e}")
+                        logger.error(f"Publish failed for article {article.id}: {e}")
                         article.status = "failed"
                         article.error_message = str(e)[:500]
                         article.retry_count = (article.retry_count or 0) + 1
                         article.updated_at = datetime.utcnow()
                         db.commit()
-                        continue  # thử lại lần sau, chuyển sang site tiếp theo
-
-                # Đăng bài ngay sau khi viết xong
-                try:
-                    _publish_article(db, project, ps, article)
-                except Exception as e:
-                    logger.error(f"Publish failed for article {article.id}: {e}")
-                    article.status = "failed"
-                    article.error_message = str(e)[:500]
-                    article.retry_count = (article.retry_count or 0) + 1
-                    article.updated_at = datetime.utcnow()
-                    db.commit()
+            finally:
+                _release_project_lock(db, _LOCK_CLASS_PUBLISH, project.id)
 
     finally:
-        if lock_acquired:
-            _release_advisory_lock(db, _LOCK_PUBLISH_ARTICLES)
         db.close()
 
 
 # ─── Keyword Clustering ───────────────────────────────────────────────────────
 
 def process_keyword_clustering():
-    """Cluster keywords for projects that have pending keywords."""
+    """Cluster keywords for projects that have pending keywords.
+    Per-project advisory lock: nhiều user chạy song song, không ai block ai.
+    """
+    from ..models import Keyword
     db = get_db()
-    lock_acquired = False
     try:
-        lock_acquired = _try_advisory_lock(db, _LOCK_CLUSTER_KW)
-        if not lock_acquired:
-            logger.debug("process_keyword_clustering: skipped (another worker running)")
-            return
-        from ..models import Keyword
         projects_with_pending = (
             db.query(Project)
             .filter(Project.status == "running")
@@ -632,6 +632,9 @@ def process_keyword_clustering():
             )
             if not pending_kws:
                 continue
+
+            if not _try_project_lock(db, _LOCK_CLASS_CLUSTER, project.id):
+                continue  # worker khác đang xử lý project này
 
             kw_texts = [kw.keyword for kw in pending_kws]
             try:
@@ -654,7 +657,6 @@ def process_keyword_clustering():
                             kw_obj.cluster_id = cluster.id
                             kw_obj.status = "clustered"
 
-                    # Create article entries for each project site
                     for ps in project.project_sites:
                         article = Article(
                             cluster_id=cluster.id,
@@ -668,15 +670,14 @@ def process_keyword_clustering():
                 db.commit()
                 logger.info(f"Clustered {len(kw_texts)} keywords into {len(clusters_data)} clusters for project {project.id}")
 
-                # Trigger viết bài ngay sau khi cluster xong
                 Thread(target=process_writing_queue, daemon=True).start()
 
             except Exception as e:
                 logger.error(f"Error clustering keywords for project {project.id}: {e}")
+            finally:
+                _release_project_lock(db, _LOCK_CLASS_CLUSTER, project.id)
 
     finally:
-        if lock_acquired:
-            _release_advisory_lock(db, _LOCK_CLUSTER_KW)
         db.close()
 
 
