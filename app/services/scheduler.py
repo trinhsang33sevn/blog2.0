@@ -172,6 +172,40 @@ def _write_single_article(db: Session, article: Article) -> None:
     ai_model     = project.ai_model
     language     = article.language
 
+    # ── Bước 0: Research Brief ────────────────────────────────────────────────
+    # Cache per cluster: nếu đã có research (JSON) cho cluster này thì tái dùng,
+    # tránh gọi AI thêm lần nữa cho các bài cùng cluster (ví dụ nhiều site).
+    research_brief = None
+    fresh_cluster = db.get(KeywordCluster, cluster_id)
+    if fresh_cluster and fresh_cluster.intent_analysis:
+        try:
+            cached = json.loads(fresh_cluster.intent_analysis)
+            if isinstance(cached, dict) and "intent_type" in cached:
+                research_brief = cached
+                logger.info(f"Cluster {cluster_id}: reusing cached research brief")
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass  # old plain-text format → sẽ research lại
+
+    if research_brief is None:
+        try:
+            research_brief = openrouter.analyze_search_intent_and_research(
+                db=db,
+                keywords=keywords,
+                cluster_name=cluster.cluster_name,
+                language=language,
+                model=ai_model,
+                user_id=user_id,
+            )
+            # Lưu cache vào cluster để các bài cùng cluster tái dùng
+            c = db.get(KeywordCluster, cluster_id)
+            if c and c.intent_analysis is None:
+                c.intent_analysis = json.dumps(research_brief, ensure_ascii=False)
+                db.commit()
+            logger.info(f"Cluster {cluster_id}: research brief generated OK")
+        except Exception as exc:
+            logger.warning(f"Cluster {cluster_id}: research brief failed ({exc}), writing without it")
+
+    # ── Bước 1: Viết bài với research context ─────────────────────────────────
     result = openrouter.analyze_intent_and_write_article(
         db=db,
         keywords=keywords,
@@ -183,6 +217,7 @@ def _write_single_article(db: Session, article: Article) -> None:
         internal_links=internal_links,
         author_persona={"name": author.name, "bio": author.bio, "writing_style": author.writing_style} if author else None,
         content_angle={"name": angle.name, "description": angle.description} if angle else None,
+        research_brief=research_brief,
         user_id=user_id,
     )
 
@@ -229,10 +264,11 @@ def _write_single_article(db: Session, article: Article) -> None:
     if ai_labels:
         article.labels = json.dumps(ai_labels, ensure_ascii=False)
 
-    if cluster.intent_analysis is None:
-        cluster = db.get(KeywordCluster, cluster_id)
-        if cluster:
-            cluster.intent_analysis = result.get("intent_analysis", "")
+    # Chỉ lưu intent_analysis đơn giản nếu chưa có research brief JSON
+    if research_brief is None:
+        c = db.get(KeywordCluster, cluster_id)
+        if c and c.intent_analysis is None:
+            c.intent_analysis = result.get("intent_analysis", "")
 
     attempts = (article.retry_count or 0) + 1
     article.title        = title

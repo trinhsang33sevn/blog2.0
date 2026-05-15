@@ -574,6 +574,132 @@ def _extract_json(raw: str) -> dict | list:
 _CLUSTER_BATCH_SIZE = 60  # từ khóa tối ưu mỗi lô
 
 
+def analyze_search_intent_and_research(
+    db: Session,
+    keywords: list[str],
+    cluster_name: str,
+    language: str,
+    model: Optional[str] = None,
+    user_id: int = None,
+) -> dict:
+    """
+    Bước 1 của pipeline viết bài:
+    AI phân tích search intent + tạo research brief cho topic.
+    Kết quả được cache trong cluster.intent_analysis và tái dùng cho các bài cùng cluster.
+    """
+    preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
+    lang_name = LANGUAGE_NAMES.get(language, "English")
+    kw_str = ", ".join(keywords)
+
+    prompt = f"""You are a senior SEO researcher and content strategist. Analyze the keyword cluster below and produce a research brief that an article writer will use to create expert-level content.
+
+TOPIC CLUSTER: {cluster_name}
+KEYWORDS: {kw_str}
+CONTENT LANGUAGE: {lang_name}
+
+## Task 1 — Search Intent Analysis
+Determine what users REALLY want when they search these keywords on Google:
+- intent_type: one of "informational" | "commercial" | "transactional" | "navigational"
+- target_audience: who is searching this (age group, knowledge level, situation they are in)
+- user_questions: the 5–8 most common questions users have about this topic
+- user_pain_points: what problems, frustrations, or unmet needs drive this search
+- search_context: why are they searching NOW (urgency, decision stage, triggering event)
+- expected_format: content type that best satisfies this intent (step-by-step guide / comparison / FAQ / how-to / listicle / in-depth analysis / etc.)
+
+## Task 2 — Research Brief
+Generate the knowledge base a human expert would draw on to write this article:
+- key_facts: 5–8 important facts, definitions, or core principles about this topic (be specific, not generic)
+- statistics: 3–5 concrete data points or statistics relevant to this topic (approximate figures are fine if exact data unavailable)
+- expert_insights: 3–4 practitioner-level insights that only someone with real experience would know
+- common_mistakes: 3–5 mistakes beginners typically make with this topic
+- subtopics: 6–8 subtopics the article must cover, ordered by relevance to the user's intent
+- must_answer: the specific questions the article MUST answer to fully satisfy the searcher
+
+Return ONLY valid JSON — no markdown fences, no explanation, nothing else:
+{{
+  "intent_type": "informational",
+  "target_audience": "...",
+  "user_questions": ["...", "..."],
+  "user_pain_points": ["...", "..."],
+  "search_context": "...",
+  "expected_format": "...",
+  "key_facts": ["...", "..."],
+  "statistics": ["...", "..."],
+  "expert_insights": ["...", "..."],
+  "common_mistakes": ["...", "..."],
+  "subtopics": ["...", "..."],
+  "must_answer": ["...", "..."]
+}}"""
+
+    content, used_model = smart_call(
+        db, preferred,
+        [{"role": "user", "content": prompt}],
+        max_tokens=2000,
+        user_id=user_id,
+    )
+    logger.info(f"research_brief ({cluster_name[:50]}) used model: {used_model}")
+    return _extract_json(content)
+
+
+def _format_research_context(brief: dict) -> str:
+    """Convert a research brief dict into a structured prompt section."""
+    lines = [
+        "## RESEARCH CONTEXT (pre-analyzed — build your article on this foundation, do not re-analyze)",
+        "",
+    ]
+
+    if brief.get("intent_type"):
+        lines.append(f"**Search Intent**: {brief['intent_type']}")
+    if brief.get("target_audience"):
+        lines.append(f"**Target Audience**: {brief['target_audience']}")
+    if brief.get("search_context"):
+        lines.append(f"**Why they're searching**: {brief['search_context']}")
+    if brief.get("expected_format"):
+        lines.append(f"**Best content format**: {brief['expected_format']}")
+
+    if brief.get("user_questions"):
+        lines.append("\n**Questions users want answered** (your article MUST address all of these):")
+        for q in brief["user_questions"]:
+            lines.append(f"  - {q}")
+
+    if brief.get("user_pain_points"):
+        lines.append("\n**User pain points to address**:")
+        for p in brief["user_pain_points"]:
+            lines.append(f"  - {p}")
+
+    if brief.get("key_facts"):
+        lines.append("\n**Key facts to incorporate** (weave naturally into the content):")
+        for f in brief["key_facts"]:
+            lines.append(f"  - {f}")
+
+    if brief.get("statistics"):
+        lines.append("\n**Statistics to reference** (cite in context, not as a bare list):")
+        for s in brief["statistics"]:
+            lines.append(f"  - {s}")
+
+    if brief.get("expert_insights"):
+        lines.append("\n**Expert insights** (present as your own knowledge and experience):")
+        for ins in brief["expert_insights"]:
+            lines.append(f"  - {ins}")
+
+    if brief.get("common_mistakes"):
+        lines.append("\n**Common mistakes to warn readers about** (adds genuine value):")
+        for m in brief["common_mistakes"]:
+            lines.append(f"  - {m}")
+
+    if brief.get("subtopics"):
+        lines.append("\n**Required subtopics** (structure your H2 sections around these, in priority order):")
+        for idx, t in enumerate(brief["subtopics"], 1):
+            lines.append(f"  {idx}. {t}")
+
+    if brief.get("must_answer"):
+        lines.append("\n**Questions the article MUST answer** (use as H3 sub-sections or FAQ entries):")
+        for q in brief["must_answer"]:
+            lines.append(f"  - {q}")
+
+    return "\n".join(lines)
+
+
 def _cluster_batch(
     db: Session,
     keywords: list[str],
@@ -645,9 +771,10 @@ def analyze_intent_and_write_article(
     internal_links: list[dict] = None,
     author_persona: Optional[dict] = None,
     content_angle: Optional[dict] = None,
+    research_brief: Optional[dict] = None,
     user_id: int = None,
 ) -> dict:
-    """Phân tích search intent rồi viết bài unique."""
+    """Viết bài unique từ research brief (nếu có) hoặc tự phân tích intent."""
     preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
     lang_name = LANGUAGE_NAMES.get(language, "English")
     kw_str = ", ".join(keywords)
@@ -709,21 +836,29 @@ def analyze_intent_and_write_article(
             f"Title, intro, all sections, and conclusion must serve this specific approach.\n"
         )
 
+    # Build the intent/research section of the prompt
+    if research_brief:
+        intent_section = _format_research_context(research_brief)
+    else:
+        intent_section = (
+            f"## STEP 1 — Search Intent Analysis\n"
+            f"Topic cluster: {cluster_name}\n"
+            f"Keywords: {kw_str}\n"
+            f"Identify:\n"
+            f"- Primary intent: what the user REALLY wants (learn / compare / buy / solve a problem)\n"
+            f"- Key pain points or questions behind these keywords\n"
+            f"- What the ideal article must deliver to satisfy this intent fully"
+        )
+
     prompt = f"""{persona_intro}
 
 TODAY'S DATE: {current_date_str}
 IMPORTANT: All content must reflect {current_year} as the current year. Do NOT cite 2025 data as "current", "this year", or "recently" — that is outdated. Use {current_year} figures, trends, and context throughout.
 
-## STEP 1 — Search Intent Analysis
-Topic cluster: {cluster_name}
-Keywords: {kw_str}
-Identify:
-- Primary intent: what the user REALLY wants (learn / compare / buy / solve a problem)
-- Key pain points or questions behind these keywords
-- What the ideal article must deliver to satisfy this intent fully
+{intent_section}
 {existing_str}
 {angle_section}
-## STEP 2 — Write a Complete Article in {lang_name}
+## Write a Complete Article in {lang_name}
 {backlink_str}
 {internal_link_str}
 
