@@ -41,6 +41,7 @@ logger = logging.getLogger("autoblogspot")
 settings = get_settings()
 
 _PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact", "/faq", "/compare")
+_PUBLIC_SUFFIXES = (".txt",)  # IndexNow key verification files
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -87,7 +88,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if path == "/" or any(path.startswith(p) for p in _PUBLIC_PREFIXES):
+        if path == "/" or any(path.startswith(p) for p in _PUBLIC_PREFIXES) or any(path.endswith(s) for s in _PUBLIC_SUFFIXES):
             return await call_next(request)
         if not request.session.get("user_id"):
             return RedirectResponse(url="/login")
@@ -247,6 +248,20 @@ def health_check():
     status = "ok" if db_ok else "degraded"
     from fastapi.responses import JSONResponse
     return JSONResponse({"status": status, "db": db_ok, "version": "1.0.0"})
+
+
+@app.get("/{key}.txt", response_class=PlainTextResponse)
+def indexnow_key_file(key: str, db: Session = Depends(get_db)):
+    """Serve IndexNow key verification file for WordPress self-hosted sites."""
+    from .services.openrouter import get_setting as _gs
+    from .models import AppSetting
+    row = db.query(AppSetting).filter(
+        AppSetting.key.like(f"%indexnow_key"),
+        AppSetting.value == key,
+    ).first()
+    if row:
+        return key
+    raise StarletteHTTPException(status_code=404)
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)

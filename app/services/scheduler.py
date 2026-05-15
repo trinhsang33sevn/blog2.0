@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
 from ..models import Project, ProjectSite, KeywordCluster, Article, IndexTask, BlogspotSite, GoogleAccount, PlatformAccount
-from . import openrouter, blogger, wordpress, tumblr, hashnode, sinbyte, index_checker, image_service, agent_service, wordpress_selfhosted as wp_sh
+from . import openrouter, blogger, wordpress, tumblr, hashnode, sinbyte, index_checker, image_service, agent_service, wordpress_selfhosted as wp_sh, index_push
 
 logger = logging.getLogger(__name__)
 
@@ -468,6 +468,19 @@ def _publish_article(db: Session, project, ps, article) -> None:
     ))
     db.commit()
     logger.info(f"Published article {article.id} [{platform}]: {article.url}")
+
+    # Push index notifications immediately after publish (non-blocking best-effort)
+    if article.url:
+        try:
+            index_push.push_all(
+                url=article.url,
+                db=db,
+                user_id=project.user_id,
+                platform=platform,
+                blog_name=site.blog_name or "",
+            )
+        except Exception as e:
+            logger.warning("index_push.push_all error: %s", e)
 
 
 def publish_ready_articles():

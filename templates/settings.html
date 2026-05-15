@@ -48,6 +48,14 @@
     </a>
   </li>
   <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#tab-index">
+      <i class="bi bi-lightning-charge me-1"></i>{{ _("sett_tab_index") }}
+      {% if google_indexing_sa or indexnow_key %}
+      <span class="badge bg-success ms-1" style="font-size:.65rem">{{ _("sett_configured") }}</span>
+      {% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
     <a class="nav-link" data-bs-toggle="tab" href="#tab-account">
       <i class="bi bi-person-gear me-1"></i>{{ _("sett_tab_account") }}
     </a>
@@ -471,6 +479,106 @@
             <div class="alert alert-info small mb-0 py-2">
               Tạo app tại <a href="https://www.tumblr.com/oauth/apps" target="_blank">tumblr.com/oauth/apps</a><br>
               Redirect URI: <code>{{ base_url }}/accounts/tumblr/callback</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB ÉP INDEX ═══════════════════ -->
+  <div class="tab-pane fade" id="tab-index">
+
+    <div class="alert alert-info small mb-4 py-2">
+      <i class="bi bi-lightning-charge me-1"></i>
+      <strong>{{ _("sett_index_intro_title") }}</strong> — {{ _("sett_index_intro_desc") }}
+    </div>
+
+    <div class="row g-4">
+
+      <!-- Sitemap ping + RPC ping (luôn bật, không cần cấu hình) -->
+      <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-left:4px solid #198754 !important;">
+          <div class="card-body py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center bg-success" style="width:36px;height:36px;flex-shrink:0">
+                <i class="bi bi-check-circle text-white"></i>
+              </div>
+              <div>
+                <div class="fw-bold">{{ _("sett_index_auto_title") }} <span class="badge bg-success ms-1" style="font-size:0.65rem;">{{ _("sett_index_always_on") }}</span></div>
+                <div class="text-muted small">{{ _("sett_index_auto_desc") }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Indexing API -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#4285f4;">
+                <i class="bi bi-google text-white"></i>
+              </div>
+              <div>
+                <div class="fw-bold">{{ _("sett_gindex_title") }} <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">{{ _("sett_index_setup_required") }}</span></div>
+                <div class="text-muted small">{{ _("sett_gindex_desc") }}</div>
+              </div>
+            </div>
+
+            {% if google_indexing_sa %}
+            <div class="alert alert-success small py-2 mb-3"><i class="bi bi-check-circle me-1"></i>{{ _("sett_gindex_active") }}</div>
+            {% else %}
+            <div class="alert alert-warning small py-2 mb-3"><i class="bi bi-exclamation-triangle me-1"></i>{{ _("sett_gindex_inactive") }}</div>
+            {% endif %}
+
+            <label class="form-label fw-semibold small">{{ _("sett_gindex_label") }}</label>
+            <textarea name="google_indexing_sa" class="form-control form-control-sm font-monospace mb-2"
+              rows="5" placeholder='{"type":"service_account","project_id":"...","private_key":"...","client_email":"...@....iam.gserviceaccount.com",...}'>{{ google_indexing_sa }}</textarea>
+
+            <div class="alert alert-light small mb-0 py-2" style="font-size:0.75rem;">
+              <strong>{{ _("sett_gindex_setup") }}:</strong>
+              <ol class="mb-0 ps-3 mt-1">
+                <li>{{ _("sett_gindex_step1") }}</li>
+                <li>{{ _("sett_gindex_step2") }}</li>
+                <li>{{ _("sett_gindex_step3") }}</li>
+                <li>{{ _("sett_gindex_step4") }}</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IndexNow -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:#00a4ef;">
+                <i class="bi bi-send text-white"></i>
+              </div>
+              <div>
+                <div class="fw-bold">IndexNow <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">Bing · Yandex</span></div>
+                <div class="text-muted small">{{ _("sett_indexnow_desc") }}</div>
+              </div>
+            </div>
+
+            <label class="form-label fw-semibold small">{{ _("sett_indexnow_key_label") }}</label>
+            <div class="input-group input-group-sm mb-2">
+              <input type="text" name="indexnow_key" class="form-control font-monospace"
+                value="{{ indexnow_key }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+              <button class="btn btn-outline-secondary" type="button"
+                onclick="document.querySelector('[name=indexnow_key]').value='{{ range(32)|map('string')|join }}'"
+                title="{{ _('sett_indexnow_generate') }}">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+            <div class="form-text mb-3">{{ _("sett_indexnow_key_hint") }}</div>
+
+            <div class="alert alert-info small mb-0 py-2" style="font-size:0.75rem;">
+              <i class="bi bi-info-circle me-1"></i>{{ _("sett_indexnow_note") }}
             </div>
           </div>
         </div>
