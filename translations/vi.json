@@ -683,6 +683,8 @@
   "sett_gindex_step2": "Thêm role: Indexing API Service Agent (hoặc Owner)",
   "sett_gindex_step3": "Tạo key JSON → Tải về",
   "sett_gindex_step4": "Dán nội dung file JSON vào ô bên dưới",
+  "sett_gindex_step5": "Vào Google Search Console (search.google.com/search-console) → Thêm và xác minh quyền sở hữu website của bạn",
+  "sett_gindex_step6": "Trong Search Console → Settings → Users and permissions → Add user → Dán email Service Account (dạng: name@project.iam.gserviceaccount.com) → Chọn quyền Owner",
   "sett_gindex_title": "Google Indexing API",
   "sett_google_oauth": "Google OAuth (Kết nối Blogspot)",
   "sett_groq_desc": "Miễn phí · Siêu nhanh · Llama",

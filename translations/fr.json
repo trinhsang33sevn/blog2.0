@@ -683,6 +683,8 @@
   "sett_gindex_step2": "Ajouter le rôle : Indexing API Service Agent (ou Propriétaire)",
   "sett_gindex_step3": "Créer une clé JSON → Télécharger",
   "sett_gindex_step4": "Coller le contenu du fichier JSON dans le champ ci-dessous",
+  "sett_gindex_step5": "Aller sur Google Search Console (search.google.com/search-console) → Ajouter et vérifier la propriété de votre site",
+  "sett_gindex_step6": "Dans Search Console → Paramètres → Utilisateurs et autorisations → Ajouter un utilisateur → Coller l'email du compte de service (ex : name@project.iam.gserviceaccount.com) → Définir l'autorisation sur Propriétaire",
   "sett_gindex_title": "API Google Indexing",
   "sett_google_oauth": "Google OAuth (Connecter Blogspot)",
   "sett_groq_desc": "Gratuit · Ultra-rapide · Llama",
