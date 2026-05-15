@@ -167,57 +167,45 @@ def refresh_access_token(db: Session, account: GoogleAccount) -> str:
 # ─── Blogger GData API ────────────────────────────────────────────────────────
 
 def get_user_blogs(db: Session, account: GoogleAccount) -> list[dict]:
-    """Lấy danh sách blog. Thử Blogger API v3 trước, fallback sang GData XML."""
+    """Lấy danh sách blog qua Blogger API v3."""
     token = refresh_access_token(db, account)
 
-    # Thử Blogger API v3 — vẫn hoạt động kể cả khi bị xóa khỏi API Library
-    try:
-        with httpx.Client(timeout=20) as client:
-            resp = client.get(
-                f"{BLOGGER_API_V3_BASE}/users/self/blogs",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                return [
-                    {
-                        "id": item.get("id", ""),
-                        "name": item.get("name", "Unnamed Blog"),
-                        "url": item.get("url", ""),
-                    }
-                    for item in data.get("items", [])
-                ]
-    except Exception:
-        pass
-
-    # Fallback: GData Atom XML (không dùng alt=json)
     with httpx.Client(timeout=20) as client:
         resp = client.get(
-            f"{BLOGGER_FEEDS_BASE}/default/blogs",
+            f"{BLOGGER_API_V3_BASE}/users/self/blogs",
             headers={"Authorization": f"Bearer {token}"},
         )
-        resp.raise_for_status()
 
-    ns = {"a": ATOM_NS}
-    root = ET.fromstring(resp.text)
-    blogs = []
-    for entry in root.findall("a:entry", ns):
-        id_el = entry.find("a:id", ns)
-        raw_id = id_el.text if id_el is not None else ""
-        blog_id = raw_id.split("blog-")[-1] if "blog-" in raw_id else raw_id
+    if resp.status_code == 401:
+        raise ValueError(
+            "Token không hợp lệ hoặc đã hết hạn — hãy xóa và kết nối lại tài khoản Google."
+        )
+    if resp.status_code == 403:
+        err = resp.json().get("error", {})
+        if "accessNotConfigured" in str(err) or "disabled" in str(err):
+            raise ValueError(
+                "Blogger API chưa được bật trong Google Cloud Console. "
+                "Vào GCP Console → APIs & Services → Library → tìm 'Blogger API' → Enable."
+            )
+        raise ValueError(
+            f"Không có quyền truy cập Blogger API (403). "
+            f"Kiểm tra OAuth scope và GCP project."
+        )
+    if resp.status_code != 200:
+        raise ValueError(
+            f"Blogger API trả về lỗi {resp.status_code}: {resp.text[:300]}"
+        )
 
-        title_el = entry.find("a:title", ns)
-        blog_name = title_el.text if title_el is not None else "Unnamed Blog"
-
-        blog_url = ""
-        for link in entry.findall("a:link", ns):
-            if link.get("rel") == "alternate":
-                blog_url = link.get("href", "")
-                break
-
-        blogs.append({"id": blog_id, "name": blog_name, "url": blog_url})
-
-    return blogs
+    data = resp.json()
+    items = data.get("items", [])
+    return [
+        {
+            "id": item.get("id", ""),
+            "name": item.get("name", "Unnamed Blog"),
+            "url": item.get("url", ""),
+        }
+        for item in items
+    ]
 
 
 def get_blog_by_url(access_token: str, blog_url: str) -> dict:
