@@ -123,6 +123,15 @@
           <textarea name="keywords_text" id="keywords_text" class="form-control font-monospace" rows="10"
             placeholder="cách giảm cân nhanh&#10;thực phẩm tốt cho tim&#10;bài tập buổi sáng&#10;..."
             oninput="countKeywords()"></textarea>
+          <div class="alert alert-warning d-flex gap-2 align-items-start mt-2 mb-2 py-2 px-3" style="border-left:4px solid #f59e0b;">
+            <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0" style="font-size:1.1rem;"></i>
+            <div class="small">
+              <strong>Lưu ý về thời gian xử lý từ khóa:</strong><br>
+              Hệ thống chia nhóm <strong>60 từ khóa mỗi 10 phút</strong>.
+              Nếu bạn nhập nhiều từ khóa, chiến dịch sẽ mất nhiều thời gian hơn để bắt đầu tạo bài viết.<br>
+              <span class="text-muted">Ví dụ: 180 từ khóa → ~30 phút để chia xong nhóm trước khi viết bài.</span>
+            </div>
+          </div>
           <div id="kw-guide" class="mt-2 p-2 rounded small" style="background:#f8f9fa;border:1px solid #dee2e6;">
             <div class="d-flex gap-3 flex-wrap mb-1">
               <span><span class="badge bg-success">Tối ưu</span> 10 – 60 từ khóa / lô</span>

@@ -114,6 +114,13 @@
       <div class="card-body">
         <form method="post" action="/projects/{{ project.id }}/add-keywords">
           <textarea name="keywords_text" class="form-control font-monospace mb-2" rows="4" placeholder="{{ _("projd_kw_placeholder") }}"></textarea>
+          <div class="alert alert-warning d-flex gap-2 align-items-start py-2 px-3 mb-2" style="border-left:4px solid #f59e0b;">
+            <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
+            <div style="font-size:0.8rem;">
+              <strong>Lưu ý:</strong> Hệ thống xử lý <strong>60 từ khóa mỗi 10 phút</strong>.
+              Nhập càng nhiều từ khóa, chiến dịch càng mất nhiều thời gian để bắt đầu viết bài.
+            </div>
+          </div>
           <button type="submit" class="btn btn-sm btn-primary w-100">
             <i class="bi bi-plus me-1"></i>{{ _("projd_btn_add_kw") }}
           </button>
