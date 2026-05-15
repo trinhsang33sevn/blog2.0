@@ -127,6 +127,46 @@ def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -
     )
 
 
+def rehost_images_for_platform(content: str, platform: str, **auth) -> str:
+    """
+    For WordPress platforms: re-upload VPS-hosted images to WordPress media library
+    and replace URLs in content. For other platforms, return content unchanged.
+
+    auth kwargs for 'wordpress':         access_token, site_id
+    auth kwargs for 'wordpress_selfhosted': site_url, username, app_password
+    """
+    if platform not in ("wordpress", "wordpress_selfhosted"):
+        return content
+
+    from ..config import get_settings
+    base_url = get_settings().BASE_URL.rstrip("/")
+    prefix = f"{base_url}/static/images/articles/"
+
+    for url in re.findall(r'<img[^>]+src="([^"]+)"', content):
+        if not url.startswith(prefix):
+            continue
+        local_file = _IMAGES_DIR / url[len(prefix):]
+        if not local_file.exists():
+            logger.warning("Local image missing, skipping rehost: %s", local_file)
+            continue
+        try:
+            if platform == "wordpress":
+                from . import wordpress as _wp
+                new_url = _wp.upload_media(auth["access_token"], auth["site_id"], local_file)
+            else:
+                from . import wordpress_selfhosted as _wp_sh
+                new_url = _wp_sh.upload_media(
+                    auth["site_url"], auth["username"], auth["app_password"], local_file
+                )
+            if new_url:
+                content = content.replace(url, new_url)
+                logger.info("Image re-hosted to WP: %s", new_url)
+        except Exception as e:
+            logger.warning("Image rehost failed for %s: %s", url, e)
+
+    return content
+
+
 def insert_images_into_content(
     content: str,
     title: str,

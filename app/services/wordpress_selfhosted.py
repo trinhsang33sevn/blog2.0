@@ -1,8 +1,17 @@
 import base64
 import json
+import logging
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+import httpx
+
+logger = logging.getLogger(__name__)
+
+_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+         ".webp": "image/webp", ".gif": "image/gif"}
 
 
 def _auth(username: str, app_password: str) -> str:
@@ -12,6 +21,27 @@ def _auth(username: str, app_password: str) -> str:
 
 def _base(site_url: str) -> str:
     return site_url.rstrip("/")
+
+
+def upload_media(site_url: str, username: str, app_password: str, file_path: Path) -> str | None:
+    """Upload image to self-hosted WordPress media library. Returns hosted URL or None."""
+    mime = _MIME.get(file_path.suffix.lower(), "image/jpeg")
+    try:
+        with httpx.Client(timeout=60) as c:
+            resp = c.post(
+                f"{_base(site_url)}/wp-json/wp/v2/media",
+                auth=(username, app_password),
+                headers={
+                    "Content-Type": mime,
+                    "Content-Disposition": f'attachment; filename="{file_path.name}"',
+                },
+                content=file_path.read_bytes(),
+            )
+            resp.raise_for_status()
+            return resp.json().get("source_url")
+    except Exception as e:
+        logger.warning("WP self-hosted media upload failed: %s", e)
+    return None
 
 
 def test_connection(site_url: str, username: str, app_password: str) -> dict:

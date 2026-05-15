@@ -404,7 +404,13 @@ def _publish_article(db: Session, project, ps, article) -> None:
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"WordPress account cho site {site.id} không tìm thấy (đã bị xóa?)")
-        post_data = wordpress.publish_post(pa.access_token, site.blog_id, article.title, article.content, labels)
+        content = image_service.rehost_images_for_platform(
+            article.content, "wordpress", access_token=pa.access_token, site_id=site.blog_id
+        )
+        if content != article.content:
+            article.content = content
+            db.commit()
+        post_data = wordpress.publish_post(pa.access_token, site.blog_id, article.title, content, labels)
     elif platform == "tumblr":
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
@@ -420,7 +426,14 @@ def _publish_article(db: Session, project, ps, article) -> None:
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"WP Self-hosted account cho site {site.id} không tìm thấy (đã bị xóa?)")
-        post_data = wp_sh.publish_post(pa.refresh_token, pa.name, pa.access_token, article.title, article.content, labels)
+        content = image_service.rehost_images_for_platform(
+            article.content, "wordpress_selfhosted",
+            site_url=pa.refresh_token, username=pa.name, app_password=pa.access_token,
+        )
+        if content != article.content:
+            article.content = content
+            db.commit()
+        post_data = wp_sh.publish_post(pa.refresh_token, pa.name, pa.access_token, article.title, content, labels)
     else:
         raise ValueError(f"Platform không được hỗ trợ: {platform}")
 
