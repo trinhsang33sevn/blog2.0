@@ -1,4 +1,6 @@
 import logging
+import secrets
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,11 +9,12 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..database import get_db
 from ..i18n import _ as t
+from ..models import EmailVerification
 from ..services.auth_service import (
     create_user, get_user_by_email, verify_password, hash_password,
     generate_reset_token, validate_reset_token, consume_reset_token,
 )
-from ..services.email_service import send_password_reset
+from ..services.email_service import send_password_reset, send_verification_email
 from ..templates import templates
 
 logger = logging.getLogger("autoblogspot.auth")
@@ -82,9 +85,137 @@ def register(
             "full_name": full_name, "email": email,
         }, status_code=400)
 
-    user = create_user(db, email=email, password=password, full_name=full_name)
+    # If email not configured → skip OTP, create account directly
+    if not settings.email_configured:
+        user = create_user(db, email=email, password=password, full_name=full_name)
+        request.session["user_id"] = user.id
+        return RedirectResponse("/?success=Chao+mung+ban+den+voi+AutoBlogspot", status_code=303)
+
+    # Generate OTP and save pending verification
+    otp = f"{secrets.randbelow(1_000_000):06d}"
+    pw_hash = hash_password(password)
+    now = datetime.utcnow()
+
+    # Remove any previous pending verification for this email
+    db.query(EmailVerification).filter(EmailVerification.email == email.lower()).delete()
+    pending = EmailVerification(
+        email=email.strip().lower(),
+        full_name=full_name.strip(),
+        password_hash=pw_hash,
+        otp_code=otp,
+        expires_at=now + timedelta(minutes=15),
+    )
+    db.add(pending)
+    db.commit()
+
+    sent = send_verification_email(email, otp, full_name)
+    if not sent:
+        logger.warning("Failed to send OTP to %s — creating account directly", email)
+        user = create_user(db, email=email, password=password, full_name=full_name)
+        request.session["user_id"] = user.id
+        return RedirectResponse("/?success=Chao+mung+ban+den+voi+AutoBlogspot", status_code=303)
+
+    from urllib.parse import quote_plus
+    return RedirectResponse(f"/verify-email?email={quote_plus(email)}", status_code=303)
+
+
+@router.get("/verify-email", response_class=HTMLResponse)
+def verify_email_page(request: Request, email: str = ""):
+    return templates.TemplateResponse(request, "verify_email.html", {
+        "email": email,
+        "error": request.query_params.get("error"),
+    })
+
+
+@router.post("/verify-email")
+def verify_email(
+    request: Request,
+    email: str = Form(...),
+    otp: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    from urllib.parse import quote_plus
+    email = email.strip().lower()
+    otp   = otp.strip()
+
+    pending = db.query(EmailVerification).filter(
+        EmailVerification.email == email
+    ).first()
+
+    if not pending:
+        return RedirectResponse(
+            f"/register?error={quote_plus('Phiên xác minh không tồn tại. Vui lòng đăng ký lại.')}",
+            status_code=303,
+        )
+
+    if datetime.utcnow() > pending.expires_at:
+        db.delete(pending)
+        db.commit()
+        return RedirectResponse(
+            f"/register?error={quote_plus('Mã đã hết hạn. Vui lòng đăng ký lại.')}",
+            status_code=303,
+        )
+
+    if pending.attempts >= 5:
+        db.delete(pending)
+        db.commit()
+        return RedirectResponse(
+            f"/register?error={quote_plus('Nhập sai quá nhiều lần. Vui lòng đăng ký lại.')}",
+            status_code=303,
+        )
+
+    if otp != pending.otp_code:
+        pending.attempts += 1
+        db.commit()
+        remaining = 5 - pending.attempts
+        return templates.TemplateResponse(request, "verify_email.html", {
+            "email": email,
+            "error": f"Mã không đúng. Còn {remaining} lần thử.",
+        }, status_code=400)
+
+    # OTP correct → create account using the pre-hashed password
+    pw_hash   = pending.password_hash
+    full_name = pending.full_name
+    db.delete(pending)
+    db.flush()
+    user = create_user(db, email=email, password="", full_name=full_name, _password_hash=pw_hash)
+
     request.session["user_id"] = user.id
     return RedirectResponse("/?success=Chao+mung+ban+den+voi+AutoBlogspot", status_code=303)
+
+
+@router.post("/verify-email/resend")
+def resend_otp(
+    request: Request,
+    email: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    from urllib.parse import quote_plus
+    email = email.strip().lower()
+    pending = db.query(EmailVerification).filter(EmailVerification.email == email).first()
+
+    if not pending:
+        return RedirectResponse(f"/register?error={quote_plus('Phiên xác minh không tồn tại.')}", status_code=303)
+
+    if pending.resend_count >= 5:
+        return templates.TemplateResponse(request, "verify_email.html", {
+            "email": email,
+            "error": "Đã gửi lại quá nhiều lần. Vui lòng đăng ký lại.",
+        }, status_code=429)
+
+    # Generate new OTP and reset attempts
+    new_otp = f"{secrets.randbelow(1_000_000):06d}"
+    pending.otp_code     = new_otp
+    pending.attempts     = 0
+    pending.resend_count += 1
+    pending.expires_at   = datetime.utcnow() + timedelta(minutes=15)
+    db.commit()
+
+    send_verification_email(email, new_otp, pending.full_name)
+    return RedirectResponse(
+        f"/verify-email?email={quote_plus(email)}&resent=1",
+        status_code=303,
+    )
 
 
 @router.post("/logout")

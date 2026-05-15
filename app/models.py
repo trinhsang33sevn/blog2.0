@@ -54,6 +54,20 @@ class Subscription(Base):
         return datetime.utcnow() < self.expires_at
 
 
+class EmailVerification(Base):
+    """Temporary OTP record created before a user account is confirmed."""
+    __tablename__ = "email_verifications"
+    id            = Column(Integer, primary_key=True)
+    email         = Column(String(200), nullable=False, index=True)
+    full_name     = Column(String(200), default="")
+    password_hash = Column(String(500), nullable=False)
+    otp_code      = Column(String(6), nullable=False)
+    attempts      = Column(Integer, default=0)
+    resend_count  = Column(Integer, default=0)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+    expires_at    = Column(DateTime, nullable=False)
+
+
 class Author(Base):
     __tablename__ = "authors"
     id = Column(Integer, primary_key=True, index=True)

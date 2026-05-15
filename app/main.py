@@ -40,7 +40,7 @@ logger = logging.getLogger("autoblogspot")
 
 settings = get_settings()
 
-_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact", "/faq", "/compare")
+_PUBLIC_PREFIXES = ("/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/static", "/set-lang", "/billing/webhook", "/robots.txt", "/sitemap.xml", "/health", "/blog", "/terms", "/privacy", "/contact", "/faq", "/compare")
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

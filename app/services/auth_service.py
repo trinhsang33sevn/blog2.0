@@ -21,10 +21,11 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 
-def create_user(db: Session, email: str, password: str, full_name: str = "") -> User:
+def create_user(db: Session, email: str, password: str, full_name: str = "",
+                _password_hash: str = "") -> User:
     user = User(
         email=email.strip().lower(),
-        password_hash=hash_password(password),
+        password_hash=_password_hash or hash_password(password),
         full_name=full_name.strip(),
         is_admin=db.query(User).count() == 0,  # first user becomes admin
     )
