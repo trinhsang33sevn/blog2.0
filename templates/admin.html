@@ -160,7 +160,8 @@
                 </td>
                 <td>
                   {% if u.subscription %}
-                    {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
+                    {% if u.subscription.plan == 'gift_vip' %}<span class="badge" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Gift 🎁 Vip</span>
+                    {% elif u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
                     {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
                     {% elif u.subscription.plan == 'gift' %}<span class="badge bg-success">Gift 🎁</span>
                     {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
@@ -221,6 +222,14 @@
     </div>
   </div>
   {% endif %}
+  {% if user_stats.by_plan.gift_vip > 0 %}
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">{{ user_stats.by_plan.gift_vip }}</div>
+      <div class="text-muted small">Gift 🎁 Vip</div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <div class="card shadow-sm border-0">
@@ -246,7 +255,8 @@
             </td>
             <td>
               {% if u.subscription %}
-                {% if u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
+                {% if u.subscription.plan == 'gift_vip' %}<span class="badge" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Gift 🎁 Vip</span>
+                {% elif u.subscription.plan == 'business' %}<span class="badge bg-warning text-dark">Business</span>
                 {% elif u.subscription.plan == 'pro' %}<span class="badge bg-primary">Pro</span>
                 {% elif u.subscription.plan == 'gift' %}<span class="badge bg-success">Gift 🎁</span>
                 {% else %}<span class="badge bg-secondary">Free</span>{% endif %}
@@ -257,8 +267,10 @@
                 {% if u.subscription.is_active_plan %}
                   {% if u.subscription.status == 'trial' %}
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle">{{ _("adm_badge_trial") }}</span>
+                  {% elif u.subscription.status == 'gift_vip' %}
+                    <span class="badge" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">VIP 🎁</span>
                   {% elif u.subscription.status == 'gift' %}
-                    <span class="badge bg-success-subtle text-success border border-success-subtle">Dùng thử 🎁</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Gift 🎁</span>
                   {% else %}
                     <span class="badge bg-success-subtle text-success border border-success-subtle">{{ _("adm_badge_active") }}</span>
                   {% endif %}
@@ -310,12 +322,13 @@
                           <select name="plan" class="form-select" id="planSelect{{ u.id }}"
                             onchange="toggleMonths(this, 'monthsRow{{ u.id }}')">
                             <option value="free">Free</option>
-                            <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro — 300.000₫/tháng</option>
-                            <option value="business" {% if u.subscription and u.subscription.plan == 'business' %}selected{% endif %}>Business — 1.000.000₫/tháng</option>
-                            <option value="gift" {% if u.subscription and u.subscription.plan == 'gift' %}selected{% endif %}>🎁 Gift — Miễn phí (không tính doanh thu)</option>
+                            <option value="pro" {% if u.subscription and u.subscription.plan == 'pro' %}selected{% endif %}>Pro — 200.000₫/tháng</option>
+                            <option value="business" {% if u.subscription and u.subscription.plan == 'business' %}selected{% endif %}>Business — 500.000₫/tháng</option>
+                            <option value="gift" {% if u.subscription and u.subscription.plan == 'gift' %}selected{% endif %}>🎁 Gift — Miễn phí (giới hạn như Pro)</option>
+                            <option value="gift_vip" {% if u.subscription and u.subscription.plan == 'gift_vip' %}selected{% endif %}>🎁 Gift VIP — Miễn phí (toàn bộ Business)</option>
                           </select>
                         </div>
-                        <div id="monthsRow{{ u.id }}" {% if u.subscription and u.subscription.plan == 'gift' %}style="display:none"{% endif %}>
+                        <div id="monthsRow{{ u.id }}" {% if u.subscription and u.subscription.plan in ('gift', 'gift_vip') %}style="display:none"{% endif %}>
                           <label class="form-label fw-semibold">{{ _("adm_months") }}</label>
                           <input type="number" name="months" class="form-control" value="1" min="1" max="24">
                           <div class="form-text">{{ _("adm_months_hint") }}</div>
@@ -353,16 +366,23 @@
         </div>
         <hr>
         <div class="d-flex justify-content-between py-1">
-          <span><span class="badge bg-primary me-2">Pro</span>{{ user_stats.by_plan.pro }} người × 300.000₫</span>
-          <strong>{{ "{:,}".format(user_stats.by_plan.pro * 300000) }}₫</strong>
+          <span><span class="badge bg-primary me-2">Pro</span>{{ user_stats.by_plan.pro }} người × 200.000₫</span>
+          <strong>{{ "{:,}".format(user_stats.by_plan.pro * 200000) }}₫</strong>
         </div>
         <div class="d-flex justify-content-between py-1">
-          <span><span class="badge bg-warning text-dark me-2">Business</span>{{ user_stats.by_plan.business }} người × 1.000.000₫</span>
-          <strong>{{ "{:,}".format(user_stats.by_plan.business * 1000000) }}₫</strong>
+          <span><span class="badge bg-warning text-dark me-2">Business</span>{{ user_stats.by_plan.business }} người × 500.000₫</span>
+          <strong>{{ "{:,}".format(user_stats.by_plan.business * 500000) }}₫</strong>
         </div>
         {% if user_stats.by_plan.gift > 0 %}
         <div class="d-flex justify-content-between py-1">
           <span><span class="badge bg-success me-2">Gift 🎁</span>{{ user_stats.by_plan.gift }} người × 0₫
+            <span class="text-muted small ms-1">(không tính doanh thu)</span></span>
+          <strong class="text-muted">0₫</strong>
+        </div>
+        {% endif %}
+        {% if user_stats.by_plan.gift_vip > 0 %}
+        <div class="d-flex justify-content-between py-1">
+          <span><span class="badge me-2" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Gift 🎁 Vip</span>{{ user_stats.by_plan.gift_vip }} người × 0₫
             <span class="text-muted small ms-1">(không tính doanh thu)</span></span>
           <strong class="text-muted">0₫</strong>
         </div>
@@ -784,7 +804,7 @@ if (urlParams.get('success')) {
 
 function toggleMonths(selectEl, rowId) {
   const row = document.getElementById(rowId);
-  if (row) row.style.display = selectEl.value === 'gift' ? 'none' : '';
+  if (row) row.style.display = ['gift', 'gift_vip'].includes(selectEl.value) ? 'none' : '';
 }
 </script>
 {% endblock %}

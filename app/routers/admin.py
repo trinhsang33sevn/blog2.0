@@ -18,7 +18,7 @@ router = APIRouter()
 
 _START_TIME = time.time()
 
-PLAN_PRICES = {"free": 0, "pro": 200_000, "business": 500_000, "gift": 0}
+PLAN_PRICES = {"free": 0, "pro": 200_000, "business": 500_000, "gift": 0, "gift_vip": 0}
 
 
 def _require_admin(request: Request, db: Session):
@@ -29,7 +29,7 @@ def _require_admin(request: Request, db: Session):
 
 def _user_stats(db: Session) -> dict:
     total = db.query(User).count()
-    by_plan = {p: 0 for p in ("free", "pro", "business", "gift")}
+    by_plan = {p: 0 for p in ("free", "pro", "business", "gift", "gift_vip")}
     active_count = 0
     expired_count = 0
     trial_count = 0
@@ -45,7 +45,7 @@ def _user_stats(db: Session) -> dict:
         if s.is_active_plan:
             if s.status == "trial":
                 trial_count += 1
-            elif s.status == "gift":
+            elif s.status in ("gift", "gift_vip"):
                 gift_count += 1
             else:
                 active_count += 1
@@ -66,7 +66,7 @@ def _user_stats(db: Session) -> dict:
 def _revenue_stats(db: Session) -> dict:
     now = datetime.utcnow()
     mrr = 0
-    subs = db.query(Subscription).filter(Subscription.status.notin_(["trial", "gift"])).all()
+    subs = db.query(Subscription).filter(Subscription.status.notin_(["trial", "gift", "gift_vip"])).all()
     for s in subs:
         if s.is_active_plan and s.plan in PLAN_PRICES:
             mrr += PLAN_PRICES[s.plan]

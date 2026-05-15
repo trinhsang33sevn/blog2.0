@@ -11,7 +11,11 @@
       <div>
         <div class="text-muted small mb-1">{{ _("bill_current_plan") }}</div>
         <div class="d-flex align-items-center gap-2">
-          {% if sub.plan == 'business' %}
+          {% if sub.plan == 'gift_vip' %}
+            <span class="badge fs-6 px-3 py-2" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Gift 🎁 Vip</span>
+          {% elif sub.plan == 'gift' %}
+            <span class="badge bg-success fs-6 px-3 py-2">Gift 🎁</span>
+          {% elif sub.plan == 'business' %}
             <span class="badge bg-warning text-dark fs-6 px-3 py-2">Business</span>
           {% elif sub.plan == 'pro' %}
             <span class="badge bg-primary fs-6 px-3 py-2">Pro</span>
@@ -72,11 +76,11 @@
       <div class="card-body">
         <h5 class="fw-bold">Free Trial</h5>
         <div class="display-6 fw-bold mb-1">0₫</div>
-        <div class="text-muted small mb-3">3 ngày dùng thử</div>
+        <div class="text-muted small mb-3">{{ _("bill_free_trial_period") }}</div>
         <ul class="list-unstyled">
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.projects }} dự án</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.sites }} website</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.articles_per_day }} bài/ngày</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.projects }} {{ _("bill_projects") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.sites }} {{ _("bill_websites") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.free.articles_per_day }} {{ _("bill_articles_day") }}</li>
         </ul>
         {% if sub and sub.plan == 'free' %}
         <span class="badge bg-secondary mt-2">{{ _("bill_current_plan_badge") }}</span>
@@ -94,9 +98,9 @@
         <div class="display-6 fw-bold mb-1">{% if get_lang() == 'vi' %}200.000₫{% else %}$8{% endif %}</div>
         <div class="text-muted small mb-3">{{ _("bill_per_month") }}</div>
         <ul class="list-unstyled">
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.projects }} dự án</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.sites }} website</li>
-          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.articles_per_day }} bài/ngày</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.projects }} {{ _("bill_projects") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.sites }} {{ _("bill_websites") }}</li>
+          <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ plan_limits.pro.articles_per_day }} {{ _("bill_articles_day") }}</li>
           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>{{ _("bill_priority_support") }}</li>
         </ul>
         {% if sub and sub.plan == 'pro' %}

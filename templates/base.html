@@ -76,7 +76,11 @@
         <div class="d-flex align-items-center gap-3">
           {% set sub = current_user.subscription %}
           {% if sub %}
-            {% if sub.plan == 'business' %}
+            {% if sub.plan == 'gift_vip' %}
+              <span class="badge" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Gift 🎁 Vip</span>
+            {% elif sub.plan == 'gift' %}
+              <span class="badge bg-success">Gift 🎁</span>
+            {% elif sub.plan == 'business' %}
               <span class="badge bg-warning text-dark">Business</span>
             {% elif sub.plan == 'pro' %}
               <span class="badge bg-primary">Pro</span>

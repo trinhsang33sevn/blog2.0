@@ -119,11 +119,11 @@ def upgrade_plan(db: Session, user_id: int, plan: str, months: int = 1) -> Subsc
     sub = db.query(Subscription).filter(Subscription.user_id == user_id).first()
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
 
-    is_gift = plan == "gift"
+    is_gift = plan in ("gift", "gift_vip")
     now = datetime.utcnow()
     if is_gift:
-        expires = None          # gift never expires
-        status  = "gift"
+        expires = None          # gift/gift_vip never expires
+        status  = plan          # preserve "gift" or "gift_vip" as status
     else:
         base    = sub.expires_at if (sub and sub.expires_at and sub.expires_at > now) else now
         expires = base + timedelta(days=30 * months)
