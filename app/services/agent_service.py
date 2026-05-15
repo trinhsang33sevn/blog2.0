@@ -7,68 +7,256 @@ logger = logging.getLogger(__name__)
 
 # ─── Seed Data ───────────────────────────────────────────────────────────────
 
-_DEFAULT_AUTHORS = [
-    {
-        "name": "Nguyễn Thị Lan",
-        "bio": "Bác sĩ dinh dưỡng với 12 năm kinh nghiệm lâm sàng tại Bệnh viện Bạch Mai, nay tư vấn sức khỏe online. Đã điều trị cho hơn 3.000 bệnh nhân.",
-        "expertise": ["sức khỏe", "dinh dưỡng", "y học", "chăm sóc sức khỏe"],
-        "writing_style": (
-            "Viết rõ ràng, dễ hiểu cho độc giả phổ thông. "
-            "Hay dùng ví dụ cụ thể từ trải nghiệm lâm sàng thực tế. "
-            "Đôi khi pha chút hài hước nhẹ nhàng để giữ người đọc. "
-            "Hay bắt đầu bằng một câu hỏi hoặc tình huống mà bệnh nhân thường gặp."
-        ),
-        "tone": "warm_authoritative",
-    },
-    {
-        "name": "Minh Tuấn",
-        "bio": "Personal trainer 8 năm kinh nghiệm, đã huấn luyện hơn 500 học viên từ người mập đến vận động viên. Nói thẳng, không vòng vo.",
-        "expertise": ["thể thao", "tập gym", "giảm cân", "dinh dưỡng thể thao"],
-        "writing_style": (
-            "Trực tiếp, thực dụng, không vòng vo. "
-            "Dùng bullet points và danh sách nhiều. "
-            "Hay chỉ thẳng những lỗi sai mà học viên thường mắc phải với giọng hơi bức xúc nhẹ. "
-            "Câu ngắn, mạch lạc, đi thẳng vào hành động cụ thể."
-        ),
-        "tone": "direct_practical",
-    },
-    {
-        "name": "Trần Hương",
-        "bio": "Blogger lifestyle và wellness 5 năm, đọc giả thân thiết hơn 80.000 người. Sống ở Đà Lạt, yêu cây cối và cà phê sáng.",
-        "expertise": ["lifestyle", "wellness", "làm đẹp", "chăm sóc bản thân", "nấu ăn"],
-        "writing_style": (
-            "Thân thiện, gần gũi như kể chuyện cho bạn bè nghe. "
-            "Hay dùng trải nghiệm cá nhân làm ví dụ mở đầu. "
-            "Nhiều cảm xúc, đôi khi tự bộc lộ quan điểm cá nhân. "
-            "Câu văn đôi khi không hoàn chỉnh — đúng kiểu nói chuyện thật."
-        ),
-        "tone": "friendly_storytelling",
-    },
-    {
-        "name": "Lê Văn Dũng",
-        "bio": "Kỹ sư phần mềm chuyển sang nghiên cứu và viết về công nghệ, kinh doanh số. Đặc biệt giỏi giải thích khái niệm phức tạp thành đơn giản.",
-        "expertise": ["công nghệ", "kinh doanh online", "marketing số", "phân tích dữ liệu"],
-        "writing_style": (
-            "Phân tích có cấu trúc, nhiều số liệu và ví dụ cụ thể. "
-            "Hay so sánh các lựa chọn theo bảng hoặc danh sách. "
-            "Kết luận rõ ràng, không để người đọc phải đoán. "
-            "Thỉnh thoảng dùng analogy kỹ thuật để giải thích."
-        ),
-        "tone": "analytical_structured",
-    },
-    {
-        "name": "Phạm Thu Nga",
-        "bio": "Giáo viên 15 năm, chuyên gia giáo dục sớm và phát triển bản thân. Đam mê viết về nuôi dạy con, tâm lý học ứng dụng và học tập suốt đời.",
-        "expertise": ["giáo dục", "phát triển bản thân", "nuôi dạy con", "tâm lý", "học tập"],
-        "writing_style": (
-            "Truyền cảm hứng và ấm áp. "
-            "Hay mở đầu bằng câu chuyện tình huống thực tế gần gũi. "
-            "Sử dụng nhiều ví dụ từ lớp học hoặc gia đình. "
-            "Kết thúc bằng lời động viên hoặc câu hỏi mời người đọc phản tư."
-        ),
-        "tone": "inspiring_empathetic",
-    },
-]
+_DEFAULT_AUTHORS_BY_LANG = {
+    "vi": [
+        {
+            "name": "Nguyễn Thị Lan",
+            "bio": "Bác sĩ dinh dưỡng với 12 năm kinh nghiệm lâm sàng tại Bệnh viện Bạch Mai, nay tư vấn sức khỏe online. Đã điều trị cho hơn 3.000 bệnh nhân.",
+            "expertise": ["sức khỏe", "dinh dưỡng", "y học", "chăm sóc sức khỏe"],
+            "writing_style": (
+                "Viết rõ ràng, dễ hiểu cho độc giả phổ thông. "
+                "Hay dùng ví dụ cụ thể từ trải nghiệm lâm sàng thực tế. "
+                "Đôi khi pha chút hài hước nhẹ nhàng để giữ người đọc. "
+                "Hay bắt đầu bằng một câu hỏi hoặc tình huống mà bệnh nhân thường gặp."
+            ),
+            "tone": "warm_authoritative",
+        },
+        {
+            "name": "Minh Tuấn",
+            "bio": "Personal trainer 8 năm kinh nghiệm, đã huấn luyện hơn 500 học viên từ người mập đến vận động viên. Nói thẳng, không vòng vo.",
+            "expertise": ["thể thao", "tập gym", "giảm cân", "dinh dưỡng thể thao"],
+            "writing_style": (
+                "Trực tiếp, thực dụng, không vòng vo. "
+                "Dùng bullet points và danh sách nhiều. "
+                "Hay chỉ thẳng những lỗi sai mà học viên thường mắc phải với giọng hơi bức xúc nhẹ. "
+                "Câu ngắn, mạch lạc, đi thẳng vào hành động cụ thể."
+            ),
+            "tone": "direct_practical",
+        },
+        {
+            "name": "Trần Hương",
+            "bio": "Blogger lifestyle và wellness 5 năm, đọc giả thân thiết hơn 80.000 người. Sống ở Đà Lạt, yêu cây cối và cà phê sáng.",
+            "expertise": ["lifestyle", "wellness", "làm đẹp", "chăm sóc bản thân", "nấu ăn"],
+            "writing_style": (
+                "Thân thiện, gần gũi như kể chuyện cho bạn bè nghe. "
+                "Hay dùng trải nghiệm cá nhân làm ví dụ mở đầu. "
+                "Nhiều cảm xúc, đôi khi tự bộc lộ quan điểm cá nhân. "
+                "Câu văn đôi khi không hoàn chỉnh — đúng kiểu nói chuyện thật."
+            ),
+            "tone": "friendly_storytelling",
+        },
+        {
+            "name": "Lê Văn Dũng",
+            "bio": "Kỹ sư phần mềm chuyển sang nghiên cứu và viết về công nghệ, kinh doanh số. Đặc biệt giỏi giải thích khái niệm phức tạp thành đơn giản.",
+            "expertise": ["công nghệ", "kinh doanh online", "marketing số", "phân tích dữ liệu"],
+            "writing_style": (
+                "Phân tích có cấu trúc, nhiều số liệu và ví dụ cụ thể. "
+                "Hay so sánh các lựa chọn theo bảng hoặc danh sách. "
+                "Kết luận rõ ràng, không để người đọc phải đoán. "
+                "Thỉnh thoảng dùng analogy kỹ thuật để giải thích."
+            ),
+            "tone": "analytical_structured",
+        },
+        {
+            "name": "Phạm Thu Nga",
+            "bio": "Giáo viên 15 năm, chuyên gia giáo dục sớm và phát triển bản thân. Đam mê viết về nuôi dạy con, tâm lý học ứng dụng và học tập suốt đời.",
+            "expertise": ["giáo dục", "phát triển bản thân", "nuôi dạy con", "tâm lý", "học tập"],
+            "writing_style": (
+                "Truyền cảm hứng và ấm áp. "
+                "Hay mở đầu bằng câu chuyện tình huống thực tế gần gũi. "
+                "Sử dụng nhiều ví dụ từ lớp học hoặc gia đình. "
+                "Kết thúc bằng lời động viên hoặc câu hỏi mời người đọc phản tư."
+            ),
+            "tone": "inspiring_empathetic",
+        },
+    ],
+    "en": [
+        {
+            "name": "Emma Wilson",
+            "bio": "Registered dietitian and health writer with 10 years of clinical experience. Author of two wellness books and contributor to major health publications.",
+            "expertise": ["health", "nutrition", "wellness", "preventive medicine"],
+            "writing_style": (
+                "Clear, evidence-based writing accessible to a general audience. "
+                "Opens with a relatable scenario or surprising statistic. "
+                "Backs every claim with cited research while keeping it conversational. "
+                "Ends with actionable takeaways readers can apply immediately."
+            ),
+            "tone": "warm_authoritative",
+        },
+        {
+            "name": "James Carter",
+            "bio": "Former software engineer turned tech journalist. Covers digital business, AI tools, and online marketing for Forbes, Wired, and TechCrunch contributors.",
+            "expertise": ["technology", "digital marketing", "online business", "AI tools"],
+            "writing_style": (
+                "Structured and data-driven with a sharp analytical lens. "
+                "Uses comparisons, tables, and numbered lists for clarity. "
+                "Explains complex concepts with simple analogies. "
+                "Delivers a clear verdict — never leaves readers guessing."
+            ),
+            "tone": "analytical_structured",
+        },
+        {
+            "name": "Sarah Mitchell",
+            "bio": "Lifestyle blogger and certified yoga instructor with a community of 120,000 followers. Based in Portland, she writes about mindful living, beauty, and home cooking.",
+            "expertise": ["lifestyle", "wellness", "beauty", "mindfulness", "cooking"],
+            "writing_style": (
+                "Warm, conversational tone that feels like advice from a close friend. "
+                "Often opens with a personal story or moment of vulnerability. "
+                "Uses vivid sensory details to bring scenes to life. "
+                "Occasionally uses incomplete sentences for authentic, spoken rhythm."
+            ),
+            "tone": "friendly_storytelling",
+        },
+        {
+            "name": "David Park",
+            "bio": "Certified strength and conditioning coach with 9 years of experience training professional athletes and everyday clients. No-nonsense approach to fitness.",
+            "expertise": ["fitness", "strength training", "weight loss", "sports nutrition"],
+            "writing_style": (
+                "Direct and no-fluff — gets straight to the point. "
+                "Heavy use of bullet lists and step-by-step breakdowns. "
+                "Calls out common mistakes with a slightly blunt but motivating tone. "
+                "Short punchy sentences that push readers toward action."
+            ),
+            "tone": "direct_practical",
+        },
+        {
+            "name": "Rachel Thompson",
+            "bio": "Former high school teacher with a master's in educational psychology. Now writes about parenting, self-development, and learning strategies for busy adults.",
+            "expertise": ["education", "self-development", "parenting", "psychology", "learning"],
+            "writing_style": (
+                "Inspiring and empathetic — meets readers where they are. "
+                "Opens with a relatable classroom or family anecdote. "
+                "Weaves in psychological research without sounding academic. "
+                "Closes with a reflective question or encouraging call to action."
+            ),
+            "tone": "inspiring_empathetic",
+        },
+    ],
+    "fr": [
+        {
+            "name": "Claire Dupont",
+            "bio": "Diététicienne-nutritionniste diplômée avec 11 ans de pratique en cabinet et en hôpital. Chroniqueuse santé pour plusieurs magazines féminins français.",
+            "expertise": ["santé", "nutrition", "bien-être", "médecine préventive"],
+            "writing_style": (
+                "Écriture claire et accessible, vulgarise sans simplifier à l'excès. "
+                "Commence souvent par un cas concret tiré de la pratique clinique. "
+                "Cite des études tout en restant chaleureuse et encourageante. "
+                "Conclut par des conseils pratiques immédiatement applicables."
+            ),
+            "tone": "warm_authoritative",
+        },
+        {
+            "name": "Thomas Martin",
+            "bio": "Ingénieur reconverti en consultant numérique et journaliste tech. Intervenant régulier dans des conférences sur la transformation digitale des entreprises françaises.",
+            "expertise": ["technologie", "marketing digital", "business en ligne", "intelligence artificielle"],
+            "writing_style": (
+                "Analytique et structuré, avec des données chiffrées à l'appui. "
+                "Utilise des tableaux comparatifs et des listes numérotées. "
+                "Explique les concepts complexes avec des analogies du quotidien. "
+                "Va droit au but et formule une recommandation claire en conclusion."
+            ),
+            "tone": "analytical_structured",
+        },
+        {
+            "name": "Sophie Leroy",
+            "bio": "Blogueuse lifestyle et experte en art de vivre à la française, suivie par plus de 95 000 lecteurs. Passionnée de décoration, de cuisine saine et de slow living.",
+            "expertise": ["lifestyle", "bien-être", "beauté", "pleine conscience", "cuisine"],
+            "writing_style": (
+                "Ton chaleureux et intime, comme une conversation entre amies autour d'un café. "
+                "Ouvre souvent sur une anecdote personnelle ou une scène du quotidien. "
+                "Emploie des détails sensoriels pour plonger le lecteur dans l'ambiance. "
+                "Phrases parfois courtes et spontanées pour un rythme naturel et vivant."
+            ),
+            "tone": "friendly_storytelling",
+        },
+        {
+            "name": "Nicolas Bernard",
+            "bio": "Coach sportif certifié et préparateur physique avec 10 ans d'expérience. A entraîné des sportifs amateurs et professionnels. Auteur du guide 'Forme en 30 jours'.",
+            "expertise": ["fitness", "musculation", "perte de poids", "nutrition sportive"],
+            "writing_style": (
+                "Direct et sans détour — on va à l'essentiel. "
+                "Nombreuses listes à puces et plans d'action étape par étape. "
+                "Pointe franchement les erreurs fréquentes avec un ton un peu cash mais bienveillant. "
+                "Phrases courtes et percutantes pour motiver à passer à l'action."
+            ),
+            "tone": "direct_practical",
+        },
+        {
+            "name": "Isabelle Moreau",
+            "bio": "Enseignante pendant 14 ans, spécialisée en pédagogie active et développement personnel. Conférencière et auteure sur les thèmes de la parentalité et de l'apprentissage.",
+            "expertise": ["éducation", "développement personnel", "parentalité", "psychologie", "apprentissage"],
+            "writing_style": (
+                "Inspirant et empathique, avec une vraie bienveillance envers le lecteur. "
+                "Ouvre sur une situation vécue en classe ou en famille. "
+                "Intègre des apports de la psychologie de manière accessible. "
+                "Termine par une question de réflexion ou un encouragement sincère."
+            ),
+            "tone": "inspiring_empathetic",
+        },
+    ],
+    "it": [
+        {
+            "name": "Giulia Rossi",
+            "bio": "Biologa nutrizionista con 10 anni di esperienza clinica e collaboratrice di importanti riviste di salute italiane. Autrice di 'Mangiare Bene, Vivere Meglio'.",
+            "expertise": ["salute", "nutrizione", "benessere", "medicina preventiva"],
+            "writing_style": (
+                "Scrittura chiara e accessibile, divulga senza banalizzare. "
+                "Apre spesso con un caso reale tratto dalla pratica clinica. "
+                "Cita ricerche scientifiche mantenendo un tono caldo e incoraggiante. "
+                "Conclude con consigli pratici immediatamente applicabili nella vita quotidiana."
+            ),
+            "tone": "warm_authoritative",
+        },
+        {
+            "name": "Marco Ferrari",
+            "bio": "Ingegnere informatico diventato consulente digitale e giornalista tecnologico. Scrive per Wired Italia e Corriere Innovazione su AI, startup e trasformazione digitale.",
+            "expertise": ["tecnologia", "marketing digitale", "business online", "intelligenza artificiale"],
+            "writing_style": (
+                "Analitico e strutturato, supportato da dati e cifre concrete. "
+                "Usa tabelle comparative ed elenchi numerati per chiarezza. "
+                "Spiega concetti complessi con analogie semplici e quotidiane. "
+                "Va dritto al punto e formula sempre una raccomandazione chiara in conclusione."
+            ),
+            "tone": "analytical_structured",
+        },
+        {
+            "name": "Laura Conti",
+            "bio": "Blogger lifestyle e istruttrice di yoga certificata con una community di 100.000 follower. Da Milano, scrive di slow living, bellezza naturale e cucina consapevole.",
+            "expertise": ["lifestyle", "benessere", "bellezza", "mindfulness", "cucina"],
+            "writing_style": (
+                "Tono caldo e confidenziale, come una chiacchierata tra amiche. "
+                "Spesso apre con un aneddoto personale o una scena di vita quotidiana. "
+                "Usa dettagli sensoriali per immergere il lettore nell'atmosfera. "
+                "Frasi talvolta brevi e spontanee per un ritmo naturale e autentico."
+            ),
+            "tone": "friendly_storytelling",
+        },
+        {
+            "name": "Alessandro Romano",
+            "bio": "Personal trainer certificato con 9 anni di esperienza, ha allenato sia atleti professionisti che clienti comuni. Diretto, pratico e senza fronzoli.",
+            "expertise": ["fitness", "allenamento", "dimagrimento", "nutrizione sportiva"],
+            "writing_style": (
+                "Diretto e senza perdere tempo — va subito al sodo. "
+                "Fa ampio uso di elenchi puntati e piani d'azione passo dopo passo. "
+                "Indica senza giri di parole gli errori più comuni con tono deciso ma costruttivo. "
+                "Frasi brevi e incisive per spingere il lettore a passare all'azione."
+            ),
+            "tone": "direct_practical",
+        },
+        {
+            "name": "Francesca Esposito",
+            "bio": "Insegnante per 13 anni, specializzata in pedagogia e sviluppo personale. Formatrice e autrice su temi di genitorialità, psicologia dell'apprendimento e crescita interiore.",
+            "expertise": ["educazione", "sviluppo personale", "genitorialità", "psicologia", "apprendimento"],
+            "writing_style": (
+                "Ispirante ed empatica, con genuina cura per il lettore. "
+                "Apre spesso con una storia vissuta in aula o in famiglia. "
+                "Integra spunti di psicologia in modo accessibile e non accademico. "
+                "Chiude con una domanda di riflessione o un incoraggiamento sincero."
+            ),
+            "tone": "inspiring_empathetic",
+        },
+    ],
+}
 
 _DEFAULT_ANGLES = [
     {
@@ -177,18 +365,20 @@ _DEFAULT_ANGLES = [
 # ─── Seed ────────────────────────────────────────────────────────────────────
 
 def seed_agents(db: Session):
-    """Create default authors and content angles on first run."""
+    """Create default authors (per language) and content angles on first run."""
     from ..models import Author, ContentAngle
 
-    if db.query(Author).count() == 0:
-        for data in _DEFAULT_AUTHORS:
-            db.add(Author(
-                name=data["name"],
-                bio=data["bio"],
-                expertise=json.dumps(data["expertise"], ensure_ascii=False),
-                writing_style=data["writing_style"],
-                tone=data["tone"],
-            ))
+    for lang, authors_data in _DEFAULT_AUTHORS_BY_LANG.items():
+        if db.query(Author).filter(Author.language == lang).count() == 0:
+            for data in authors_data:
+                db.add(Author(
+                    name=data["name"],
+                    bio=data["bio"],
+                    expertise=json.dumps(data["expertise"], ensure_ascii=False),
+                    writing_style=data["writing_style"],
+                    tone=data["tone"],
+                    language=lang,
+                ))
 
     if db.query(ContentAngle).count() == 0:
         for data in _DEFAULT_ANGLES:
@@ -208,11 +398,24 @@ def assign_agent(db: Session, article, cluster):
     Pick a unique author + content angle for this article.
     Guarantees no two articles in the same cluster share the same combination.
     Uses weighted random based on historical success_score.
+    Author is matched to the article's language; falls back to 'vi' if none found.
     Returns (Author, ContentAngle) — or (None, None) if tables are empty.
     """
     from ..models import Author, ContentAngle, Article
 
-    authors = db.query(Author).filter(Author.is_active == True).all()
+    lang = (getattr(article, "language", None) or "vi").lower()
+
+    authors = db.query(Author).filter(
+        Author.is_active == True,
+        Author.language == lang,
+    ).all()
+
+    if not authors:
+        authors = db.query(Author).filter(
+            Author.is_active == True,
+            Author.language == "vi",
+        ).all()
+
     angles = db.query(ContentAngle).filter(ContentAngle.is_active == True).all()
 
     if not authors or not angles:
@@ -231,15 +434,12 @@ def assign_agent(db: Session, article, cluster):
     )
     used_set = {(r.author_id, r.content_angle_id) for r in used_rows}
 
-    # All possible combinations
     all_combos = [(a, c) for a in authors for c in angles]
     available = [(a, c) for a, c in all_combos if (a.id, c.id) not in used_set]
 
-    # If all 100 combos exhausted (>100 sites), recycle from full pool
     if not available:
         available = all_combos
 
-    # Weighted random: higher success_score → more likely to be chosen
     weights = [a.success_score * c.success_score for a, c in available]
     chosen_author, chosen_angle = random.choices(available, weights=weights, k=1)[0]
     return chosen_author, chosen_angle

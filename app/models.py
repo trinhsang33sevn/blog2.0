@@ -76,6 +76,7 @@ class Author(Base):
     expertise = Column(Text, default="[]")       # JSON array of topic areas
     writing_style = Column(Text)
     tone = Column(String(100), default="conversational")
+    language = Column(String(20), default="vi")  # vi | en | fr | it
     success_score = Column(Float, default=1.0)   # updated by feedback loop
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
