@@ -4,14 +4,10 @@ import logging
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
 
 import httpx
 
 logger = logging.getLogger(__name__)
-
-_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
-         ".webp": "image/webp", ".gif": "image/gif"}
 
 
 def _auth(username: str, app_password: str) -> str:
@@ -23,9 +19,9 @@ def _base(site_url: str) -> str:
     return site_url.rstrip("/")
 
 
-def upload_media(site_url: str, username: str, app_password: str, file_path: Path) -> str | None:
-    """Upload image to self-hosted WordPress media library. Returns hosted URL or None."""
-    mime = _MIME.get(file_path.suffix.lower(), "image/jpeg")
+def upload_media_bytes(site_url: str, username: str, app_password: str,
+                       img_bytes: bytes, mime: str, filename: str) -> str | None:
+    """Upload image bytes to self-hosted WordPress media library. Returns hosted URL or None."""
     try:
         with httpx.Client(timeout=60) as c:
             resp = c.post(
@@ -33,9 +29,9 @@ def upload_media(site_url: str, username: str, app_password: str, file_path: Pat
                 auth=(username, app_password),
                 headers={
                     "Content-Type": mime,
-                    "Content-Disposition": f'attachment; filename="{file_path.name}"',
+                    "Content-Disposition": f'attachment; filename="{filename}"',
                 },
-                content=file_path.read_bytes(),
+                content=img_bytes,
             )
             resp.raise_for_status()
             return resp.json().get("source_url")

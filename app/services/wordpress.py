@@ -1,15 +1,11 @@
 """WordPress.com REST API v1.1 integration."""
 import logging
-from pathlib import Path
 from urllib.parse import urlencode
 import httpx
 from sqlalchemy.orm import Session
 from ..models import AppSetting
 
 logger = logging.getLogger(__name__)
-
-_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
-         ".webp": "image/webp", ".gif": "image/gif"}
 
 WP_AUTH_URL  = "https://public-api.wordpress.com/oauth2/authorize"
 WP_TOKEN_URL = "https://public-api.wordpress.com/oauth2/token"
@@ -68,15 +64,15 @@ def get_user_sites(access_token: str) -> list[dict]:
     ]
 
 
-def upload_media(access_token: str, site_id: str, file_path: Path) -> str | None:
-    """Upload image to WordPress.com media library. Returns hosted URL or None."""
-    mime = _MIME.get(file_path.suffix.lower(), "image/jpeg")
+def upload_media_bytes(access_token: str, site_id: str,
+                       img_bytes: bytes, mime: str, filename: str) -> str | None:
+    """Upload image bytes to WordPress.com media library. Returns hosted URL or None."""
     try:
         with httpx.Client(timeout=60) as c:
             resp = c.post(
                 f"{WP_API_BASE}/sites/{site_id}/media/new",
                 headers={"Authorization": f"Bearer {access_token}"},
-                files={"file": (file_path.name, file_path.read_bytes(), mime)},
+                files={"file": (filename, img_bytes, mime)},
             )
             resp.raise_for_status()
             media_list = resp.json().get("media", [])

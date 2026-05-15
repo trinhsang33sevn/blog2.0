@@ -2,7 +2,6 @@ import logging
 import random
 import re
 import uuid
-from pathlib import Path
 from urllib.parse import quote
 
 import httpx
@@ -27,36 +26,6 @@ _QUALITY_SUFFIX = (
     "high resolution, 8k uhd, high quality, detailed, masterpiece"
 )
 
-_IMAGES_DIR = Path("static/images/articles")
-
-
-def _save_image(url: str) -> str | None:
-    """Download image from url and save to static/images/articles/. Returns /static/... path or None."""
-    _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        with httpx.Client(timeout=40, follow_redirects=True) as client:
-            resp = client.get(url)
-            resp.raise_for_status()
-        ct = resp.headers.get("content-type", "image/jpeg")
-        if not resp.content:
-            return None
-        ext = "png" if "png" in ct else "webp" if "webp" in ct else "jpg"
-        filename = f"{uuid.uuid4().hex}.{ext}"
-        (_IMAGES_DIR / filename).write_bytes(resp.content)
-        return f"/static/images/articles/{filename}"
-    except Exception as e:
-        logger.warning("Image download failed %s: %s", url[:80], e)
-        return None
-
-
-def _hosted_url(source_url: str) -> str:
-    """Download image, return absolute hosted URL. Falls back to source_url on failure."""
-    from ..config import get_settings
-    local = _save_image(source_url)
-    if local:
-        return get_settings().BASE_URL.rstrip("/") + local
-    return source_url
-
 
 def _build_pollinations_url(prompt: str, width: int, height: int) -> str:
     seed = random.randint(1, 99999)
@@ -71,12 +40,12 @@ def _build_pollinations_url(prompt: str, width: int, height: int) -> str:
 
 
 def build_hero_image_url(prompt: str, width: int = 1200, height: int = 630) -> str:
-    """Generate Pollinations hero image, download & host locally. Returns absolute URL."""
-    return _hosted_url(_build_pollinations_url(prompt, width, height))
+    """Returns Pollinations.ai URL directly — no local storage."""
+    return _build_pollinations_url(prompt, width, height)
 
 
 def fetch_pixabay_image(query: str, api_key: str) -> str | None:
-    """Fetch Pixabay image, download & host locally. Returns absolute URL or None."""
+    """Returns Pixabay image URL directly — no local storage."""
     try:
         with httpx.Client(timeout=10) as client:
             resp = client.get(
@@ -94,9 +63,7 @@ def fetch_pixabay_image(query: str, api_key: str) -> str | None:
             resp.raise_for_status()
             hits = resp.json().get("hits", [])
             if hits:
-                pixabay_url = random.choice(hits[:3]).get("webformatURL")
-                if pixabay_url:
-                    return _hosted_url(pixabay_url)
+                return random.choice(hits[:3]).get("webformatURL")
     except Exception as e:
         logger.warning("Pixabay fetch failed for '%s': %s", query, e)
     return None
@@ -117,7 +84,7 @@ def _pixabay_figure_html(query: str, api_key: str) -> str:
 
 def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -> str:
     base_prompt = f"professional high quality photo illustration of {query}, realistic, detailed"
-    url = _hosted_url(_build_pollinations_url(base_prompt, width, height))
+    url = _build_pollinations_url(base_prompt, width, height)
     safe_query = query.replace('"', "")
     return (
         f'\n<figure style="margin:1.5rem 0;text-align:center;">'
@@ -127,40 +94,59 @@ def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -
     )
 
 
+def _fetch_image_bytes(url: str) -> tuple[bytes, str] | None:
+    """Download image into memory. Returns (bytes, mime_type) or None."""
+    try:
+        with httpx.Client(timeout=45, follow_redirects=True) as c:
+            resp = c.get(url)
+            resp.raise_for_status()
+            if not resp.content:
+                return None
+            ct = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+            return resp.content, ct
+    except Exception as e:
+        logger.warning("Image fetch failed %s: %s", url[:80], e)
+    return None
+
+
 def rehost_images_for_platform(content: str, platform: str, **auth) -> str:
     """
-    For WordPress platforms: re-upload VPS-hosted images to WordPress media library
-    and replace URLs in content. For other platforms, return content unchanged.
+    For WordPress: download each external image into RAM and upload directly
+    to WordPress media library — nothing is saved on VPS disk.
+    For all other platforms: return content unchanged.
 
-    auth kwargs for 'wordpress':         access_token, site_id
-    auth kwargs for 'wordpress_selfhosted': site_url, username, app_password
+    auth kwargs:
+      wordpress          → access_token, site_id
+      wordpress_selfhosted → site_url, username, app_password
     """
     if platform not in ("wordpress", "wordpress_selfhosted"):
         return content
 
-    from ..config import get_settings
-    base_url = get_settings().BASE_URL.rstrip("/")
-    prefix = f"{base_url}/static/images/articles/"
-
     for url in re.findall(r'<img[^>]+src="([^"]+)"', content):
-        if not url.startswith(prefix):
+        if not url.startswith("http"):
             continue
-        local_file = _IMAGES_DIR / url[len(prefix):]
-        if not local_file.exists():
-            logger.warning("Local image missing, skipping rehost: %s", local_file)
+        result = _fetch_image_bytes(url)
+        if not result:
             continue
+        img_bytes, mime = result
+        ext = {"image/jpeg": "jpg", "image/png": "png",
+               "image/webp": "webp", "image/gif": "gif"}.get(mime, "jpg")
+        filename = f"{uuid.uuid4().hex}.{ext}"
         try:
             if platform == "wordpress":
                 from . import wordpress as _wp
-                new_url = _wp.upload_media(auth["access_token"], auth["site_id"], local_file)
+                new_url = _wp.upload_media_bytes(
+                    auth["access_token"], auth["site_id"], img_bytes, mime, filename
+                )
             else:
                 from . import wordpress_selfhosted as _wp_sh
-                new_url = _wp_sh.upload_media(
-                    auth["site_url"], auth["username"], auth["app_password"], local_file
+                new_url = _wp_sh.upload_media_bytes(
+                    auth["site_url"], auth["username"], auth["app_password"],
+                    img_bytes, mime, filename,
                 )
             if new_url:
                 content = content.replace(url, new_url)
-                logger.info("Image re-hosted to WP: %s", new_url)
+                logger.info("Image hosted on WP: %s", new_url)
         except Exception as e:
             logger.warning("Image rehost failed for %s: %s", url, e)
 
@@ -175,9 +161,9 @@ def insert_images_into_content(
     pixabay_api_key: str,
 ) -> str:
     """
-    Chèn 2-4 ảnh vào bài viết (tất cả đã tải về server):
-    - Đầu bài: 1 ảnh Pollinations hero
-    - Trong bài: 1-3 ảnh Pixabay hoặc Pollinations fallback
+    Embed 2-4 images into article using external URLs (Pollinations / Pixabay).
+    No files are saved to disk. For WordPress, rehost_images_for_platform()
+    is called separately at publish time.
     """
     prompt = image_prompt.strip() if image_prompt else title
     hero_url = build_hero_image_url(prompt)
