@@ -1,13 +1,14 @@
 import logging
 import random
 import re
+import uuid
+from pathlib import Path
 from urllib.parse import quote
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
-# Negative prompt dùng cho tất cả ảnh Pollinations — loại bỏ lỗi anatomy phổ biến
 _NEGATIVE_PROMPT = (
     "deformed, bad anatomy, disfigured, poorly drawn face, mutation, mutated, "
     "extra limbs, extra arms, extra legs, extra hands, extra fingers, "
@@ -21,15 +22,43 @@ _NEGATIVE_PROMPT = (
     "watermark, text, logo, signature, username, nsfw, explicit"
 )
 
-# Quality booster thêm vào positive prompt
 _QUALITY_SUFFIX = (
     "photorealistic, professional photography, sharp focus, "
     "high resolution, 8k uhd, high quality, detailed, masterpiece"
 )
 
+_IMAGES_DIR = Path("static/images/articles")
 
-def build_hero_image_url(prompt: str, width: int = 1200, height: int = 630) -> str:
-    """Pollinations.ai — AI sinh ảnh đại diện, FLUX model, có negative prompt."""
+
+def _save_image(url: str) -> str | None:
+    """Download image from url and save to static/images/articles/. Returns /static/... path or None."""
+    _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        with httpx.Client(timeout=40, follow_redirects=True) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+        ct = resp.headers.get("content-type", "image/jpeg")
+        if not resp.content:
+            return None
+        ext = "png" if "png" in ct else "webp" if "webp" in ct else "jpg"
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        (_IMAGES_DIR / filename).write_bytes(resp.content)
+        return f"/static/images/articles/{filename}"
+    except Exception as e:
+        logger.warning("Image download failed %s: %s", url[:80], e)
+        return None
+
+
+def _hosted_url(source_url: str) -> str:
+    """Download image, return absolute hosted URL. Falls back to source_url on failure."""
+    from ..config import get_settings
+    local = _save_image(source_url)
+    if local:
+        return get_settings().BASE_URL.rstrip("/") + local
+    return source_url
+
+
+def _build_pollinations_url(prompt: str, width: int, height: int) -> str:
     seed = random.randint(1, 99999)
     full_prompt = f"{prompt.strip()}, {_QUALITY_SUFFIX}"
     encoded = quote(full_prompt[:600])
@@ -41,8 +70,13 @@ def build_hero_image_url(prompt: str, width: int = 1200, height: int = 630) -> s
     )
 
 
+def build_hero_image_url(prompt: str, width: int = 1200, height: int = 630) -> str:
+    """Generate Pollinations hero image, download & host locally. Returns absolute URL."""
+    return _hosted_url(_build_pollinations_url(prompt, width, height))
+
+
 def fetch_pixabay_image(query: str, api_key: str) -> str | None:
-    """Pixabay API — ảnh thật, trả về URL hoặc None nếu thất bại."""
+    """Fetch Pixabay image, download & host locally. Returns absolute URL or None."""
     try:
         with httpx.Client(timeout=10) as client:
             resp = client.get(
@@ -60,14 +94,15 @@ def fetch_pixabay_image(query: str, api_key: str) -> str | None:
             resp.raise_for_status()
             hits = resp.json().get("hits", [])
             if hits:
-                return random.choice(hits[:3]).get("webformatURL")
+                pixabay_url = random.choice(hits[:3]).get("webformatURL")
+                if pixabay_url:
+                    return _hosted_url(pixabay_url)
     except Exception as e:
-        logger.warning(f"Pixabay fetch failed for '{query}': {e}")
+        logger.warning("Pixabay fetch failed for '%s': %s", query, e)
     return None
 
 
 def _pixabay_figure_html(query: str, api_key: str) -> str:
-    """Trả về HTML <figure> ảnh Pixabay, hoặc chuỗi rỗng nếu không tìm được."""
     url = fetch_pixabay_image(query, api_key)
     if not url:
         return ""
@@ -81,17 +116,8 @@ def _pixabay_figure_html(query: str, api_key: str) -> str:
 
 
 def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -> str:
-    """Tạo ảnh minh họa section bằng Pollinations.ai khi không có Pixabay."""
-    seed = random.randint(1, 99999)
     base_prompt = f"professional high quality photo illustration of {query}, realistic, detailed"
-    full_prompt = f"{base_prompt}, {_QUALITY_SUFFIX}"
-    encoded = quote(full_prompt[:600])
-    neg_encoded = quote(_NEGATIVE_PROMPT)
-    url = (
-        f"https://image.pollinations.ai/prompt/{encoded}"
-        f"?width={width}&height={height}&nologo=true&seed={seed}"
-        f"&model=flux&negative={neg_encoded}"
-    )
+    url = _hosted_url(_build_pollinations_url(base_prompt, width, height))
     safe_query = query.replace('"', "")
     return (
         f'\n<figure style="margin:1.5rem 0;text-align:center;">'
@@ -109,11 +135,10 @@ def insert_images_into_content(
     pixabay_api_key: str,
 ) -> str:
     """
-    Chèn 2-4 ảnh vào bài viết, số lượng ngẫu nhiên theo độ dài nội dung:
-    - Đầu bài: 1 ảnh Pollinations.ai (hero image)
-    - Trong bài: 1-3 ảnh Pixabay (nếu có key) hoặc Pollinations.ai (fallback)
+    Chèn 2-4 ảnh vào bài viết (tất cả đã tải về server):
+    - Đầu bài: 1 ảnh Pollinations hero
+    - Trong bài: 1-3 ảnh Pixabay hoặc Pollinations fallback
     """
-    # ── Hero image (Pollinations) ─────────────────────────────────────────────
     prompt = image_prompt.strip() if image_prompt else title
     hero_url = build_hero_image_url(prompt)
     hero_html = (
@@ -123,11 +148,9 @@ def insert_images_into_content(
         f"</figure>\n"
     )
 
-    # ── Tách content thành các phần theo thẻ <h2 ─────────────────────────────
     sections = re.split(r"(?=<h2[\s>])", content)
     sections[0] = hero_html + sections[0]
 
-    # ── Xác định số ảnh inline cần chèn dựa theo độ dài bài ──────────────────
     if image_queries:
         word_count = len(re.sub(r"<[^>]+>", " ", content).split())
         if word_count < 400:
@@ -137,9 +160,8 @@ def insert_images_into_content(
         else:
             extra_count = random.randint(2, 3)
 
-        num_sections = len(sections) - 1  # số section h2 (bỏ intro)
+        num_sections = len(sections) - 1
         if num_sections > 0:
-            # Chọn section indices phân bổ đều
             if extra_count >= num_sections:
                 chosen = list(range(1, len(sections)))
             else:
@@ -150,7 +172,6 @@ def insert_images_into_content(
             for i, section_idx in enumerate(chosen):
                 if i >= len(image_queries):
                     break
-                # Dùng Pixabay nếu có key, fallback sang Pollinations.ai
                 if pixabay_api_key:
                     figure = _pixabay_figure_html(image_queries[i], pixabay_api_key)
                 else:
