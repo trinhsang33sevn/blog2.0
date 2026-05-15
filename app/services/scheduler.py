@@ -614,9 +614,12 @@ def publish_ready_articles():
 
 def process_keyword_clustering():
     """Cluster keywords for projects that have pending keywords.
+    Mỗi lần chạy xử lý tối đa 1 batch (60 từ khóa) mỗi project.
+    Kết quả được lưu ngay sau mỗi batch — không mất dữ liệu nếu batch sau thất bại.
     Per-project advisory lock: nhiều user chạy song song, không ai block ai.
     """
     from ..models import Keyword
+    _BATCH = 60  # từ khóa tối đa mỗi lần chạy scheduler
     db = get_db()
     try:
         projects_with_pending = (
@@ -628,6 +631,7 @@ def process_keyword_clustering():
             pending_kws = (
                 db.query(Keyword)
                 .filter(Keyword.project_id == project.id, Keyword.status == "pending")
+                .limit(_BATCH)
                 .all()
             )
             if not pending_kws:
@@ -637,10 +641,9 @@ def process_keyword_clustering():
                 continue  # worker khác đang xử lý project này
 
             kw_texts = [kw.keyword for kw in pending_kws]
+            kw_map   = {kw.keyword: kw for kw in pending_kws}
             try:
-                clusters_data = openrouter.cluster_keywords(db, kw_texts, model=project.ai_model, user_id=project.user_id)
-
-                kw_map = {kw.keyword: kw for kw in pending_kws}
+                clusters_data = openrouter._cluster_batch(db, kw_texts, openrouter.get_setting(db, "openrouter_model", openrouter.DEFAULT_OR_MODEL, user_id=project.user_id), user_id=project.user_id)
 
                 for cluster_data in clusters_data:
                     cluster = KeywordCluster(
@@ -668,12 +671,14 @@ def process_keyword_clustering():
                         db.add(article)
 
                 db.commit()
-                logger.info(f"Clustered {len(kw_texts)} keywords into {len(clusters_data)} clusters for project {project.id}")
+                remaining = db.query(Keyword).filter(Keyword.project_id == project.id, Keyword.status == "pending").count()
+                logger.info(f"Clustered {len(kw_texts)} keywords into {len(clusters_data)} clusters for project {project.id} (còn {remaining} kw pending)")
 
                 Thread(target=process_writing_queue, daemon=True).start()
 
             except Exception as e:
                 logger.error(f"Error clustering keywords for project {project.id}: {e}")
+                db.rollback()
             finally:
                 _release_project_lock(db, _LOCK_CLASS_CLUSTER, project.id)
 
