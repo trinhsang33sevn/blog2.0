@@ -7,14 +7,37 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Negative prompt dùng cho tất cả ảnh Pollinations — loại bỏ lỗi anatomy phổ biến
+_NEGATIVE_PROMPT = (
+    "deformed, bad anatomy, disfigured, poorly drawn face, mutation, mutated, "
+    "extra limbs, extra arms, extra legs, extra hands, extra fingers, "
+    "missing limb, missing arm, missing leg, missing hand, missing fingers, "
+    "floating limbs, disconnected limbs, malformed hands, malformed limbs, "
+    "poorly drawn hands, poorly drawn feet, poorly drawn face, "
+    "extra heads, two heads, cloned face, double face, duplicate, "
+    "gross proportions, distorted face, bad proportions, "
+    "long neck, long body, twisted body, deformed body, "
+    "blurry, out of focus, low quality, worst quality, low resolution, "
+    "watermark, text, logo, signature, username, nsfw, explicit"
+)
+
+# Quality booster thêm vào positive prompt
+_QUALITY_SUFFIX = (
+    "photorealistic, professional photography, sharp focus, "
+    "high resolution, 8k uhd, high quality, detailed, masterpiece"
+)
+
 
 def build_hero_image_url(prompt: str, width: int = 1200, height: int = 630) -> str:
-    """Pollinations.ai — AI sinh ảnh đại diện, không cần API key."""
+    """Pollinations.ai — AI sinh ảnh đại diện, FLUX model, có negative prompt."""
     seed = random.randint(1, 99999)
-    encoded = quote(prompt[:500])  # giới hạn độ dài prompt
+    full_prompt = f"{prompt.strip()}, {_QUALITY_SUFFIX}"
+    encoded = quote(full_prompt[:600])
+    neg_encoded = quote(_NEGATIVE_PROMPT)
     return (
         f"https://image.pollinations.ai/prompt/{encoded}"
         f"?width={width}&height={height}&nologo=true&seed={seed}"
+        f"&model=flux&negative={neg_encoded}"
     )
 
 
@@ -60,11 +83,14 @@ def _pixabay_figure_html(query: str, api_key: str) -> str:
 def _pollinations_figure_html(query: str, width: int = 800, height: int = 450) -> str:
     """Tạo ảnh minh họa section bằng Pollinations.ai khi không có Pixabay."""
     seed = random.randint(1, 99999)
-    prompt = f"professional high quality photo illustration of {query}, realistic, detailed"
-    encoded = quote(prompt[:500])
+    base_prompt = f"professional high quality photo illustration of {query}, realistic, detailed"
+    full_prompt = f"{base_prompt}, {_QUALITY_SUFFIX}"
+    encoded = quote(full_prompt[:600])
+    neg_encoded = quote(_NEGATIVE_PROMPT)
     url = (
         f"https://image.pollinations.ai/prompt/{encoded}"
         f"?width={width}&height={height}&nologo=true&seed={seed}"
+        f"&model=flux&negative={neg_encoded}"
     )
     safe_query = query.replace('"', "")
     return (

@@ -887,7 +887,7 @@ IMPORTANT: All content must reflect {current_year} as the current year. Do NOT c
 - HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote — NO html/head/body tags
 
 ## STEP 3 — Image Suggestions (in English)
-- image_prompt: One VIVID, highly specific sentence for an AI image generator. Describe a real scene — specific subject, action, setting, mood, lighting. NOT generic clip-art concepts. Example: "A Vietnamese woman in her 30s sitting at a wooden desk reviewing financial documents on her laptop, warm morning light through a window, coffee cup beside her, charts visible on screen, photorealistic."
+- image_prompt: One VIVID, highly specific sentence for an AI image generator. CRITICAL RULES to avoid anatomy defects: (1) NEVER describe a full-body person — use "waist-up portrait", "head and shoulders close-up", or "face and chest only"; (2) PREFER scene/object/environment shots when possible — e.g., a product on a desk, a landscape, tools, food, technology devices; (3) If a person must appear, show them from the back, side, or very close-up face only. Describe setting, mood, lighting vividly. Example: "Waist-up portrait of a professional woman reviewing charts on a laptop screen, warm office lighting, shallow depth of field, photorealistic."
 - image_queries: 3–5 short English keyword phrases (2–4 words each) for stock photo searches, one per main H2 section. Make them concrete and visual — avoid abstract terms.
 
 ## STEP 4 — Article Labels (in {lang_name})
