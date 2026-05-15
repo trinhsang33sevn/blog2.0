@@ -201,10 +201,15 @@
     <ol class="mb-0 small text-muted">
       <li>{{ _("acct_google_guide_step1") | safe }}</li>
       <li>{{ _("acct_google_guide_step2") | safe }}</li>
+      <li class="text-danger fw-semibold">{{ _("acct_google_guide_step2b") | safe }}</li>
       <li>{{ _("acct_google_guide_step3") | safe }}</li>
       <li>{{ _("acct_google_guide_step4") | safe }} <code class="user-select-all">{{ base_url }}/accounts/oauth/callback</code></li>
       <li>{{ _("acct_google_guide_step5") | safe }}</li>
     </ol>
+    <div class="alert alert-warning mt-3 mb-0 py-2 small">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ _("acct_google_guide_api_warning") | safe }}
+    </div>
   </div>
 </div>
 
