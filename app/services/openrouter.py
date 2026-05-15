@@ -706,7 +706,7 @@ def _cluster_batch(
     preferred: str,
     user_id: int = None,
 ) -> list[dict]:
-    """Gọi AI phân cụm cho một lô từ khóa."""
+    """Gọi AI phân cụm cho một lô từ khóa. Retry tối đa 3 lần nếu AI không trả JSON."""
     kw_list = "\n".join(f"- {kw}" for kw in keywords)
     prompt = f"""You are a senior SEO strategist. Group the following keywords into topical clusters. Each cluster will become ONE comprehensive SEO article.
 
@@ -729,14 +729,29 @@ Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
   }}
 ]"""
 
-    content, used_model = smart_call(
-        db, preferred,
-        [{"role": "user", "content": prompt}],
-        max_tokens=3000,
-        user_id=user_id,
+    retry_prompt = (
+        "Output ONLY the raw JSON array below. "
+        "No explanation, no thinking, no markdown. Start your response with [ and end with ].\n\n"
+        + prompt
     )
-    logger.info(f"cluster_batch ({len(keywords)} kws) used model: {used_model}")
-    return _extract_json(content)
+
+    last_error = None
+    for attempt in range(3):
+        try:
+            use_prompt = retry_prompt if attempt > 0 else prompt
+            content, used_model = smart_call(
+                db, preferred,
+                [{"role": "user", "content": use_prompt}],
+                max_tokens=3000,
+                user_id=user_id,
+            )
+            logger.info(f"cluster_batch ({len(keywords)} kws) used model: {used_model} attempt={attempt + 1}")
+            return _extract_json(content)
+        except ValueError as e:
+            last_error = e
+            logger.warning(f"cluster_batch attempt {attempt + 1} failed (JSON parse error): {e}")
+
+    raise last_error
 
 
 def cluster_keywords(db: Session, keywords: list[str], model: Optional[str] = None, user_id: int = None) -> list[dict]:
