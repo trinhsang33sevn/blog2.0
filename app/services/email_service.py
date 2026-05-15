@@ -96,6 +96,79 @@ def send_verification_email(to: str, code: str, full_name: str = "") -> bool:
     return send_email(to, subject, html)
 
 
+def send_system_alert(to: str, alerts: list[dict], stats: dict) -> bool:
+    """Gửi email cảnh báo hệ thống khi disk/CPU/RAM vượt ngưỡng."""
+    def _bar_color(pct: float) -> str:
+        return "#ef4444" if pct >= 85 else "#f59e0b" if pct >= 70 else "#10b981"
+
+    def _pct_bar(pct: float) -> str:
+        color = _bar_color(pct)
+        return (
+            f'<div style="background:#e5e7eb;border-radius:4px;height:8px;margin:4px 0 2px">'
+            f'<div style="background:{color};width:{min(pct,100):.0f}%;height:8px;border-radius:4px"></div>'
+            f'</div>'
+        )
+
+    alert_rows = "".join(
+        f'<tr><td style="padding:6px 0;color:#374151;font-weight:600">{a["icon"]} {a["label"]}</td>'
+        f'<td style="padding:6px 0;color:#ef4444;font-weight:700">{a["value"]}</td>'
+        f'<td style="padding:6px 0;color:#6b7280">{a["action"]}</td></tr>'
+        for a in alerts
+    )
+
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f0f2f5;padding:40px 0;margin:0">
+  <div style="max-width:560px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+    <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:24px 32px;text-align:center">
+      <h1 style="color:#fff;margin:0;font-size:20px;font-weight:700">⚠️ AutoBlogspot — Cảnh báo hệ thống</h1>
+      <p style="color:rgba(255,255,255,.8);margin:6px 0 0;font-size:13px">Server {stats.get('hostname','')}</p>
+    </div>
+    <div style="padding:28px 32px">
+      <p style="color:#374151;font-size:14px;margin:0 0 20px">Hệ thống phát hiện một hoặc nhiều chỉ số vượt ngưỡng cảnh báo:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        <thead><tr style="border-bottom:2px solid #e5e7eb">
+          <th style="text-align:left;padding:6px 0;color:#6b7280">Chỉ số</th>
+          <th style="text-align:left;padding:6px 0;color:#6b7280">Giá trị</th>
+          <th style="text-align:left;padding:6px 0;color:#6b7280">Gợi ý</th>
+        </tr></thead>
+        <tbody>{alert_rows}</tbody>
+      </table>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px">
+        <p style="margin:0 0 12px;font-weight:600;color:#374151;font-size:13px">📊 Tổng quan hệ thống hiện tại:</p>
+        <div style="font-size:12px;color:#374151">
+          <div style="margin-bottom:8px">
+            <span style="font-weight:600">CPU:</span> {stats.get('cpu_pct',0):.1f}% ({stats.get('cpu_cores',0)} nhân)
+            {_pct_bar(stats.get('cpu_pct',0))}
+          </div>
+          <div style="margin-bottom:8px">
+            <span style="font-weight:600">RAM:</span> {stats.get('mem_used_gb',0)} GB / {stats.get('mem_total_gb',0)} GB ({stats.get('mem_pct',0):.1f}%)
+            {_pct_bar(stats.get('mem_pct',0))}
+          </div>
+          <div>
+            <span style="font-weight:600">Ổ cứng:</span> {stats.get('disk_used_gb',0):.1f} GB / {stats.get('disk_total_gb',0):.1f} GB ({stats.get('disk_pct',0):.1f}%)
+            {_pct_bar(stats.get('disk_pct',0))}
+          </div>
+        </div>
+      </div>
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px;font-size:12px;color:#92400e">
+        <strong>💡 Lệnh dọn dẹp nhanh (SSH vào server):</strong><br>
+        <code style="font-family:monospace">sudo docker builder prune -af</code> — Xóa Docker build cache<br>
+        <code style="font-family:monospace">sudo journalctl --vacuum-size=100M</code> — Giảm system journal<br>
+        <code style="font-family:monospace">sudo find /var/log -name "*.gz" -delete</code> — Xóa log nén cũ
+      </div>
+    </div>
+    <div style="background:#f9fafb;padding:14px 32px;text-align:center;border-top:1px solid #e5e7eb">
+      <a href="https://autoblogspot.com/admin?tab=system" style="color:#4f46e5;font-size:12px">Xem Admin Dashboard</a>
+      <span style="color:#d1d5db;margin:0 8px">|</span>
+      <span style="color:#9ca3af;font-size:12px">© 2025 AutoBlogspot</span>
+    </div>
+  </div>
+</body></html>"""
+    subject = f"⚠️ AutoBlogspot: Cảnh báo hệ thống — {', '.join(a['label'] for a in alerts)}"
+    return send_email(to, subject, html)
+
+
 def send_password_reset(to: str, reset_url: str) -> bool:
     subject = "Đặt lại mật khẩu AutoBlogspot"
     html = f"""

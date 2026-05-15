@@ -157,6 +157,12 @@ def admin_dashboard(request: Request, tab: str = "overview", db: Session = Depen
         "plan_prices":       PLAN_PRICES,
         "telegram_username": get_setting(db, "telegram_username"),
         "contact_email":     get_setting(db, "contact_email") or "hoangvandonglx@gmail.com",
+        "alert_config": {
+            "alert_email":    get_setting(db, "alert_email") or "",
+            "disk_alert_pct": get_setting(db, "disk_alert_pct") or "80",
+            "cpu_alert_pct":  get_setting(db, "cpu_alert_pct")  or "90",
+            "ram_alert_pct":  get_setting(db, "ram_alert_pct")  or "90",
+        },
     })
 
 
@@ -261,3 +267,59 @@ def delete_user(uid: int, request: Request, db: Session = Depends(get_db)):
         db.delete(user)
         db.commit()
     return RedirectResponse("/admin?tab=members&success=Da+xoa+nguoi+dung", status_code=303)
+
+
+@router.post("/admin/alert-config")
+def save_alert_config(
+    request: Request,
+    alert_email:    str = Form(""),
+    disk_alert_pct: str = Form("80"),
+    cpu_alert_pct:  str = Form("90"),
+    ram_alert_pct:  str = Form("90"),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    for key, val in [
+        ("alert_email",    alert_email.strip()),
+        ("disk_alert_pct", disk_alert_pct.strip()),
+        ("cpu_alert_pct",  cpu_alert_pct.strip()),
+        ("ram_alert_pct",  ram_alert_pct.strip()),
+    ]:
+        set_setting(db, key, val)
+    return RedirectResponse("/admin?tab=system&success=Da+luu+cau+hinh+canh+bao", status_code=303)
+
+
+@router.get("/admin/test-alert")
+def test_alert(request: Request, db: Session = Depends(get_db)):
+    """Send a test system alert email immediately."""
+    import socket
+    import psutil
+    from ..services.email_service import send_system_alert
+
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+
+    alert_email = get_setting(db, "alert_email") or ""
+    if not alert_email:
+        return RedirectResponse("/admin?tab=system&error=Chua+cau+hinh+email+canh+bao", status_code=303)
+
+    disk = psutil.disk_usage("/")
+    cpu  = psutil.cpu_percent(interval=1)
+    ram  = psutil.virtual_memory()
+    stats = {
+        "hostname":     socket.gethostname(),
+        "cpu_pct":      cpu,
+        "cpu_cores":    psutil.cpu_count(),
+        "mem_pct":      ram.percent,
+        "mem_used_gb":  round(ram.used  / 1024**3, 1),
+        "mem_total_gb": round(ram.total / 1024**3, 1),
+        "disk_pct":     disk.percent,
+        "disk_used_gb": round(disk.used  / 1024**3, 1),
+        "disk_total_gb":round(disk.total / 1024**3, 1),
+    }
+    test_alerts = [{"icon": "🧪", "label": "Test Alert", "value": "Email thử nghiệm", "action": "Không cần hành động"}]
+    ok = send_system_alert(alert_email, test_alerts, stats)
+    if ok:
+        return RedirectResponse("/admin?tab=system&success=Da+gui+email+test+thanh+cong", status_code=303)
+    return RedirectResponse("/admin?tab=system&error=Gui+email+that+bai+kiem+tra+SMTP", status_code=303)

@@ -1,8 +1,11 @@
 import json
 import logging
 import random
+import socket
 from datetime import datetime, timedelta, date
 from threading import Thread
+
+import psutil
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -652,6 +655,82 @@ def submit_new_urls_to_sinbyte():
         db.close()
 
 
+# ─── System Health Monitoring ────────────────────────────────────────────────
+
+# Rate-limit: one alert per type per cooldown window
+_last_alert_sent: dict[str, datetime] = {}
+ALERT_COOLDOWN_HOURS = 6
+
+
+def check_system_health():
+    """Check disk/CPU/RAM against admin thresholds and send email if exceeded."""
+    db = get_db()
+    try:
+        from .email_service import send_system_alert
+        from . import openrouter as _or
+
+        alert_email = _or.get_setting(db, "alert_email") or ""
+        if not alert_email:
+            return
+
+        disk_thresh = int(_or.get_setting(db, "disk_alert_pct") or "80")
+        cpu_thresh  = int(_or.get_setting(db, "cpu_alert_pct")  or "90")
+        ram_thresh  = int(_or.get_setting(db, "ram_alert_pct")  or "90")
+
+        disk = psutil.disk_usage("/")
+        cpu  = psutil.cpu_percent(interval=1)
+        ram  = psutil.virtual_memory()
+        now  = datetime.utcnow()
+
+        def _cooldown_ok(key: str) -> bool:
+            last = _last_alert_sent.get(key)
+            return last is None or (now - last).total_seconds() > ALERT_COOLDOWN_HOURS * 3600
+
+        triggered = []
+        if disk.percent >= disk_thresh and _cooldown_ok("disk"):
+            triggered.append({
+                "icon": "💾", "label": "Ổ cứng",
+                "value": f"{disk.percent:.1f}% (ngưỡng {disk_thresh}%)",
+                "action": "Chạy: sudo docker builder prune -af",
+            })
+            _last_alert_sent["disk"] = now
+
+        if cpu >= cpu_thresh and _cooldown_ok("cpu"):
+            triggered.append({
+                "icon": "🖥️", "label": "CPU",
+                "value": f"{cpu:.1f}% (ngưỡng {cpu_thresh}%)",
+                "action": "Kiểm tra tiến trình nặng",
+            })
+            _last_alert_sent["cpu"] = now
+
+        if ram.percent >= ram_thresh and _cooldown_ok("ram"):
+            triggered.append({
+                "icon": "🧠", "label": "RAM",
+                "value": f"{ram.percent:.1f}% (ngưỡng {ram_thresh}%)",
+                "action": "Khởi động lại app container",
+            })
+            _last_alert_sent["ram"] = now
+
+        if triggered:
+            stats = {
+                "hostname":     socket.gethostname(),
+                "cpu_pct":      cpu,
+                "cpu_cores":    psutil.cpu_count(),
+                "mem_pct":      ram.percent,
+                "mem_used_gb":  round(ram.used  / 1024**3, 1),
+                "mem_total_gb": round(ram.total / 1024**3, 1),
+                "disk_pct":     disk.percent,
+                "disk_used_gb": round(disk.used  / 1024**3, 1),
+                "disk_total_gb":round(disk.total / 1024**3, 1),
+            }
+            send_system_alert(alert_email, triggered, stats)
+            logger.warning(f"System alert sent to {alert_email}: {[a['label'] for a in triggered]}")
+    except Exception as exc:
+        logger.error(f"check_system_health error: {exc}")
+    finally:
+        db.close()
+
+
 # ─── Index Checking ───────────────────────────────────────────────────────────
 
 def check_index_status():
@@ -815,6 +894,9 @@ def start_scheduler():
 
     # Check index status every 6 hours (max 10 URLs per run to avoid blocks)
     _scheduler.add_job(check_index_status, IntervalTrigger(hours=6), id="check_index", replace_existing=True)
+
+    # System health check every 30 minutes — sends email alert if thresholds exceeded
+    _scheduler.add_job(check_system_health, IntervalTrigger(minutes=30), id="health_check", replace_existing=True)
 
     _scheduler.start()
     logger.info("Scheduler started")
