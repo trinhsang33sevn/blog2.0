@@ -275,6 +275,100 @@
       </div>
 
     </div>
+
+    <!-- Bảng chi phí ước tính mỗi bài viết -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-transparent fw-semibold d-flex align-items-center gap-2">
+            <i class="bi bi-calculator text-primary"></i>
+            Chi phí ước tính mỗi bài viết (~12,000 token/bài)
+            <span class="badge bg-light text-muted fw-normal ms-1 small">Phân nhóm + Nghiên cứu + Viết bài + Humanize</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">Model AI</th>
+                    <th>Nhà cung cấp</th>
+                    <th>Giá / 1M token</th>
+                    <th>Chi phí / bài</th>
+                    <th>Số bài / $1</th>
+                    <th class="pe-3">Chất lượng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="table-success">
+                    <td class="ps-3 fw-semibold">Gemini 2.0 Flash</td>
+                    <td><span class="badge bg-light text-dark border">Gemini</span></td>
+                    <td>~$0.10</td>
+                    <td class="fw-bold text-success">~$0.001 <span class="text-muted fw-normal">(~30đ)</span></td>
+                    <td class="fw-bold">~1,000 bài</td>
+                    <td><span class="text-warning">★★★★</span><span class="text-muted">☆</span></td>
+                  </tr>
+                  <tr class="table-success">
+                    <td class="ps-3 fw-semibold">Gemini 2.5 Flash</td>
+                    <td><span class="badge bg-light text-dark border">Gemini</span></td>
+                    <td>~$0.30</td>
+                    <td class="fw-bold text-success">~$0.004 <span class="text-muted fw-normal">(~100đ)</span></td>
+                    <td class="fw-bold">~250 bài</td>
+                    <td><span class="text-warning">★★★★★</span></td>
+                  </tr>
+                  <tr>
+                    <td class="ps-3 fw-semibold">DeepSeek Chat</td>
+                    <td><span class="badge bg-light text-dark border">OpenRouter</span></td>
+                    <td>~$0.14</td>
+                    <td>~$0.002 <span class="text-muted">(~50đ)</span></td>
+                    <td>~500 bài</td>
+                    <td><span class="text-warning">★★★★</span><span class="text-muted">☆</span></td>
+                  </tr>
+                  <tr>
+                    <td class="ps-3 fw-semibold">GPT-4o Mini</td>
+                    <td><span class="badge bg-light text-dark border">OpenAI</span></td>
+                    <td>~$0.15</td>
+                    <td>~$0.002 <span class="text-muted">(~50đ)</span></td>
+                    <td>~500 bài</td>
+                    <td><span class="text-warning">★★★★</span><span class="text-muted">☆</span></td>
+                  </tr>
+                  <tr>
+                    <td class="ps-3 fw-semibold">Claude 3.5 Haiku</td>
+                    <td><span class="badge bg-light text-dark border">Claude</span></td>
+                    <td>~$0.25</td>
+                    <td>~$0.003 <span class="text-muted">(~80đ)</span></td>
+                    <td>~330 bài</td>
+                    <td><span class="text-warning">★★★★★</span></td>
+                  </tr>
+                  <tr>
+                    <td class="ps-3 fw-semibold">GPT-4o</td>
+                    <td><span class="badge bg-light text-dark border">OpenAI</span></td>
+                    <td>~$2.50</td>
+                    <td>~$0.030 <span class="text-muted">(~800đ)</span></td>
+                    <td>~33 bài</td>
+                    <td><span class="text-warning">★★★★★</span></td>
+                  </tr>
+                  <tr>
+                    <td class="ps-3 fw-semibold">Claude Opus</td>
+                    <td><span class="badge bg-light text-dark border">Claude</span></td>
+                    <td>~$15.00</td>
+                    <td>~$0.180 <span class="text-muted">(~4,600đ)</span></td>
+                    <td>~6 bài</td>
+                    <td><span class="text-warning">★★★★★</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="px-3 py-2 text-muted small border-top">
+              <i class="bi bi-info-circle me-1"></i>
+              Ước tính dựa trên ~12,000 token/bài (phân nhóm từ khóa + nghiên cứu chủ đề + viết bài + humanize).
+              Research brief được <strong>cache theo cluster</strong> — nhiều website dùng chung 1 cluster sẽ tiết kiệm thêm.
+              <span class="text-success fw-semibold">Nền xanh = khuyến nghị tốt nhất về giá/chất lượng.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ═══════════════════ TAB SERVICES ═══════════════════ -->
