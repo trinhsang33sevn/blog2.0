@@ -317,6 +317,16 @@ def _write_single_article(db: Session, article: Article) -> None:
             c.intent_analysis = result.get("intent_analysis", "")
 
     attempts = (article.retry_count or 0) + 1
+
+    # Kiểm tra nội dung trước khi lưu — nếu là thinking text thì retry
+    if _is_broken_content(final_content):
+        article.retry_count   = attempts
+        article.status        = "failed" if attempts >= 3 else "pending"
+        article.error_message = "Broken content (thinking model output) — requeued"
+        db.commit()
+        logger.warning(f"Article {article_id} attempt={attempts}: broken content detected, requeued (status={article.status})")
+        return
+
     article.title        = title
     article.content      = final_content
     article.status       = "ready"
@@ -955,6 +965,94 @@ def _rewrite_article_for_task(db: Session, task: IndexTask):
         logger.error(f"Error rewriting article for task {task.id}: {e}")
 
 
+# ─── Broken Content Detection ────────────────────────────────────────────────
+
+# Các cụm từ đặc trưng của thinking model / prompt bị lọt vào nội dung bài viết
+_BROKEN_PHRASES = [
+    "we need to rewrite",
+    "we must not add",
+    "must keep all html tags",
+    "must rewrite content",
+    "we need to ensure",
+    "we need to produce json",
+    "we need to output json",
+    "let's parse keywords",
+    "must group keywords",
+    "we need to cluster",
+    "we need to write",
+    "must keep same structure",
+    "must keep same number of sections",
+    "keep all links exactly",
+    "language must remain",
+    "return only valid json",
+    "return only a valid json",
+]
+
+
+def _is_broken_content(content: str) -> bool:
+    """Trả về True nếu nội dung là thinking text / prompt thay vì bài viết thật."""
+    if not content or len(content) < 50:
+        return True
+    low = content.lower().strip()
+    # Nội dung bài viết thật phải bắt đầu bằng HTML tag
+    if not low.startswith("<"):
+        for phrase in _BROKEN_PHRASES:
+            if phrase in low[:2000]:
+                return True
+    return False
+
+
+def detect_and_fix_broken_articles():
+    """
+    Quét toàn bộ bài viết đã publish hoặc ready có nội dung bị lỗi (thinking model).
+    - Nếu đã published: xóa khỏi platform rồi reset về pending để viết lại.
+    - Nếu ready (chưa publish): reset về pending luôn.
+    """
+    db: Session = SessionLocal()
+    try:
+        candidates = (
+            db.query(Article)
+            .filter(Article.status.in_(["published", "ready"]))
+            .filter(Article.content.isnot(None))
+            .all()
+        )
+
+        fixed = 0
+        for article in candidates:
+            if not _is_broken_content(article.content):
+                continue
+
+            old_status = article.status
+            logger.warning(
+                f"[broken-content] Article {article.id} '{article.title}' "
+                f"có nội dung lỗi (status={old_status}), reset về pending"
+            )
+
+            # Reset về pending để hệ thống viết lại bài mới
+            # Bài cũ trên platform (nếu đã publish) cần xóa thủ công
+            article.status          = "pending"
+            article.content         = None
+            article.title           = None
+            article.blogger_post_id = None
+            article.url             = None
+            article.published_at    = None
+            article.retry_count     = 0
+            article.error_message   = "Broken content detected — requeued"
+            fixed += 1
+
+        if fixed:
+            db.commit()
+            logger.info(f"[broken-content] Đã reset {fixed} bài lỗi về pending")
+        else:
+            logger.info("[broken-content] Không phát hiện bài lỗi nào")
+
+    except Exception as e:
+        logger.error(f"detect_and_fix_broken_articles error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 # ─── Auto-refresh free model list ────────────────────────────────────────────
 
 def refresh_openrouter_models_for_all_users():
@@ -1013,6 +1111,9 @@ def start_scheduler():
 
     # Cập nhật danh sách free models từ OpenRouter mỗi 24 giờ
     _scheduler.add_job(refresh_openrouter_models_for_all_users, IntervalTrigger(hours=24), id="refresh_or_models", replace_existing=True)
+
+    # Quét và sửa bài viết bị lỗi (thinking model output) mỗi 30 phút
+    _scheduler.add_job(detect_and_fix_broken_articles, IntervalTrigger(minutes=30), id="fix_broken", replace_existing=True)
 
     _scheduler.start()
     logger.info("Scheduler started")
