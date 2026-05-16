@@ -69,6 +69,75 @@ LANGUAGE_NAMES = {
     "es": "Spanish",
 }
 
+# ─── Multi-model rotation ────────────────────────────────────────────────────
+# Mỗi bài viết dùng model khác nhau: bài 1→ModelA, bài 2→ModelB, bài 3→ModelC...
+# Index lưu trong memory (reset khi restart server — chấp nhận được).
+
+_user_rotation_index: dict[int, int] = {}  # user_id → next index in pool
+
+# Các model trả phí tốt nhất để đưa vào pool, grouped by credential key
+_ROTATION_PAID = {
+    "gemini_api_keys": [
+        "gemini:gemini-2.0-flash",
+        "gemini:gemini-2.5-flash",
+        "gemini:gemini-1.5-flash",
+    ],
+    "claude_api_key": [
+        "claude:claude-3-5-haiku-20241022",
+        "claude:claude-3-5-sonnet-20241022",
+    ],
+    "openai_api_key": [
+        "openai:gpt-4o-mini",
+        "openai:gpt-4o",
+    ],
+    "groq_api_key": [
+        "groq:llama-3.3-70b-versatile",
+        "groq:llama-3.1-8b-instant",
+    ],
+}
+
+# Số model free lấy vào pool (top N theo thứ tự danh sách)
+_ROTATION_FREE_LIMIT = 10
+
+
+def _build_rotation_pool(db: Session, user_id: int = None) -> list[str]:
+    """Xây dựng pool model cho rotation: paid (nếu có key) + free OpenRouter."""
+    pool: list[str] = []
+
+    # Paid providers — chỉ thêm nếu user đã cấu hình key
+    for cred_key, models in _ROTATION_PAID.items():
+        if get_setting(db, cred_key, user_id=user_id):
+            pool.extend(models)
+
+    # Free OpenRouter models — bỏ qua thinking models và auto-router
+    if get_setting(db, "openrouter_api_key", user_id=user_id):
+        free_ids = [
+            m["id"] for m in get_current_free_models(db, user_id=user_id)
+            if m["id"] not in _THINKING_MODELS and m["id"] != "openrouter/free"
+        ]
+        pool.extend(free_ids[:_ROTATION_FREE_LIMIT])
+
+    return pool
+
+
+def pick_rotation_model(db: Session, user_id: int = None) -> str:
+    """
+    Trả về model tiếp theo trong vòng xoay round-robin.
+    Bài 1 → pool[0], bài 2 → pool[1], ..., hết pool → quay lại pool[0].
+    Nếu pool rỗng (chưa cấu hình gì) → trả về model mặc định của project.
+    """
+    pool = _build_rotation_pool(db, user_id)
+    if not pool:
+        return ""   # caller dùng project.ai_model làm fallback
+
+    uid = user_id or 0
+    idx = _user_rotation_index.get(uid, 0) % len(pool)
+    _user_rotation_index[uid] = idx + 1   # advance cho bài tiếp theo
+    model = pool[idx]
+    logger.info(f"[rotation] user={uid} bài #{idx + 1}/{len(pool)} → {model}")
+    return model
+
+
 # Model dạng "thinking/reasoning" — xuất chuỗi suy luận thay vì JSON thuần.
 # Bị bỏ qua hoàn toàn khi json_mode=True (clustering, v.v.)
 _THINKING_MODELS = {

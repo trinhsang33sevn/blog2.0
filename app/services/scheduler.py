@@ -213,8 +213,11 @@ def _write_single_article(db: Session, article: Article) -> None:
     article_id   = article.id
     cluster_id   = cluster.id
     user_id      = project.user_id
-    ai_model     = project.ai_model
     language     = article.language
+
+    # Round-robin: mỗi bài dùng model khác nhau từ pool (paid + free).
+    # Nếu pool rỗng (chưa cấu hình provider nào) → dùng project.ai_model.
+    ai_model = openrouter.pick_rotation_model(db, user_id=user_id) or project.ai_model
 
     # ── Bước 0: Research Brief ────────────────────────────────────────────────
     # Cache per cluster: nếu đã có research (JSON) cho cluster này thì tái dùng,
