@@ -168,10 +168,12 @@ async def create_project(
             for row in ws.iter_rows(min_row=2, values_only=True):
                 if not row or not row[0]:
                     continue
-                cluster_name = str(row[0]).strip()
-                keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
-                if not cluster_name or not keywords:
+                primary_keyword = str(row[0]).strip()
+                if not primary_keyword:
                     continue
+                secondary_keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
+                keywords = [primary_keyword] + secondary_keywords
+                cluster_name = primary_keyword
                 cluster = KeywordCluster(project_id=project.id, cluster_name=cluster_name, status="pending")
                 db.add(cluster)
                 db.flush()
@@ -209,7 +211,7 @@ def download_clusters_template():
         top=Side(style="thin"), bottom=Side(style="thin"),
     )
 
-    headers = ["Tên nhóm bài viết (Cluster Name)", "Từ khóa 1", "Từ khóa 2", "Từ khóa 3", "Từ khóa 4", "Từ khóa 5", "Từ khóa 6"]
+    headers = ["Từ khóa chính (Primary Keyword)", "Từ khóa phụ 1", "Từ khóa phụ 2", "Từ khóa phụ 3", "Từ khóa phụ 4", "Từ khóa phụ 5", "Từ khóa phụ 6"]
     for col, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=h)
         cell.fill      = header_fill
@@ -218,9 +220,9 @@ def download_clusters_template():
         cell.border    = thin_border
 
     examples = [
-        ["Ghế công viên giá rẻ tại HCM", "ghế công viên giá rẻ", "ghế băng công viên rẻ", "mua ghế công viên hcm", "ghế công viên gỗ giá rẻ", "", ""],
-        ["Ghế inox ngoài trời bền đẹp",  "ghế inox ngoài trời", "ghế inox chịu mưa nắng", "ghế inox sân vườn", "bàn ghế inox ngoài trời", "ghế inox 304", ""],
-        ["Cách chọn ghế công viên phù hợp", "cách chọn ghế công viên", "tiêu chí chọn ghế ngoài trời", "ghế công viên loại nào tốt", "", "", ""],
+        ["ghế công viên giá rẻ", "ghế băng công viên rẻ", "mua ghế công viên hcm", "ghế công viên gỗ giá rẻ", "", "", ""],
+        ["ghế inox ngoài trời", "ghế inox chịu mưa nắng", "ghế inox sân vườn", "bàn ghế inox ngoài trời", "ghế inox 304", "", ""],
+        ["cách chọn ghế công viên", "tiêu chí chọn ghế ngoài trời", "ghế công viên loại nào tốt", "", "", "", ""],
     ]
     for row_idx, row_data in enumerate(examples, 2):
         for col_idx, val in enumerate(row_data, 1):
@@ -238,12 +240,13 @@ def download_clusters_template():
     guide = [
         ("AutoBlogspot — Hướng dẫn nhập nhóm từ khóa", True),
         ("", False),
-        ("1. Mỗi hàng = 1 nhóm bài viết (cluster)", False),
-        ("2. Cột A: Tên nhóm — đây sẽ là định hướng tiêu đề bài viết (bắt buộc)", False),
-        ("3. Cột B trở đi: Các từ khóa thuộc nhóm đó (tối thiểu 1 từ khóa, tối đa không giới hạn)", False),
-        ("4. Mỗi hàng có thể có số lượng từ khóa khác nhau — bỏ trống ô nếu không dùng", False),
-        ("5. Không thay đổi hàng tiêu đề (hàng 1)", False),
-        ("6. Có thể thêm cột từ khóa tùy ý (cột H, I, J... — không giới hạn)", False),
+        ("1. Mỗi hàng = 1 nhóm từ khóa (cluster) → AI sẽ viết 1 bài độc lập từ nhóm này", False),
+        ("2. Cột A: Từ khóa chính (bắt buộc) — AI dùng đây làm từ khóa trọng tâm để viết bài", False),
+        ("3. Cột B trở đi: Từ khóa phụ (tùy chọn) — giúp AI hiểu thêm chủ đề, tăng độ phủ SEO", False),
+        ("4. Tiêu đề bài viết do AI tự tạo — KHÔNG cần nhập tiêu đề, AI sẽ tự viết tiêu đề riêng cho từng website", False),
+        ("5. Mỗi hàng có thể có số lượng từ khóa phụ khác nhau — bỏ trống ô nếu không dùng", False),
+        ("6. Không thay đổi hàng tiêu đề (hàng 1)", False),
+        ("7. Có thể thêm cột từ khóa phụ tùy ý (cột H, I, J... — không giới hạn)", False),
         ("", False),
         ("LỢI ÍCH: Upload file này thay vì để AI tự chia → chiến dịch bắt đầu ngay lập tức!", True),
     ]
@@ -404,15 +407,14 @@ async def upload_clusters(
         for row in ws.iter_rows(min_row=2, values_only=True):
             if not row or not row[0]:
                 continue
-            cluster_name = str(row[0]).strip()
-            if not cluster_name:
+            primary_keyword = str(row[0]).strip()
+            if not primary_keyword:
                 continue
 
-            # Thu thập từ khóa từ cột B trở đi
-            keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
-            if not keywords:
-                skipped_rows += 1
-                continue
+            # Thu thập từ khóa: cột A là từ khóa chính, cột B trở đi là từ khóa phụ
+            secondary_keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
+            keywords = [primary_keyword] + secondary_keywords
+            cluster_name = primary_keyword
 
             # Tạo cluster
             cluster = KeywordCluster(
