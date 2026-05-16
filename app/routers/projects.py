@@ -1,9 +1,10 @@
+import io
 import json
 import logging
 from threading import Thread
 
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 logger = logging.getLogger("autoblogspot.billing")
 from sqlalchemy import func
@@ -274,6 +275,173 @@ def add_keywords(
             added += 1
     db.commit()
     return RedirectResponse(f"/projects/{project_id}?success=Added+{added}+keywords", status_code=303)
+
+
+@router.get("/projects/clusters-template")
+def download_clusters_template():
+    """Tải file Excel mẫu để nhập nhóm từ khóa đã chia sẵn."""
+    import openpyxl
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Nhóm từ khóa"
+
+    # Header style
+    header_fill   = PatternFill("solid", fgColor="1D4ED8")
+    header_font   = Font(color="FFFFFF", bold=True, size=11)
+    example_fill  = PatternFill("solid", fgColor="EFF6FF")
+    thin_border   = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Tên nhóm bài viết (Cluster Name)", "Từ khóa 1", "Từ khóa 2", "Từ khóa 3", "Từ khóa 4", "Từ khóa 5", "Từ khóa 6"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill   = header_fill
+        cell.font   = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = thin_border
+
+    # Ví dụ minh họa
+    examples = [
+        ["Ghế công viên giá rẻ tại HCM", "ghế công viên giá rẻ", "ghế băng công viên rẻ", "mua ghế công viên hcm", "ghế công viên gỗ giá rẻ", "", ""],
+        ["Ghế inox ngoài trời bền đẹp",  "ghế inox ngoài trời", "ghế inox chịu mưa nắng", "ghế inox sân vườn", "bàn ghế inox ngoài trời", "ghế inox 304", ""],
+        ["Cách chọn ghế công viên phù hợp", "cách chọn ghế công viên", "tiêu chí chọn ghế ngoài trời", "ghế công viên loại nào tốt", "", "", ""],
+    ]
+    for row_idx, row_data in enumerate(examples, 2):
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.fill   = example_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical="center")
+
+    # Độ rộng cột
+    ws.column_dimensions["A"].width = 45
+    for col in range(2, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 28
+    ws.row_dimensions[1].height = 35
+
+    # Sheet hướng dẫn
+    ws2 = wb.create_sheet("Hướng dẫn")
+    guide = [
+        ("AutoBlogspot — Hướng dẫn nhập nhóm từ khóa", True),
+        ("", False),
+        ("1. Mỗi hàng = 1 nhóm bài viết (cluster)", False),
+        ("2. Cột A: Tên nhóm — đây sẽ là định hướng tiêu đề bài viết (bắt buộc)", False),
+        ("3. Cột B trở đi: Các từ khóa thuộc nhóm đó (tối thiểu 1 từ khóa, tối đa không giới hạn)", False),
+        ("4. Mỗi hàng có thể có số lượng từ khóa khác nhau — bỏ trống ô nếu không dùng", False),
+        ("5. Không thay đổi hàng tiêu đề (hàng 1)", False),
+        ("6. Có thể thêm cột từ khóa tùy ý (cột H, I, J... — không giới hạn)", False),
+        ("", False),
+        ("LỢI ÍCH: Upload file này thay vì để AI tự chia → chiến dịch bắt đầu ngay lập tức!", True),
+    ]
+    ws2.column_dimensions["A"].width = 80
+    for i, (text, bold) in enumerate(guide, 1):
+        cell = ws2.cell(row=i, column=1, value=text)
+        cell.font = Font(bold=bold, size=11 if bold else 10)
+        cell.alignment = Alignment(wrap_text=True)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=mau-nhom-tu-khoa.xlsx"},
+    )
+
+
+@router.post("/projects/{project_id}/upload-clusters")
+async def upload_clusters(
+    project_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    """Đọc file Excel nhóm từ khóa đã chia sẵn và tạo cluster + article trực tiếp (bỏ qua AI clustering)."""
+    import openpyxl
+
+    current_user = get_current_user(request, db)
+    project = db.query(Project).filter(
+        Project.id == project_id, Project.user_id == current_user.id
+    ).first()
+    if not project:
+        raise HTTPException(status_code=404)
+
+    try:
+        content = await file.read()
+        wb = openpyxl.load_workbook(filename=io.BytesIO(content), data_only=True)
+        ws = wb.active
+
+        clusters_created = 0
+        kw_total = 0
+        skipped_rows = 0
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row or not row[0]:
+                continue
+            cluster_name = str(row[0]).strip()
+            if not cluster_name:
+                continue
+
+            # Thu thập từ khóa từ cột B trở đi
+            keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
+            if not keywords:
+                skipped_rows += 1
+                continue
+
+            # Tạo cluster
+            cluster = KeywordCluster(
+                project_id=project_id,
+                cluster_name=cluster_name,
+                status="pending",
+            )
+            db.add(cluster)
+            db.flush()
+
+            # Tạo keyword records
+            for kw_text in keywords:
+                existing = db.query(Keyword).filter(
+                    Keyword.project_id == project_id,
+                    Keyword.keyword == kw_text,
+                ).first()
+                if existing:
+                    existing.cluster_id = cluster.id
+                    existing.status = "clustered"
+                else:
+                    db.add(Keyword(
+                        project_id=project_id,
+                        keyword=kw_text,
+                        cluster_id=cluster.id,
+                        status="clustered",
+                    ))
+                kw_total += 1
+
+            # Tạo article cho mỗi site
+            for ps in project.project_sites:
+                db.add(Article(
+                    cluster_id=cluster.id,
+                    site_id=ps.site_id,
+                    project_id=project_id,
+                    language=ps.language,
+                    status="pending",
+                ))
+
+            clusters_created += 1
+
+        db.commit()
+
+        msg = f"Đã tạo {clusters_created} nhóm, {kw_total} từ khóa — chiến dịch bắt đầu viết bài ngay!"
+        if skipped_rows:
+            msg += f" ({skipped_rows} hàng bỏ qua do thiếu từ khóa)"
+        return RedirectResponse(f"/projects/{project_id}?success={msg}", status_code=303)
+
+    except Exception as e:
+        logger.error(f"upload_clusters error: {e}")
+        return RedirectResponse(f"/projects/{project_id}?error=Lỗi đọc file: {str(e)[:100]}", status_code=303)
 
 
 @router.get("/projects/{project_id}/edit", response_class=HTMLResponse)

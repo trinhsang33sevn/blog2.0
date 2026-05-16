@@ -108,6 +108,28 @@
       </ul>
     </div>
 
+    <!-- Upload pre-clustered keywords -->
+    <div class="card shadow-sm mb-3 border-success border-2">
+      <div class="card-header fw-semibold bg-success text-white d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-lightning-charge-fill me-1"></i>Tải lên nhóm từ khóa (Bắt đầu ngay)</span>
+        <a href="/projects/clusters-template" class="btn btn-sm btn-light" download>
+          <i class="bi bi-download me-1"></i>Tải file mẫu
+        </a>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-success py-2 px-3 mb-2 small">
+          <i class="bi bi-rocket-takeoff-fill me-1"></i>
+          <strong>Nhanh hơn AI clustering!</strong> Upload file Excel nhóm từ khóa đã chia sẵn → chiến dịch bắt đầu viết bài <strong>ngay lập tức</strong>, không cần chờ AI phân nhóm.
+        </div>
+        <form method="post" action="/projects/{{ project.id }}/upload-clusters" enctype="multipart/form-data">
+          <input type="file" name="file" class="form-control form-control-sm mb-2" accept=".xlsx,.xls" required>
+          <button type="submit" class="btn btn-sm btn-success w-100">
+            <i class="bi bi-upload me-1"></i>Upload & Tạo nhóm từ khóa
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- Add Keywords -->
     <div class="card shadow-sm">
       <div class="card-header fw-semibold"><i class="bi bi-plus-circle me-1"></i>{{ _("projd_add_keywords") }}</div>
