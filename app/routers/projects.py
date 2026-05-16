@@ -165,6 +165,79 @@ def create_project(
     return RedirectResponse(f"/projects/{project.id}", status_code=303)
 
 
+@router.get("/projects/clusters-template")
+def download_clusters_template():
+    """Tải file Excel mẫu để nhập nhóm từ khóa đã chia sẵn."""
+    import openpyxl
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Nhóm từ khóa"
+
+    header_fill  = PatternFill("solid", fgColor="1D4ED8")
+    header_font  = Font(color="FFFFFF", bold=True, size=11)
+    example_fill = PatternFill("solid", fgColor="EFF6FF")
+    thin_border  = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Tên nhóm bài viết (Cluster Name)", "Từ khóa 1", "Từ khóa 2", "Từ khóa 3", "Từ khóa 4", "Từ khóa 5", "Từ khóa 6"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border    = thin_border
+
+    examples = [
+        ["Ghế công viên giá rẻ tại HCM", "ghế công viên giá rẻ", "ghế băng công viên rẻ", "mua ghế công viên hcm", "ghế công viên gỗ giá rẻ", "", ""],
+        ["Ghế inox ngoài trời bền đẹp",  "ghế inox ngoài trời", "ghế inox chịu mưa nắng", "ghế inox sân vườn", "bàn ghế inox ngoài trời", "ghế inox 304", ""],
+        ["Cách chọn ghế công viên phù hợp", "cách chọn ghế công viên", "tiêu chí chọn ghế ngoài trời", "ghế công viên loại nào tốt", "", "", ""],
+    ]
+    for row_idx, row_data in enumerate(examples, 2):
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.fill      = example_fill
+            cell.border    = thin_border
+            cell.alignment = Alignment(vertical="center")
+
+    ws.column_dimensions["A"].width = 45
+    for col in range(2, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 28
+    ws.row_dimensions[1].height = 35
+
+    ws2 = wb.create_sheet("Hướng dẫn")
+    guide = [
+        ("AutoBlogspot — Hướng dẫn nhập nhóm từ khóa", True),
+        ("", False),
+        ("1. Mỗi hàng = 1 nhóm bài viết (cluster)", False),
+        ("2. Cột A: Tên nhóm — đây sẽ là định hướng tiêu đề bài viết (bắt buộc)", False),
+        ("3. Cột B trở đi: Các từ khóa thuộc nhóm đó (tối thiểu 1 từ khóa, tối đa không giới hạn)", False),
+        ("4. Mỗi hàng có thể có số lượng từ khóa khác nhau — bỏ trống ô nếu không dùng", False),
+        ("5. Không thay đổi hàng tiêu đề (hàng 1)", False),
+        ("6. Có thể thêm cột từ khóa tùy ý (cột H, I, J... — không giới hạn)", False),
+        ("", False),
+        ("LỢI ÍCH: Upload file này thay vì để AI tự chia → chiến dịch bắt đầu ngay lập tức!", True),
+    ]
+    ws2.column_dimensions["A"].width = 80
+    for i, (text, bold) in enumerate(guide, 1):
+        cell = ws2.cell(row=i, column=1, value=text)
+        cell.font      = Font(bold=bold, size=11 if bold else 10)
+        cell.alignment = Alignment(wrap_text=True)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=mau-nhom-tu-khoa.xlsx"},
+    )
+
+
 @router.get("/projects/{project_id}", response_class=HTMLResponse)
 def project_detail(project_id: int, request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)
@@ -275,83 +348,6 @@ def add_keywords(
             added += 1
     db.commit()
     return RedirectResponse(f"/projects/{project_id}?success=Added+{added}+keywords", status_code=303)
-
-
-@router.get("/projects/clusters-template")
-def download_clusters_template():
-    """Tải file Excel mẫu để nhập nhóm từ khóa đã chia sẵn."""
-    import openpyxl
-    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-    from openpyxl.utils import get_column_letter
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Nhóm từ khóa"
-
-    # Header style
-    header_fill   = PatternFill("solid", fgColor="1D4ED8")
-    header_font   = Font(color="FFFFFF", bold=True, size=11)
-    example_fill  = PatternFill("solid", fgColor="EFF6FF")
-    thin_border   = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
-    )
-
-    headers = ["Tên nhóm bài viết (Cluster Name)", "Từ khóa 1", "Từ khóa 2", "Từ khóa 3", "Từ khóa 4", "Từ khóa 5", "Từ khóa 6"]
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.fill   = header_fill
-        cell.font   = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = thin_border
-
-    # Ví dụ minh họa
-    examples = [
-        ["Ghế công viên giá rẻ tại HCM", "ghế công viên giá rẻ", "ghế băng công viên rẻ", "mua ghế công viên hcm", "ghế công viên gỗ giá rẻ", "", ""],
-        ["Ghế inox ngoài trời bền đẹp",  "ghế inox ngoài trời", "ghế inox chịu mưa nắng", "ghế inox sân vườn", "bàn ghế inox ngoài trời", "ghế inox 304", ""],
-        ["Cách chọn ghế công viên phù hợp", "cách chọn ghế công viên", "tiêu chí chọn ghế ngoài trời", "ghế công viên loại nào tốt", "", "", ""],
-    ]
-    for row_idx, row_data in enumerate(examples, 2):
-        for col_idx, val in enumerate(row_data, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=val)
-            cell.fill   = example_fill
-            cell.border = thin_border
-            cell.alignment = Alignment(vertical="center")
-
-    # Độ rộng cột
-    ws.column_dimensions["A"].width = 45
-    for col in range(2, len(headers) + 1):
-        ws.column_dimensions[get_column_letter(col)].width = 28
-    ws.row_dimensions[1].height = 35
-
-    # Sheet hướng dẫn
-    ws2 = wb.create_sheet("Hướng dẫn")
-    guide = [
-        ("AutoBlogspot — Hướng dẫn nhập nhóm từ khóa", True),
-        ("", False),
-        ("1. Mỗi hàng = 1 nhóm bài viết (cluster)", False),
-        ("2. Cột A: Tên nhóm — đây sẽ là định hướng tiêu đề bài viết (bắt buộc)", False),
-        ("3. Cột B trở đi: Các từ khóa thuộc nhóm đó (tối thiểu 1 từ khóa, tối đa không giới hạn)", False),
-        ("4. Mỗi hàng có thể có số lượng từ khóa khác nhau — bỏ trống ô nếu không dùng", False),
-        ("5. Không thay đổi hàng tiêu đề (hàng 1)", False),
-        ("6. Có thể thêm cột từ khóa tùy ý (cột H, I, J... — không giới hạn)", False),
-        ("", False),
-        ("LỢI ÍCH: Upload file này thay vì để AI tự chia → chiến dịch bắt đầu ngay lập tức!", True),
-    ]
-    ws2.column_dimensions["A"].width = 80
-    for i, (text, bold) in enumerate(guide, 1):
-        cell = ws2.cell(row=i, column=1, value=text)
-        cell.font = Font(bold=bold, size=11 if bold else 10)
-        cell.alignment = Alignment(wrap_text=True)
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return StreamingResponse(
-        buf,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=mau-nhom-tu-khoa.xlsx"},
-    )
 
 
 @router.post("/projects/{project_id}/upload-clusters")
