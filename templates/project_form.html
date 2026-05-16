@@ -416,6 +416,7 @@ function updateSiteCount() {
   }
 
   document.getElementById('projectForm').addEventListener('submit', function() {
+    updateBacklinks();
     document.querySelectorAll('select[data-for-site]').forEach(function(sel) {
       const cb = document.getElementById('site' + sel.dataset.forSite);
       if (cb && !cb.checked) sel.disabled = true;

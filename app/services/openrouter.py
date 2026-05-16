@@ -833,10 +833,14 @@ def analyze_intent_and_write_article(
     backlink_str = ""
     if backlinks:
         lines = "\n".join(
-            f'- Anchor text: "{bl.get("anchor", "")}" -> URL: {bl.get("url", "")}'
+            f'- <a href="{bl.get("url", "")}">{bl.get("anchor", "")}</a>'
             for bl in backlinks
         )
-        backlink_str = f"\nInclude these backlinks naturally in the article:\n{lines}"
+        backlink_str = (
+            f"\n## MANDATORY BACKLINKS\n"
+            f"You MUST insert ALL of the following links into the article body as HTML anchor tags exactly as shown. "
+            f"Place each one inside a relevant sentence — do NOT list them separately, do NOT skip any:\n{lines}"
+        )
 
     existing_str = ""
     if existing_titles:
