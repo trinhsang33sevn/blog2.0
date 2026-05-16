@@ -119,7 +119,7 @@ def new_project_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/projects/new")
-def create_project(
+async def create_project(
     request: Request,
     name: str = Form(...),
     description: str = Form(""),
@@ -132,6 +132,7 @@ def create_project(
     backlinks_json: str = Form("[]"),
     custom_labels_text: str = Form(""),
     keywords_text: str = Form(""),
+    clusters_file: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
     current_user = get_current_user(request, db)
@@ -157,7 +158,31 @@ def create_project(
         lang = site_languages[i] if i < len(site_languages) else "vi"
         db.add(ProjectSite(project_id=project.id, site_id=site_id, language=lang))
 
-    if keywords_text.strip():
+    # Upload Excel clusters — bỏ qua AI clustering, tạo cluster ngay
+    if clusters_file and clusters_file.filename and clusters_file.filename.endswith((".xlsx", ".xls")):
+        try:
+            import openpyxl
+            content = await clusters_file.read()
+            wb = openpyxl.load_workbook(filename=io.BytesIO(content), data_only=True)
+            ws = wb.active
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not row or not row[0]:
+                    continue
+                cluster_name = str(row[0]).strip()
+                keywords = [str(v).strip() for v in row[1:] if v and str(v).strip()]
+                if not cluster_name or not keywords:
+                    continue
+                cluster = KeywordCluster(project_id=project.id, cluster_name=cluster_name, status="pending")
+                db.add(cluster)
+                db.flush()
+                for kw_text in keywords:
+                    db.add(Keyword(project_id=project.id, keyword=kw_text, cluster_id=cluster.id, status="clustered"))
+                for ps in project.project_sites:
+                    db.add(Article(cluster_id=cluster.id, site_id=ps.site_id, project_id=project.id, language=ps.language, status="pending"))
+        except Exception as e:
+            logger.error(f"create_project Excel parse error: {e}")
+
+    elif keywords_text.strip():
         for kw in [k.strip() for k in keywords_text.splitlines() if k.strip()]:
             db.add(Keyword(project_id=project.id, keyword=kw))
 

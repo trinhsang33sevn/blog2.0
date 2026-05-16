@@ -7,7 +7,7 @@
 </div>
 
 {% set form_action = '/projects/' ~ project.id ~ '/edit' if project else '/projects/new' %}
-<form method="post" action="{{ form_action }}" id="projectForm">
+<form method="post" action="{{ form_action }}" id="projectForm" enctype="multipart/form-data">
   <div class="row g-4">
     <!-- Left column -->
     <div class="col-md-7">
@@ -116,36 +116,68 @@
       <div class="card shadow-sm mb-4">
         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
           <span><i class="bi bi-tags me-1"></i>{{ _("projf_keywords") }}</span>
-          <span id="kw-badge" class="badge bg-secondary">0 từ khóa</span>
+          <a href="/projects/clusters-template" class="btn btn-sm btn-outline-success" download>
+            <i class="bi bi-download me-1"></i>Tải file mẫu Excel
+          </a>
         </div>
         <div class="card-body">
-          <label class="form-label">{{ _("projf_kw_placeholder") }}</label>
-          <textarea name="keywords_text" id="keywords_text" class="form-control font-monospace" rows="10"
-            placeholder="cách giảm cân nhanh&#10;thực phẩm tốt cho tim&#10;bài tập buổi sáng&#10;..."
-            oninput="countKeywords()"></textarea>
-          <div class="alert alert-warning d-flex gap-2 align-items-start mt-2 mb-2 py-2 px-3" style="border-left:4px solid #f59e0b;">
-            <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0" style="font-size:1.1rem;"></i>
-            <div class="small">
-              <strong>Lưu ý về thời gian xử lý từ khóa:</strong><br>
-              Hệ thống chia nhóm <strong>60 từ khóa mỗi 10 phút</strong>.
-              Nếu bạn nhập nhiều từ khóa, chiến dịch sẽ mất nhiều thời gian hơn để bắt đầu tạo bài viết.<br>
-              <span class="text-muted">Ví dụ: 180 từ khóa → ~30 phút để chia xong nhóm trước khi viết bài.</span>
+
+          <!-- Tab chọn phương thức -->
+          <ul class="nav nav-tabs mb-3" id="kwMethodTabs">
+            <li class="nav-item">
+              <button class="nav-link active" id="tab-manual-btn" type="button" onclick="switchKwTab('manual')">
+                <i class="bi bi-keyboard me-1"></i>Nhập từ khóa (AI tự chia)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-excel-btn" type="button" onclick="switchKwTab('excel')">
+                <i class="bi bi-lightning-charge-fill me-1 text-success"></i>Upload Excel (Bắt đầu ngay)
+              </button>
+            </li>
+          </ul>
+
+          <!-- Tab 1: nhập thủ công -->
+          <div id="tab-manual">
+            <textarea name="keywords_text" id="keywords_text" class="form-control font-monospace" rows="10"
+              placeholder="cách giảm cân nhanh&#10;thực phẩm tốt cho tim&#10;bài tập buổi sáng&#10;..."
+              oninput="countKeywords()"></textarea>
+            <div class="d-flex justify-content-between align-items-center mt-1 mb-2">
+              <span id="kw-badge" class="badge bg-secondary">0 từ khóa</span>
+              <span id="kw-status" class="small fw-semibold"></span>
+            </div>
+            <div class="alert alert-warning d-flex gap-2 align-items-start py-2 px-3" style="border-left:4px solid #f59e0b;">
+              <i class="bi bi-exclamation-triangle-fill text-warning mt-1 flex-shrink-0"></i>
+              <div class="small">
+                <strong>Lưu ý:</strong> Hệ thống chia nhóm <strong>60 từ khóa mỗi 10 phút</strong>. Nhập càng nhiều từ khóa, chiến dịch càng mất nhiều thời gian để bắt đầu tạo bài viết.<br>
+                <span class="text-muted">Ví dụ: 180 từ khóa → ~30 phút để chia xong nhóm.</span>
+              </div>
+            </div>
+            <div id="kw-guide" class="p-2 rounded small" style="background:#f8f9fa;border:1px solid #dee2e6;">
+              <div class="d-flex gap-3 flex-wrap mb-1">
+                <span><span class="badge bg-success">Tối ưu</span> 10–60 từ khóa</span>
+                <span><span class="badge bg-primary">Tốt</span> 60–200 từ khóa</span>
+                <span><span class="badge bg-warning text-dark">Chấp nhận</span> 200–500 từ khóa</span>
+              </div>
+              <div class="text-muted" style="font-size:0.78rem;">
+                <i class="bi bi-info-circle me-1"></i>AI chia nhóm: mỗi nhóm gồm 1 từ khóa chính + 0–5 từ khóa phụ liên quan = 1 bài viết.
+              </div>
             </div>
           </div>
-          <div id="kw-guide" class="mt-2 p-2 rounded small" style="background:#f8f9fa;border:1px solid #dee2e6;">
-            <div class="d-flex gap-3 flex-wrap mb-1">
-              <span><span class="badge bg-success">Tối ưu</span> 10 – 60 từ khóa / lô</span>
-              <span><span class="badge bg-primary">Tốt</span> 60 – 200 từ khóa (tự chia lô)</span>
-              <span><span class="badge bg-warning text-dark">Chấp nhận</span> 200 – 500 từ khóa</span>
-              <span><span class="badge bg-secondary">Không giới hạn</span> > 500 (xử lý lâu hơn)</span>
+
+          <!-- Tab 2: upload Excel -->
+          <div id="tab-excel" style="display:none;">
+            <div class="alert alert-success d-flex gap-2 align-items-start py-2 px-3 mb-3">
+              <i class="bi bi-rocket-takeoff-fill text-success mt-1 flex-shrink-0"></i>
+              <div class="small">
+                <strong>Bắt đầu ngay lập tức!</strong> Upload file Excel nhóm từ khóa đã chia sẵn → chiến dịch bắt đầu viết bài <strong>ngay</strong>, không cần chờ AI phân nhóm 10 phút/lô.
+              </div>
             </div>
-            <div class="text-muted" style="font-size:0.78rem;">
-              <i class="bi bi-info-circle me-1"></i>
-              AI tự động chia thành các lô 60 từ khóa để đảm bảo chất lượng phân nhóm.
-              Nên nhập <strong>50–200 từ khóa</strong> mỗi dự án để tối ưu thời gian và chất lượng.
+            <input type="file" name="clusters_file" id="clusters_file" class="form-control mb-2" accept=".xlsx,.xls">
+            <div class="text-muted small">
+              <i class="bi bi-info-circle me-1"></i>Chưa có file mẫu? <a href="/projects/clusters-template" download>Tải file mẫu tại đây</a>.
             </div>
           </div>
-          <div id="kw-status" class="mt-1 small fw-semibold"></div>
+
         </div>
       </div>
       {% else %}
@@ -274,6 +306,19 @@
 {% block scripts %}
 <script>
 {% if not project %}
+function switchKwTab(tab) {
+  document.getElementById('tab-manual').style.display = tab === 'manual' ? '' : 'none';
+  document.getElementById('tab-excel').style.display  = tab === 'excel'  ? '' : 'none';
+  document.getElementById('tab-manual-btn').classList.toggle('active', tab === 'manual');
+  document.getElementById('tab-excel-btn').classList.toggle('active', tab === 'excel');
+  // Xóa giá trị tab không dùng để không submit cả 2
+  if (tab === 'excel') {
+    document.getElementById('keywords_text').value = '';
+  } else {
+    document.getElementById('clusters_file').value = '';
+  }
+}
+
 function countKeywords() {
   const ta = document.getElementById('keywords_text');
   const badge = document.getElementById('kw-badge');

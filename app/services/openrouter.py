@@ -727,24 +727,25 @@ def _cluster_batch(
 ) -> list[dict]:
     """Gọi AI phân cụm cho một lô từ khóa. Retry tối đa 3 lần nếu AI không trả JSON."""
     kw_list = "\n".join(f"- {kw}" for kw in keywords)
-    prompt = f"""You are a senior SEO strategist. Group the following keywords into topical clusters. Each cluster will become ONE comprehensive SEO article.
+    prompt = f"""You are a senior SEO strategist. Group the following keywords into topical clusters. Each cluster will become ONE SEO article.
 
 Keywords to cluster:
 {kw_list}
 
 Rules:
-1. Group by SEARCH INTENT — all keywords in a cluster must share the same intent (informational, commercial, or transactional).
-2. Each cluster = one article. Keep clusters focused: 2–6 keywords per cluster is ideal.
-3. Cluster "name" must be a specific, article-ready topic title — not generic (e.g. "How to Train a German Shepherd Puppy at Home", not "Dog Training").
-4. Do NOT split closely related long-tail variations into different clusters.
-5. Do NOT merge unrelated keywords just to reduce count.
+1. Each cluster has exactly 1 PRIMARY keyword and 0–5 SECONDARY keywords (you decide how many based on relevance).
+2. PRIMARY keyword: the most specific, highest-intent keyword that best represents the article topic.
+3. SECONDARY keywords: closely related variations or long-tail versions of the primary keyword that can be naturally woven into the same article. Only add if they truly belong — do NOT force unrelated keywords together.
+4. Group by SEARCH INTENT — all keywords in a cluster must share the same intent (informational, commercial, or transactional).
+5. Cluster "name" must be a specific, article-ready topic title (e.g. "How to Choose Outdoor Park Benches for Small Gardens", not "Park Bench").
 6. Every keyword must appear in exactly one cluster.
 
 Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
 [
   {{
     "name": "Specific SEO Article Topic",
-    "keywords": ["primary keyword", "variation 1", "long-tail variant"]
+    "primary_keyword": "the single most important keyword",
+    "secondary_keywords": ["variation 1", "long-tail variant"]
   }}
 ]"""
 
@@ -767,7 +768,18 @@ Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
                 json_mode=True,
             )
             logger.info(f"cluster_batch ({len(keywords)} kws) used model: {used_model} attempt={attempt + 1}")
-            return _extract_json(content)
+            raw = _extract_json(content)
+            # Normalize format mới (primary_keyword + secondary_keywords) → keywords[]
+            normalized = []
+            for c in raw:
+                primary = c.get("primary_keyword", "")
+                secondary = c.get("secondary_keywords") or c.get("keywords") or []
+                if primary and primary not in secondary:
+                    kws = [primary] + [k for k in secondary if k]
+                else:
+                    kws = secondary or ([primary] if primary else [])
+                normalized.append({"name": c.get("name", ""), "keywords": kws})
+            return normalized
         except ValueError as e:
             last_error = e
             logger.warning(f"cluster_batch attempt {attempt + 1} failed (JSON parse error): {e}")
