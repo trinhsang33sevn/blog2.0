@@ -700,6 +700,7 @@ def process_keyword_clustering():
 
 def submit_new_urls_to_sinbyte():
     """Submit newly published article URLs to Sinbyte (nếu có key), rồi chuyển sang submitted."""
+    from collections import defaultdict
     db = get_db()
     try:
         pending_tasks = (
@@ -710,32 +711,38 @@ def submit_new_urls_to_sinbyte():
         if not pending_tasks:
             return
 
-        urls = [t.url for t in pending_tasks if t.url]
-        if not urls:
-            return
-
-        sinbyte_key = openrouter.get_setting(db, "sinbyte_api_key")
-        task_id = ""
-
-        if sinbyte_key and sinbyte_key.strip():
-            try:
-                task_name = f"AutoBlogspot-{datetime.utcnow().strftime('%Y%m%d-%H%M')}"
-                result = sinbyte.submit_urls(db, task_name, urls)
-                task_id = str(result.get("id", ""))
-                logger.info(f"Submitted {len(urls)} URLs to Sinbyte, task_id={task_id}")
-            except Exception as e:
-                logger.warning(f"Sinbyte submit failed ({e}), bỏ qua Sinbyte, vẫn theo dõi Google Index")
-        else:
-            logger.info(f"Sinbyte chưa cấu hình — bỏ qua, {len(urls)} URLs chuyển sang theo dõi Google Index trực tiếp")
-
-        # Dù có Sinbyte hay không, vẫn chuyển sang submitted để check_index_status() hoạt động
-        now = datetime.utcnow()
+        # Nhóm tasks theo user để lấy key đúng per-user
+        tasks_by_user = defaultdict(list)
         for task in pending_tasks:
-            task.status = "submitted"
-            task.submitted_at = now
-            if task_id:
-                task.sinbyte_task_id = task_id
-                task.sinbyte_submitted_count = 1
+            uid = task.article.project.user_id if task.article and task.article.project else None
+            tasks_by_user[uid].append(task)
+
+        now = datetime.utcnow()
+        for uid, user_tasks in tasks_by_user.items():
+            urls = [t.url for t in user_tasks if t.url]
+            if not urls:
+                continue
+
+            sinbyte_key = openrouter.get_setting(db, "sinbyte_api_key", user_id=uid)
+            task_id = ""
+
+            if sinbyte_key and sinbyte_key.strip():
+                try:
+                    task_name = f"AutoBlogspot-{datetime.utcnow().strftime('%Y%m%d-%H%M')}"
+                    result = sinbyte.submit_urls(db, task_name, urls, user_id=uid)
+                    task_id = str(result.get("id", ""))
+                    logger.info(f"Submitted {len(urls)} URLs to Sinbyte (user={uid}), task_id={task_id}")
+                except Exception as e:
+                    logger.warning(f"Sinbyte submit failed user={uid} ({e}), vẫn theo dõi Google Index")
+            else:
+                logger.info(f"Sinbyte chưa cấu hình (user={uid}) — {len(urls)} URLs chuyển sang theo dõi trực tiếp")
+
+            for task in user_tasks:
+                task.status = "submitted"
+                task.submitted_at = now
+                if task_id:
+                    task.sinbyte_task_id = task_id
+                    task.sinbyte_submitted_count = 1
 
         db.commit()
 
@@ -890,8 +897,9 @@ def _handle_not_indexed(db: Session, task: IndexTask):
 
 def _resubmit_to_sinbyte(db: Session, task: IndexTask):
     try:
+        uid = task.article.project.user_id if task.article and task.article.project else None
         task_name = f"Retry-{datetime.utcnow().strftime('%Y%m%d')}"
-        result = sinbyte.submit_urls(db, task_name, [task.url])
+        result = sinbyte.submit_urls(db, task_name, [task.url], user_id=uid)
         task.sinbyte_task_id = str(result.get("id", task.sinbyte_task_id))
         task.sinbyte_submitted_count += 1
         task.submitted_at = datetime.utcnow()

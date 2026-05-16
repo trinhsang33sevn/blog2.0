@@ -62,7 +62,7 @@ def resubmit_task(task_id: int, request: Request, db: Session = Depends(get_db))
     )
     if task:
         try:
-            result = sinbyte.submit_urls(db, f"Manual-{datetime.utcnow().strftime('%Y%m%d')}", [task.url])
+            result = sinbyte.submit_urls(db, f"Manual-{datetime.utcnow().strftime('%Y%m%d')}", [task.url], user_id=current_user.id)
             task.sinbyte_task_id         = str(result.get("id", ""))
             task.sinbyte_submitted_count += 1
             task.submitted_at            = datetime.utcnow()
