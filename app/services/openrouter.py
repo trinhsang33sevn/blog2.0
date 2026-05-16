@@ -363,13 +363,13 @@ def call_with_fallback(
         preferred_model = all_fallback_ids[0] if all_fallback_ids else DEFAULT_OR_MODEL
         all_fallback_ids = [m for m in all_fallback_ids if m != preferred_model]
 
-    # Khi json_mode=True, loại bỏ thinking model — chúng xuất reasoning text, không phải JSON
+    # Loại bỏ thinking model khỏi toàn bộ fallback chain —
+    # chúng xuất reasoning text thay vì content, phá hỏng cả JSON lẫn bài viết
     full_order = [preferred_model] + all_fallback_ids
-    if json_mode:
-        skipped = [m for m in full_order if m in _THINKING_MODELS]
-        full_order = [m for m in full_order if m not in _THINKING_MODELS]
-        if skipped:
-            logger.info(f"[json_mode] Bỏ qua thinking models: {skipped}")
+    skipped = [m for m in full_order if m in _THINKING_MODELS]
+    full_order = [m for m in full_order if m not in _THINKING_MODELS]
+    if skipped:
+        logger.info(f"[fallback] Bỏ qua thinking models: {skipped}")
 
     phase1, phase2 = [], []
     for m in full_order:
