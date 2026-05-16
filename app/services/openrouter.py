@@ -33,6 +33,11 @@ FREE_MODELS = [
     {"id": "nvidia/nemotron-3-nano-30b-a3b:free", "name": "NVIDIA Nemotron Nano 30B (256K ctx)"},
     {"id": "nousresearch/hermes-3-llama-3.1-405b:free", "name": "Nous Hermes 3 405B (131K ctx)"},
 
+    # ── Google Gemini Free (OpenRouter) ─────────────────────────────────
+    {"id": "google/gemini-2.0-flash-exp:free", "name": "Gemini 2.0 Flash Exp — FREE (1M ctx) ⭐"},
+    {"id": "google/gemini-flash-1.5:free",     "name": "Gemini 1.5 Flash — FREE (1M ctx)"},
+    {"id": "google/gemini-flash-1.5-8b:free",  "name": "Gemini 1.5 Flash 8B — FREE (1M ctx)"},
+
     # ── Google Gemma ─────────────────────────────────────────────────────
     {"id": "google/gemma-4-31b-it:free", "name": "Google Gemma 4 31B (262K ctx)"},
     {"id": "google/gemma-4-26b-a4b-it:free", "name": "Google Gemma 4 26B A4B (262K ctx)"},
