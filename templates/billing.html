@@ -177,20 +177,16 @@
 
             {# Thông tin thanh toán #}
             <div class="bg-light rounded p-3 font-monospace small">
-              <div><strong>{{ _("bill_bank") }}:</strong> {{ payment_config.bank_name }}</div>
-              <div><strong>{{ _("bill_account_number") }}:</strong>
-                <span class="user-select-all fw-bold">{{ payment_config.account_number }}</span>
-              </div>
-              {% if payment_config.account_holder %}
-              <div><strong>{{ _("bill_account_holder") }}:</strong> {{ payment_config.account_holder }}</div>
-              {% endif %}
-              <div class="mt-2 pt-2 border-top">
+              <div class="mb-2">
                 <strong>{{ _("bill_amount") }}:</strong>
                 <span id="vnAmount" class="text-danger fw-bold">—</span>
               </div>
               <div>
                 <strong>{{ _("bill_transfer_note") }}:</strong>
                 <span id="vnRef" class="text-primary fw-bold user-select-all">—</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1"
+                        onclick="navigator.clipboard.writeText(document.getElementById('vnRef').textContent).then(()=>{this.textContent='✓';setTimeout(()=>{this.textContent='Copy'},1500)})"
+                        title="Sao chép nội dung chuyển khoản">Copy</button>
               </div>
             </div>
 
@@ -204,11 +200,13 @@
             {% endif %}
           </div>
 
-          {# ── Cột phải: QR code ── #}
+          {# ── Cột phải: QR SePay (tĩnh) ── #}
           <div class="col-md-7 d-flex flex-column align-items-center justify-content-center">
-            <img id="vnQrImg" src="" alt="VietQR"
-                 class="rounded border mb-2" style="max-width:220px;height:auto;min-height:180px">
+            {% if sepay_qr_image_url %}
+            <img src="{{ sepay_qr_image_url }}" alt="SePay QR"
+                 class="rounded border mb-2" style="max-width:220px;height:auto">
             <div class="text-muted small">{{ _("bill_scan_qr") }}</div>
+            {% endif %}
           </div>
         </div>
 
@@ -267,7 +265,6 @@
     if (!d) return;
     document.getElementById('vnAmount').textContent = fmt(d.amount);
     document.getElementById('vnRef').textContent    = d.reference;
-    document.getElementById('vnQrImg').src          = d.qr_url;
   }
 
   document.querySelectorAll('input[name="vnPlan"], input[name="vnMonths"]')

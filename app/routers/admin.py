@@ -124,6 +124,7 @@ def _payment_config(db: Session) -> dict:
         "payment_account_number": get_setting(db, "payment_account_number"),
         "payment_account_holder": get_setting(db, "payment_account_holder"),
         "payment_transfer_note":  get_setting(db, "payment_transfer_note"),
+        "sepay_qr_image_url":     get_setting(db, "sepay_qr_image_url"),
         "sepay_api_key":          get_setting(db, "sepay_api_key"),
         "ls_api_key":             get_setting(db, "ls_api_key"),
         "ls_webhook_secret":      get_setting(db, "ls_webhook_secret"),
@@ -201,6 +202,7 @@ def save_payment_config(
     payment_account_number: str = Form(""),
     payment_account_holder: str = Form(""),
     payment_transfer_note:  str = Form(""),
+    sepay_qr_image_url:     str = Form(""),
     sepay_api_key:          str = Form(""),
     db: Session = Depends(get_db),
 ):
@@ -211,6 +213,7 @@ def save_payment_config(
         ("payment_account_number", payment_account_number),
         ("payment_account_holder", payment_account_holder),
         ("payment_transfer_note",  payment_transfer_note),
+        ("sepay_qr_image_url",     sepay_qr_image_url),
         ("sepay_api_key",          sepay_api_key),
     ]:
         set_setting(db, key, val.strip())

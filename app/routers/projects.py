@@ -557,22 +557,12 @@ def billing_page(request: Request, db: Session = Depends(get_db)):
     from ..services.sepay import generate_reference, build_qr_url, expected_amount, MONTH_OPTIONS
     current_user = get_current_user(request, db)
 
-    bank_name   = get_setting(db, "payment_bank_name") or ""
-    acct_number = get_setting(db, "payment_account_number") or ""
-    acct_holder = get_setting(db, "payment_account_holder") or ""
-
-    payment_config = {
-        "bank_name":      bank_name,
-        "account_number": acct_number,
-        "account_holder": acct_holder,
-        "transfer_note":  get_setting(db, "payment_transfer_note") or "",
-    }
-
-    sepay_configured = bool(get_setting(db, "sepay_api_key"))
-    vn_bank_ready    = bool(bank_name and acct_number)
+    sepay_qr_image_url = get_setting(db, "sepay_qr_image_url") or ""
+    sepay_configured   = bool(get_setting(db, "sepay_api_key"))
+    vn_bank_ready      = bool(sepay_qr_image_url)
 
     uid = current_user.id
-    # vn_payment[plan][months] = {reference, amount, qr_url}
+    # vn_payment[plan][months] = {reference, amount}
     vn_payment = {}
     if vn_bank_ready:
         for plan in ("pro", "business"):
@@ -583,7 +573,6 @@ def billing_page(request: Request, db: Session = Depends(get_db)):
                 vn_payment[plan][months] = {
                     "reference": ref,
                     "amount":    amt,
-                    "qr_url":    build_qr_url(acct_number, bank_name, amt, ref),
                 }
 
     ls_configured = bool(
@@ -596,7 +585,7 @@ def billing_page(request: Request, db: Session = Depends(get_db)):
         "sub":               current_user.subscription,
         "plan_limits":       PLAN_LIMITS,
         "active_page":       "billing",
-        "payment_config":    payment_config,
+        "sepay_qr_image_url": sepay_qr_image_url,
         "vn_bank_ready":     vn_bank_ready,
         "vn_payment":        vn_payment,
         "vn_payment_json":   _json.dumps(vn_payment),
