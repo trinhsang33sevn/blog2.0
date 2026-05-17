@@ -109,6 +109,7 @@ class GoogleAccount(Base):
     access_token = Column(Text)
     refresh_token = Column(Text)
     token_expiry = Column(DateTime)
+    token_error = Column(Text, nullable=True)   # set when refresh token is revoked/invalid
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user  = relationship("User", back_populates="google_accounts")

@@ -143,7 +143,8 @@ def refresh_access_token(db: Session, account: GoogleAccount) -> str:
     """Refresh token nếu hết hạn, trả về access token hợp lệ."""
     now = datetime.utcnow()
     if account.token_expiry and account.token_expiry > now + timedelta(minutes=5):
-        return account.access_token
+        if not account.token_error:
+            return account.access_token
 
     uid = account.user_id
     client_id = get_setting(db, "google_client_id", user_id=uid)
@@ -156,11 +157,27 @@ def refresh_access_token(db: Session, account: GoogleAccount) -> str:
             "refresh_token": account.refresh_token,
             "grant_type": "refresh_token",
         })
-        resp.raise_for_status()
-        data = resp.json()
+
+    if resp.status_code == 400:
+        try:
+            err = resp.json()
+        except Exception:
+            err = {}
+        error_code = err.get("error", "")
+        if error_code == "invalid_grant":
+            msg = "Token bị thu hồi hoặc hết hạn — vui lòng xóa và kết nối lại tài khoản Google."
+        else:
+            msg = f"Google trả về lỗi 400: {err.get('error_description', error_code)}"
+        account.token_error = msg
+        db.commit()
+        raise ValueError(msg)
+
+    resp.raise_for_status()
+    data = resp.json()
 
     account.access_token = data["access_token"]
     account.token_expiry = datetime.utcnow() + timedelta(seconds=data.get("expires_in", 3600))
+    account.token_error = None   # clear on success
     db.commit()
     return account.access_token
 

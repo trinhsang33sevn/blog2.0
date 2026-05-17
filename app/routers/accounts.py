@@ -165,6 +165,32 @@ def add_blog_manually(
     return RedirectResponse("/accounts?success=Blog+added+successfully", status_code=303)
 
 
+@router.post("/accounts/{account_id}/test-token")
+def test_google_token(account_id: int, request: Request, db: Session = Depends(get_db)):
+    """Kiểm tra token Google còn hợp lệ không và cập nhật trạng thái."""
+    current_user = get_current_user(request, db)
+    account = db.query(GoogleAccount).filter(
+        GoogleAccount.id == account_id, GoogleAccount.user_id == current_user.id
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404)
+    try:
+        account.token_expiry = None
+        blogger.refresh_access_token(db, account)
+        blogger.get_user_blogs(db, account)
+        return RedirectResponse(
+            f"/accounts?success=Tài+khoản+{account.email}+kết+nối+OK", status_code=303
+        )
+    except ValueError as e:
+        return RedirectResponse(
+            f"/accounts?error={str(e)[:200]}", status_code=303
+        )
+    except Exception as e:
+        return RedirectResponse(
+            f"/accounts?error=Lỗi+kết+nối:+{str(e)[:150]}", status_code=303
+        )
+
+
 @router.post("/accounts/{account_id}/delete")
 def delete_google_account(account_id: int, request: Request, db: Session = Depends(get_db)):
     current_user = get_current_user(request, db)

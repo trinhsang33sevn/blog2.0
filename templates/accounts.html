@@ -76,16 +76,31 @@
 {% endif %}
 
 {% for account in accounts %}
-<div class="card shadow-sm mb-4">
-  <div class="card-header d-flex align-items-center justify-content-between">
+<div class="card shadow-sm mb-4 {% if account.token_error %}border-danger{% endif %}">
+  <div class="card-header d-flex align-items-center justify-content-between {% if account.token_error %}bg-danger-subtle{% endif %}">
     <div class="d-flex align-items-center gap-2">
       <div class="avatar-circle">{{ account.name[0].upper() if account.name else 'G' }}</div>
       <div>
-        <div class="fw-semibold">{{ account.name }}</div>
+        <div class="fw-semibold">
+          {{ account.name }}
+          {% if account.token_error %}
+            <span class="badge bg-danger ms-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Token lỗi</span>
+          {% else %}
+            <span class="badge bg-success ms-1"><i class="bi bi-check-circle-fill me-1"></i>OK</span>
+          {% endif %}
+        </div>
         <div class="text-muted small">{{ account.email }}</div>
+        {% if account.token_error %}
+        <div class="text-danger small mt-1"><i class="bi bi-info-circle me-1"></i>{{ account.token_error }}</div>
+        {% endif %}
       </div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <form method="post" action="/accounts/{{ account.id }}/test-token">
+        <button type="submit" class="btn btn-sm {% if account.token_error %}btn-danger{% else %}btn-outline-secondary{% endif %}" title="Kiểm tra kết nối Google">
+          <i class="bi bi-wifi me-1"></i>{% if account.token_error %}Kết nối lại{% else %}Kiểm tra{% endif %}
+        </button>
+      </form>
       <form method="post" action="/accounts/{{ account.id }}/sync-blogs">
         <button type="submit" class="btn btn-sm btn-outline-success">
           <i class="bi bi-arrow-clockwise me-1"></i>{{ _("acct_sync_blog") }}
