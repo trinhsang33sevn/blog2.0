@@ -607,6 +607,13 @@ Return ONLY the rewritten HTML — no explanation, no JSON, no markdown fence, j
         return content
 
 
+class TruncatedResponseError(ValueError):
+    """Raised when the AI response was cut off before the JSON was complete."""
+    def __init__(self, message: str, partial_raw: str = ""):
+        super().__init__(message)
+        self.partial_raw = partial_raw
+
+
 # ─── JSON Parsing ────────────────────────────────────────────────────────────
 
 def _repair_truncated_json(text: str) -> str:
@@ -724,7 +731,7 @@ def _extract_json(raw: str) -> dict | list:
     except json.JSONDecodeError:
         pass
 
-    # JSON bị cắt giữa chừng — thử repair
+    # JSON bị cắt giữa chừng — thử repair bằng cách đóng bracket
     try:
         repaired = _repair_truncated_json(raw.strip())
         if repaired != raw.strip():
@@ -736,13 +743,60 @@ def _extract_json(raw: str) -> dict | list:
         repaired_cleaned = _repair_truncated_json(cleaned)
         if repaired_cleaned != cleaned:
             return json.loads(repaired_cleaned)
-    except (json.JSONDecodeError, Exception) as e:
-        raise ValueError(f"Cannot parse AI response as JSON: {e}\nRaw (first 500 chars): {raw[:500]}")
+    except (json.JSONDecodeError, Exception):
+        pass
+
+    # Phát hiện truncation: response không kết thúc bằng } hoặc ]
+    stripped_end = raw.strip()[-1] if raw.strip() else ""
+    is_truncated = stripped_end not in ("}", "]")
+    if is_truncated:
+        raise TruncatedResponseError(
+            f"AI response was truncated (ends with '{stripped_end}')\nRaw (first 500 chars): {raw[:500]}",
+            partial_raw=raw,
+        )
 
     raise ValueError(f"Cannot parse AI response as JSON\nRaw (first 500 chars): {raw[:500]}")
 
 
 # ─── Public AI Functions ──────────────────────────────────────────────────────
+
+def _continue_truncated_response(
+    db: Session,
+    original_prompt: str,
+    partial_raw: str,
+    preferred: str,
+    user_id: int = None,
+    max_tokens: int = 4000,
+) -> Optional[dict]:
+    """
+    Khi AI response bị cắt giữa JSON, gửi continuation prompt để model viết tiếp phần còn thiếu.
+    Trả về dict đã parse hoàn chỉnh, hoặc None nếu continuation cũng thất bại.
+    """
+    partial_stripped = partial_raw.rstrip()
+    messages = [
+        {"role": "user", "content": original_prompt},
+        {"role": "assistant", "content": partial_stripped},
+        {
+            "role": "user",
+            "content": (
+                "Your previous response was cut off. Continue from EXACTLY where you stopped "
+                "— output ONLY the remaining text needed to complete the JSON (do NOT repeat "
+                "anything already written). Close all open strings, arrays, and objects properly "
+                "so the result is valid JSON ending with }."
+            ),
+        },
+    ]
+    try:
+        continuation, used_model = smart_call(
+            db, preferred, messages, max_tokens=max_tokens, user_id=user_id
+        )
+        logger.info(f"_continue_truncated_response continuation model: {used_model}")
+        merged = partial_stripped + continuation.strip()
+        return _extract_json(merged)
+    except Exception as e:
+        logger.warning(f"_continue_truncated_response failed: {e}")
+        return None
+
 
 _CLUSTER_BATCH_SIZE = 60  # từ khóa tối ưu mỗi lô
 
@@ -1128,9 +1182,19 @@ Return ONLY valid JSON — no markdown fences, no extra text, nothing before or 
   ]
 }}"""
 
-    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=8000, user_id=user_id)
+    messages = [{"role": "user", "content": prompt}]
+    content, used_model = smart_call(db, preferred, messages, max_tokens=8000, user_id=user_id)
     logger.info(f"write_article used model: {used_model}")
-    return _extract_json(content)
+
+    try:
+        return _extract_json(content)
+    except TruncatedResponseError as e:
+        logger.warning(f"write_article response truncated ({len(e.partial_raw)} chars) — attempting continuation with {used_model}")
+        result = _continue_truncated_response(db, prompt, e.partial_raw, preferred, user_id=user_id, max_tokens=4000)
+        if result is not None:
+            logger.info("write_article continuation succeeded")
+            return result
+        raise ValueError(f"write_article failed: response was truncated and continuation also failed.\n{e}")
 
 
 def rewrite_article(
@@ -1185,6 +1249,14 @@ Return ONLY valid JSON (no markdown, no extra text):
   "content": "Full rewritten HTML article in {lang_name}"
 }}"""
 
-    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=5000, user_id=user_id)
+    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=6000, user_id=user_id)
     logger.info(f"rewrite_article used model: {used_model}")
-    return _extract_json(content)
+
+    try:
+        return _extract_json(content)
+    except TruncatedResponseError as e:
+        logger.warning(f"rewrite_article response truncated — attempting continuation with {used_model}")
+        result = _continue_truncated_response(db, prompt, e.partial_raw, preferred, user_id=user_id, max_tokens=3000)
+        if result is not None:
+            return result
+        raise ValueError(f"rewrite_article failed: truncated and continuation failed.\n{e}")
