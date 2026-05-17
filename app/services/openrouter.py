@@ -1035,6 +1035,138 @@ def cluster_keywords(db: Session, keywords: list[str], model: Optional[str] = No
     return all_clusters
 
 
+def _is_html_complete(html: str) -> bool:
+    """Kiểm tra HTML article đã đủ cấu trúc (có FAQ + kết luận + kết thúc đúng tag)."""
+    h = html.rstrip().lower()
+    has_faq = any(w in h for w in ("faq", "câu hỏi thường", "frequently asked", "câu hỏi phổ biến"))
+    has_conclusion = any(w in h for w in ("kết luận", "conclusion", "tóm lại", "tóm tắt", "lời kết", "wrapping up", "final thoughts"))
+    ends_ok = h.endswith(("</p>", "</li>", "</ul>", "</ol>", "</blockquote>"))
+    return ends_ok and (has_faq or has_conclusion)
+
+
+def _write_article_html(
+    db: Session,
+    prompt: str,
+    preferred: str,
+    user_id: int = None,
+) -> str:
+    """
+    Phase 1: Gọi AI viết bài dưới dạng HTML thuần — không JSON wrapper.
+    Tự động thử continuation nếu bị cắt giữa chừng.
+    Trả về chuỗi HTML đầy đủ.
+    """
+    messages = [{"role": "user", "content": prompt}]
+    html, used_model = smart_call(db, preferred, messages, max_tokens=6000, user_id=user_id)
+    logger.info(f"_write_article_html model: {used_model} | len={len(html)}")
+
+    # Bỏ markdown fence nếu model vẫn wrap
+    html = html.strip()
+    if html.startswith("```"):
+        for part in html.split("```"):
+            cleaned = part.strip().lstrip("html").strip()
+            if cleaned.startswith("<"):
+                html = cleaned
+                break
+
+    if not _is_html_complete(html):
+        logger.warning(f"_write_article_html incomplete ({len(html)} chars) — trying continuation")
+        cont_messages = messages + [
+            {"role": "assistant", "content": html},
+            {"role": "user", "content": (
+                "Your response was cut off. Continue writing from EXACTLY where you stopped. "
+                "Output ONLY the remaining HTML — do not repeat anything already written. "
+                "Complete the article through the Conclusion section and end with </p>."
+            )},
+        ]
+        try:
+            continuation, cont_model = smart_call(db, preferred, cont_messages, max_tokens=3000, user_id=user_id)
+            logger.info(f"_write_article_html continuation model: {cont_model}")
+            html = html + continuation.strip()
+        except Exception as e:
+            logger.warning(f"_write_article_html continuation failed: {e}")
+
+    return html
+
+
+def _extract_article_metadata(
+    db: Session,
+    html_content: str,
+    title_hint: str,
+    language: str,
+    lang_name: str,
+    current_date_str: str,
+    preferred: str,
+    user_id: int = None,
+) -> dict:
+    """
+    Phase 2: Từ HTML đã viết, trích xuất title + metadata nhỏ.
+    Output JSON ~1000-1500 tokens — gần như không bao giờ truncated.
+    """
+    # Chỉ gửi 3000 ký tự đầu của HTML để tìm title và answer box (tiết kiệm token)
+    html_preview = html_content[:3000]
+
+    prompt = f"""You are given an article written in {lang_name}.
+
+ARTICLE CONTENT (first portion):
+{html_preview}
+
+{"SUGGESTED TITLE: " + title_hint if title_hint else ""}
+
+Generate metadata for this article. Return ONLY valid JSON — no markdown, no explanation:
+{{
+  "title": "SEO-optimized title in {lang_name} (extract or improve from the article)",
+  "image_prompt": "One vivid specific English sentence for an AI image generator. Never describe a full-body person. Prefer product/scene/environment shots. If person needed: waist-up or face-only.",
+  "image_queries": ["visual search query 1", "visual search query 2", "visual search query 3"],
+  "labels": ["Label 1", "Label 2"],
+  "schema_markup": [
+    {{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{{"@type":"Question","name":"Q1?","acceptedAnswer":{{"@type":"Answer","text":"A1."}}}}]}},
+    {{"@context":"https://schema.org","@type":"Article","headline":"title here","description":"first <p> paragraph text (answer box)","datePublished":"{current_date_str}","inLanguage":"{language}"}}
+  ]
+}}
+
+Rules:
+- labels: 1–3 short {lang_name} category words (max 30 chars each, not the article title)
+- schema_markup FAQPage: extract ALL question/answer pairs from the article's FAQ section
+- schema_markup Article: headline = final title, description = the Answer Box paragraph (first <p>)
+- image_queries: 2–4 words each, concrete and visual"""
+
+    meta_messages = [{"role": "user", "content": prompt}]
+    try:
+        content, used_model = smart_call(db, preferred, meta_messages, max_tokens=1500, user_id=user_id)
+        logger.info(f"_extract_article_metadata model: {used_model}")
+        return _extract_json(content)
+    except Exception as e:
+        logger.warning(f"_extract_article_metadata failed: {e} — using defaults")
+        return {
+            "title": title_hint or "",
+            "image_prompt": "",
+            "image_queries": [],
+            "labels": [],
+            "schema_markup": [],
+        }
+
+
+def _parse_title_from_html(html: str, fallback: str = "") -> tuple[str, str]:
+    """
+    Trích title từ dòng đầu 'TITLE: ...' hoặc tag <h1>.
+    Trả về (title, html_without_title_line).
+    """
+    lines = html.split("\n")
+    if lines and lines[0].upper().startswith("TITLE:"):
+        title = lines[0][6:].strip()
+        content = "\n".join(lines[1:]).strip()
+        return title, content
+
+    # Tìm <h1> nếu có
+    h1_match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.IGNORECASE | re.DOTALL)
+    if h1_match:
+        title = re.sub(r"<[^>]+>", "", h1_match.group(1)).strip()
+        content = html[:h1_match.start()] + html[h1_match.end():]
+        return title, content.strip()
+
+    return fallback, html
+
+
 def analyze_intent_and_write_article(
     db: Session,
     keywords: list[str],
@@ -1049,14 +1181,19 @@ def analyze_intent_and_write_article(
     research_brief: Optional[dict] = None,
     user_id: int = None,
 ) -> dict:
-    """Viết bài unique từ research brief (nếu có) hoặc tự phân tích intent."""
+    """
+    2-phase article writing pipeline:
+    Phase 1 — Write pure HTML (no JSON wrapper, no escaping issues)
+    Phase 2 — Extract metadata from the HTML (small JSON, near-zero failure rate)
+    """
     preferred = model or get_setting(db, "openrouter_model", DEFAULT_OR_MODEL, user_id=user_id)
     lang_name = LANGUAGE_NAMES.get(language, "English")
     kw_str = ", ".join(keywords)
     now = datetime.now()
-    current_date_str = now.strftime("%B %Y")   # e.g. "May 2026"
+    current_date_str = now.strftime("%B %Y")
     current_year = now.year
 
+    # ── Shared prompt fragments ───────────────────────────────────────────────
     backlink_str = ""
     if backlinks:
         lines = "\n".join(
@@ -1072,8 +1209,7 @@ def analyze_intent_and_write_article(
     existing_str = ""
     if existing_titles:
         existing_str = (
-            "\nIMPORTANT: These titles already exist for this topic - "
-            "your article MUST have a completely different angle and title:\n"
+            "\nIMPORTANT: These titles already exist — your article MUST have a completely different angle:\n"
             + "\n".join(f"- {t}" for t in existing_titles)
         )
 
@@ -1085,13 +1221,10 @@ def analyze_intent_and_write_article(
         )
         internal_link_str = (
             "\n## Internal Links\n"
-            "Naturally link to relevant existing articles on the same website "
-            "by inserting the anchor tags below where they fit contextually "
-            "(do NOT force links that are irrelevant):\n"
+            "Insert the anchor tags below where contextually relevant (do NOT force unrelated links):\n"
             + lines
         )
 
-    # Author persona intro
     if author_persona:
         persona_intro = (
             f"You are {author_persona['name']} — {author_persona['bio']}\n\n"
@@ -1104,35 +1237,30 @@ def analyze_intent_and_write_article(
             "in this topic. Write exactly as a knowledgeable human would — not as an AI assistant."
         )
 
-    # Content angle section
     angle_section = ""
     if content_angle:
         angle_section = (
             f"\n## CONTENT ANGLE (MANDATORY)\n"
             f"**Angle**: {content_angle['name']}\n"
             f"**Approach**: {content_angle['description']}\n\n"
-            f"Structure the ENTIRE article through this angle. "
-            f"Title, intro, all sections, and conclusion must serve this specific approach.\n"
+            f"Structure the ENTIRE article through this angle.\n"
         )
 
-    # Build the intent/research section of the prompt
     if research_brief:
         intent_section = _format_research_context(research_brief)
     else:
         intent_section = (
-            f"## STEP 1 — Search Intent Analysis\n"
+            f"## Search Intent\n"
             f"Topic cluster: {cluster_name}\n"
             f"Keywords: {kw_str}\n"
-            f"Identify:\n"
-            f"- Primary intent: what the user REALLY wants (learn / compare / buy / solve a problem)\n"
-            f"- Key pain points or questions behind these keywords\n"
-            f"- What the ideal article must deliver to satisfy this intent fully"
+            f"Identify the primary intent and what the article must deliver to satisfy searchers fully."
         )
 
-    prompt = f"""{persona_intro}
+    # ── Phase 1 prompt — HTML only ────────────────────────────────────────────
+    phase1_prompt = f"""{persona_intro}
 
 TODAY'S DATE: {current_date_str}
-IMPORTANT: All content must reflect {current_year} as the current year. Do NOT cite 2025 data as "current", "this year", or "recently" — that is outdated. Use {current_year} figures, trends, and context throughout.
+IMPORTANT: All content must reflect {current_year} as the current year.
 
 {intent_section}
 {existing_str}
@@ -1142,78 +1270,61 @@ IMPORTANT: All content must reflect {current_year} as the current year. Do NOT c
 {internal_link_str}
 
 ### Article structure (MANDATORY):
-1. **Title** — Specific, click-worthy. Include the primary keyword + a power element (number, "Guide", "Proven", "Step-by-Step"). Avoid generic titles.
-2. **Answer Box** ⭐ GEO/AIO — Immediately after the title, write a `<p>` paragraph of 50–60 words that directly answers the primary search query. No preamble. No "In this article...". Just the direct answer. Google uses this for AI Overviews; AI assistants use this as a citation snippet.
-3. **Introduction (hook)** — After the Answer Box, write 2–3 paragraphs with a relatable scenario or surprising fact. State what the reader will gain.
-4. **Body sections** — 4–6 H2 sections. Each covers one focused sub-topic. Use H3 for sub-points. Include at least one: numbered steps, comparison, checklist, or real example. **Each section MUST contain at least 1 specific fact, number, or statistic** (e.g. "studies show X%", "as of {current_year}, Y...") — vague generalities are not acceptable.
-5. **FAQ section** ⭐ AIO — 4–5 questions in the exact phrasing users type into Google or ask AI assistants. Each answer: 2–3 concise sentences, factual, self-contained (readable without context). Use `<h3>` for questions, `<p>` for answers. This section is critical for Google AI Overviews.
-6. **Conclusion** — Brief takeaways + clear CTA.
+1. **Title line** — First line of your output must be: TITLE: [your SEO-optimized title]
+2. **Answer Box** ⭐ GEO/AIO — First `<p>` tag: 50–60 word direct answer to the primary query. No preamble.
+3. **Introduction** — 2–3 paragraphs: relatable scenario or surprising fact, state what reader gains.
+4. **Body sections** — 4–6 `<h2>` sections with `<h3>` sub-points. Each section MUST include ≥1 specific fact/stat/number.
+5. **FAQ section** ⭐ AIO — 4–5 `<h3>` questions + `<p>` answers. Questions in exact phrasing users type. Answers: 2–3 self-contained sentences.
+6. **Conclusion** — Brief takeaways + clear CTA. End with `</p>`.
 
-### Writing style — CRITICAL (human voice, bypass AI detectors):
-- **Sentence variety**: Mix very short sentences (3–6 words) with longer ones (20–30 words). Never write 5 sentences of the same length in a row.
-- **Burstiness**: Some paragraphs are 1–2 sentences. Others are 4–5. Vary deliberately.
-- **Forbidden AI phrases**: NEVER use "Furthermore", "Moreover", "In addition", "It is worth noting", "It is important to note", "In conclusion", "To summarize", "Delve into", "Leverage", "Utilize" — these are instant AI red flags.
-- **Natural transitions**: Use casual connectors instead — "Here's the thing.", "And that's exactly why...", "But wait —", "The good news?", "Honestly,", "Let me explain."
-- **Personal voice**: Include 1–2 first-person observations ("In my experience...", "I've seen this go wrong when..."), mild opinions ("Personally, I think..."), or light humor.
-- **Imperfect structure**: Not every section needs to be the same length. One section can be 80 words, another 300 words — just like a real writer would do.
-- **Concrete specifics**: Use real-sounding examples, specific numbers, named scenarios. Avoid vague generalities.
-- **Rhetorical questions**: Ask the reader 2–3 questions throughout ("Sound familiar?", "So what does that mean for you?").
-- **Emotional resonance**: Express genuine enthusiasm, mild frustration, or empathy where appropriate.
-- Language: {lang_name} ONLY — use natural idioms, colloquial expressions, and phrases native speakers actually use.
+### Writing style — CRITICAL:
+- Mix short (3–6 word) and long (20–30 word) sentences. Never 5 same-length in a row.
+- NEVER use: "Furthermore", "Moreover", "In addition", "It is worth noting", "Delve into", "Leverage", "Utilize"
+- Use: "Here's the thing.", "And that's exactly why...", "But wait —", "The good news?", "Honestly,"
+- Include 1–2 first-person observations or mild opinions.
+- Language: {lang_name} ONLY — natural idioms, colloquial expressions.
 
 ### Technical requirements:
-- Length: 1200–2000 words
-- Keyword "{kw_str}" woven in naturally — never forced or repeated unnaturally
-- HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote — NO html/head/body tags
+- 1200–2000 words total
+- Keyword "{kw_str}" woven in naturally
+- HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote
+- NO html/head/body/h1 tags — content only
 
-### GEO/AIO optimization (MANDATORY):
-- The Answer Box paragraph must be the FIRST `<p>` tag in the content — before any h2
-- Every factual claim should be specific: use exact numbers, years, percentages
-- FAQ answers must be self-contained: each answer must make sense when read alone, out of context
-- Avoid filler phrases like "great question", "it depends", "there are many factors" in FAQ answers
+### GEO/AIO (MANDATORY):
+- Answer Box must be the FIRST `<p>` — before any `<h2>`
+- Every factual claim: specific numbers, years, percentages
+- FAQ answers must be self-contained (readable without context)
 
-## STEP 3 — Image Suggestions (in English)
-- image_prompt: One VIVID, highly specific sentence for an AI image generator. CRITICAL RULES to avoid anatomy defects: (1) NEVER describe a full-body person — use "waist-up portrait", "head and shoulders close-up", or "face and chest only"; (2) PREFER scene/object/environment shots when possible — e.g., a product on a desk, a landscape, tools, food, technology devices; (3) If a person must appear, show them from the back, side, or very close-up face only. Describe setting, mood, lighting vividly. Example: "Waist-up portrait of a professional woman reviewing charts on a laptop screen, warm office lighting, shallow depth of field, photorealistic."
-- image_queries: 3–5 short English keyword phrases (2–4 words each) for stock photo searches, one per main H2 section. Make them concrete and visual — avoid abstract terms.
+### Output format:
+- Line 1: TITLE: [SEO-optimized title in {lang_name}]
+- Line 2: blank
+- Lines 3+: full article HTML starting with `<p>` (Answer Box)
+- NO JSON, NO markdown fences, NO explanation — just the title line then HTML"""
 
-## STEP 4 — Article Labels (in {lang_name})
-Generate 1–3 concise blog category labels in {lang_name}.
-Labels must be short broad topic words (e.g. "Sức khỏe", "Dinh dưỡng", "Thể thao").
-Do NOT use the article title as a label. Max 30 characters each.
+    # ── Phase 1: Write HTML ───────────────────────────────────────────────────
+    html_raw = _write_article_html(db, phase1_prompt, preferred, user_id=user_id)
+    title_hint, html_content = _parse_title_from_html(html_raw, fallback=cluster_name)
 
-## STEP 5 — Structured Schema Markup (JSON-LD for GEO/AIO)
-Generate structured data so AI assistants (ChatGPT, Perplexity, Google AI Overviews) can cite this article accurately.
-Produce a JSON array with exactly 2 objects:
-1. FAQPage: extract every Q&A pair from the FAQ section
-2. Article: headline + description (use the Answer Box text) + date + language
+    if not html_content or len(html_content) < 1500:
+        raise ValueError(f"Phase 1 HTML too short: {len(html_content)} chars")
 
-Return ONLY valid JSON — no markdown fences, no extra text, nothing before or after the JSON:
-{{
-  "intent_analysis": "1–2 sentence summary of search intent and what the article delivers (in English)",
-  "title": "SEO-optimized article title in {lang_name}",
-  "content": "Complete HTML article in {lang_name} (all sections including FAQ and conclusion)",
-  "image_prompt": "Vivid, specific English scene description for AI image generation",
-  "image_queries": ["concrete visual query 1", "concrete visual query 2", "concrete visual query 3", "concrete visual query 4"],
-  "labels": ["Nhãn 1", "Nhãn 2"],
-  "schema_markup": [
-    {{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{{"@type":"Question","name":"Câu hỏi 1?","acceptedAnswer":{{"@type":"Answer","text":"Câu trả lời 1."}}}}]}},
-    {{"@context":"https://schema.org","@type":"Article","headline":"Tiêu đề bài viết","description":"Đoạn Answer Box 50-60 chữ","datePublished":"{current_date_str}","inLanguage":"{language}"}}
-  ]
-}}"""
+    # ── Phase 2: Extract metadata ─────────────────────────────────────────────
+    meta = _extract_article_metadata(
+        db, html_content, title_hint, language, lang_name,
+        current_date_str, preferred, user_id=user_id,
+    )
 
-    messages = [{"role": "user", "content": prompt}]
-    content, used_model = smart_call(db, preferred, messages, max_tokens=8000, user_id=user_id)
-    logger.info(f"write_article used model: {used_model}")
+    title = meta.get("title") or title_hint or cluster_name
 
-    try:
-        return _extract_json(content)
-    except TruncatedResponseError as e:
-        logger.warning(f"write_article truncated ({len(e.partial_raw)} chars) — continuing with {used_model}")
-        result = _continue_truncated_response(db, messages, e.partial_raw, preferred, user_id=user_id, max_tokens=4000, close_with="}")
-        if result is not None:
-            logger.info("write_article continuation succeeded")
-            return result
-        raise ValueError(f"write_article failed: truncated and continuation failed.\n{e}")
+    return {
+        "title":        title,
+        "content":      html_content,
+        "image_prompt": meta.get("image_prompt", ""),
+        "image_queries": meta.get("image_queries", []),
+        "labels":       meta.get("labels", []),
+        "schema_markup": meta.get("schema_markup", []),
+        "intent_analysis": "",
+    }
 
 
 def rewrite_article(
