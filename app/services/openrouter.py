@@ -609,12 +609,76 @@ Return ONLY the rewritten HTML — no explanation, no JSON, no markdown fence, j
 
 # ─── JSON Parsing ────────────────────────────────────────────────────────────
 
+def _repair_truncated_json(text: str) -> str:
+    """
+    Cố gắng sửa JSON bị cắt giữa chừng do model hết output token.
+    Chiến lược: cắt bỏ chuỗi/value cuối chưa hoàn thành, đóng các bracket còn mở.
+    """
+    # Tìm dấu phẩy hoặc kết thúc value cuối cùng hợp lệ
+    # Cắt bỏ phần trailing chưa hoàn chỉnh bằng cách tìm vị trí an toàn
+    depth = 0
+    in_string = False
+    escape_next = False
+    last_safe = 0
+
+    for i, ch in enumerate(text):
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in ('{', '['):
+            depth += 1
+        elif ch in ('}', ']'):
+            depth -= 1
+            if depth == 0:
+                last_safe = i + 1
+        elif ch == ',' and depth == 1:
+            last_safe = i  # có thể cắt ngay trước dấu phẩy cuối
+
+    if last_safe > 0 and last_safe < len(text):
+        # Cắt tại vị trí an toàn cuối cùng rồi đóng bracket
+        truncated = text[:last_safe].rstrip().rstrip(',')
+        # Đếm bracket chưa đóng
+        opens = {'[': ']', '{': '}'}
+        stack = []
+        in_str = False
+        esc = False
+        for ch in truncated:
+            if esc:
+                esc = False
+                continue
+            if ch == '\\' and in_str:
+                esc = True
+                continue
+            if ch == '"':
+                in_str = not in_str
+                continue
+            if in_str:
+                continue
+            if ch in opens:
+                stack.append(opens[ch])
+            elif ch in (']', '}') and stack:
+                stack.pop()
+        closing = ''.join(reversed(stack))
+        return truncated + closing
+
+    return text
+
+
 def _extract_json(raw: str) -> dict | list:
     """
     Trích xuất JSON từ response AI, xử lý các trường hợp:
     - Có markdown code block ```json ... ```
     - Có ký tự điều khiển (literal newline/tab) bên trong chuỗi JSON
     - JSON bị bọc bởi text thừa
+    - JSON bị cắt giữa chừng do model hết token
     """
     if not raw or not raw.strip():
         raise ValueError("AI returned empty response")
@@ -651,15 +715,31 @@ def _extract_json(raw: str) -> dict | list:
         pass
 
     # Xóa ký tự điều khiển không hợp lệ (giữ lại \n \r \t đã được escape)
-    # Thay literal control chars (0x00-0x1f trừ \t \n \r) bằng space
     cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', text)
     # Thay literal newline/tab bên trong chuỗi JSON bằng escaped version
     cleaned = re.sub(r'(?<=: ")(.*?)(?="[,\n\}])', lambda m: m.group(0).replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t'), cleaned, flags=re.DOTALL)
 
     try:
         return json.loads(cleaned)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
+        pass
+
+    # JSON bị cắt giữa chừng — thử repair
+    try:
+        repaired = _repair_truncated_json(raw.strip())
+        if repaired != raw.strip():
+            return json.loads(repaired)
+    except (json.JSONDecodeError, Exception):
+        pass
+
+    try:
+        repaired_cleaned = _repair_truncated_json(cleaned)
+        if repaired_cleaned != cleaned:
+            return json.loads(repaired_cleaned)
+    except (json.JSONDecodeError, Exception) as e:
         raise ValueError(f"Cannot parse AI response as JSON: {e}\nRaw (first 500 chars): {raw[:500]}")
+
+    raise ValueError(f"Cannot parse AI response as JSON\nRaw (first 500 chars): {raw[:500]}")
 
 
 # ─── Public AI Functions ──────────────────────────────────────────────────────
@@ -1048,7 +1128,7 @@ Return ONLY valid JSON — no markdown fences, no extra text, nothing before or 
   ]
 }}"""
 
-    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=5000, user_id=user_id)
+    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=8000, user_id=user_id)
     logger.info(f"write_article used model: {used_model}")
     return _extract_json(content)
 

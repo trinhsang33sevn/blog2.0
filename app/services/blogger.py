@@ -145,8 +145,9 @@ def refresh_access_token(db: Session, account: GoogleAccount) -> str:
     if account.token_expiry and account.token_expiry > now + timedelta(minutes=5):
         return account.access_token
 
-    client_id = get_setting(db, "google_client_id")
-    client_secret = get_setting(db, "google_client_secret")
+    uid = account.user_id
+    client_id = get_setting(db, "google_client_id", user_id=uid)
+    client_secret = get_setting(db, "google_client_secret", user_id=uid)
 
     with httpx.Client() as client:
         resp = client.post(GOOGLE_TOKEN_URL, data={
