@@ -762,35 +762,37 @@ def _extract_json(raw: str) -> dict | list:
 
 def _continue_truncated_response(
     db: Session,
-    original_prompt: str,
+    prior_messages: list[dict],
     partial_raw: str,
     preferred: str,
     user_id: int = None,
     max_tokens: int = 4000,
-) -> Optional[dict]:
+    close_with: str = "}",
+) -> Optional[dict | list]:
     """
-    Khi AI response bị cắt giữa JSON, gửi continuation prompt để model viết tiếp phần còn thiếu.
-    Trả về dict đã parse hoàn chỉnh, hoặc None nếu continuation cũng thất bại.
+    Khi AI response bị cắt giữa JSON, gửi continuation prompt để model viết tiếp.
+    prior_messages: toàn bộ lịch sử hội thoại gốc (system + user messages).
+    close_with: ký tự đóng JSON cuối cùng ("}" cho object, "]" cho array).
+    Trả về kết quả đã parse, hoặc None nếu thất bại.
     """
     partial_stripped = partial_raw.rstrip()
-    messages = [
-        {"role": "user", "content": original_prompt},
+    continuation_messages = list(prior_messages) + [
         {"role": "assistant", "content": partial_stripped},
         {
             "role": "user",
             "content": (
-                "Your previous response was cut off. Continue from EXACTLY where you stopped "
-                "— output ONLY the remaining text needed to complete the JSON (do NOT repeat "
-                "anything already written). Close all open strings, arrays, and objects properly "
-                "so the result is valid JSON ending with }."
+                f"Your previous response was cut off before the JSON was complete. "
+                f"Continue from EXACTLY where you stopped — output ONLY the remaining text "
+                f"(do NOT repeat anything already written). "
+                f"Close all open strings, arrays, and objects so the result is valid JSON ending with {close_with}."
             ),
         },
     ]
     try:
         continuation, used_model = smart_call(
-            db, preferred, messages, max_tokens=max_tokens, user_id=user_id
+            db, preferred, continuation_messages, max_tokens=max_tokens, user_id=user_id
         )
-        logger.info(f"_continue_truncated_response continuation model: {used_model}")
+        logger.info(f"_continue_truncated_response model: {used_model}")
         merged = partial_stripped + continuation.strip()
         return _extract_json(merged)
     except Exception as e:
@@ -964,30 +966,47 @@ Return ONLY a valid JSON array — no explanation, no markdown, nothing else:
         + prompt
     )
 
+    def _normalize_clusters(raw: list) -> list[dict]:
+        normalized = []
+        for c in raw:
+            primary = c.get("primary_keyword", "")
+            secondary = c.get("secondary_keywords") or c.get("keywords") or []
+            if primary and primary not in secondary:
+                kws = [primary] + [k for k in secondary if k]
+            else:
+                kws = secondary or ([primary] if primary else [])
+            normalized.append({"name": c.get("name", ""), "keywords": kws})
+        return normalized
+
     last_error = None
     for attempt in range(3):
         try:
             use_prompt = retry_prompt if attempt > 0 else prompt
+            cluster_messages = [system_msg, {"role": "user", "content": use_prompt}]
             content, used_model = smart_call(
-                db, preferred,
-                [system_msg, {"role": "user", "content": use_prompt}],
+                db, preferred, cluster_messages,
                 max_tokens=3000,
                 user_id=user_id,
                 json_mode=True,
             )
             logger.info(f"cluster_batch ({len(keywords)} kws) used model: {used_model} attempt={attempt + 1}")
             raw = _extract_json(content)
-            # Normalize format mới (primary_keyword + secondary_keywords) → keywords[]
-            normalized = []
-            for c in raw:
-                primary = c.get("primary_keyword", "")
-                secondary = c.get("secondary_keywords") or c.get("keywords") or []
-                if primary and primary not in secondary:
-                    kws = [primary] + [k for k in secondary if k]
-                else:
-                    kws = secondary or ([primary] if primary else [])
-                normalized.append({"name": c.get("name", ""), "keywords": kws})
-            return normalized
+            return _normalize_clusters(raw)
+
+        except TruncatedResponseError as e:
+            logger.warning(f"cluster_batch truncated at attempt {attempt + 1} ({len(e.partial_raw)} chars) — trying continuation")
+            use_prompt = retry_prompt if attempt > 0 else prompt
+            cluster_messages = [system_msg, {"role": "user", "content": use_prompt}]
+            result = _continue_truncated_response(
+                db, cluster_messages, e.partial_raw, preferred,
+                user_id=user_id, max_tokens=2000, close_with="]",
+            )
+            if result is not None:
+                logger.info(f"cluster_batch continuation succeeded ({len(result)} clusters)")
+                return _normalize_clusters(result)
+            last_error = e
+            logger.warning(f"cluster_batch continuation also failed — attempt {attempt + 1} abandoned")
+
         except ValueError as e:
             last_error = e
             logger.warning(f"cluster_batch attempt {attempt + 1} failed (JSON parse error): {e}")
@@ -1189,12 +1208,12 @@ Return ONLY valid JSON — no markdown fences, no extra text, nothing before or 
     try:
         return _extract_json(content)
     except TruncatedResponseError as e:
-        logger.warning(f"write_article response truncated ({len(e.partial_raw)} chars) — attempting continuation with {used_model}")
-        result = _continue_truncated_response(db, prompt, e.partial_raw, preferred, user_id=user_id, max_tokens=4000)
+        logger.warning(f"write_article truncated ({len(e.partial_raw)} chars) — continuing with {used_model}")
+        result = _continue_truncated_response(db, messages, e.partial_raw, preferred, user_id=user_id, max_tokens=4000, close_with="}")
         if result is not None:
             logger.info("write_article continuation succeeded")
             return result
-        raise ValueError(f"write_article failed: response was truncated and continuation also failed.\n{e}")
+        raise ValueError(f"write_article failed: truncated and continuation failed.\n{e}")
 
 
 def rewrite_article(
@@ -1249,14 +1268,15 @@ Return ONLY valid JSON (no markdown, no extra text):
   "content": "Full rewritten HTML article in {lang_name}"
 }}"""
 
-    content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=6000, user_id=user_id)
+    rewrite_messages = [{"role": "user", "content": prompt}]
+    content, used_model = smart_call(db, preferred, rewrite_messages, max_tokens=6000, user_id=user_id)
     logger.info(f"rewrite_article used model: {used_model}")
 
     try:
         return _extract_json(content)
     except TruncatedResponseError as e:
-        logger.warning(f"rewrite_article response truncated — attempting continuation with {used_model}")
-        result = _continue_truncated_response(db, prompt, e.partial_raw, preferred, user_id=user_id, max_tokens=3000)
+        logger.warning(f"rewrite_article truncated — continuing with {used_model}")
+        result = _continue_truncated_response(db, rewrite_messages, e.partial_raw, preferred, user_id=user_id, max_tokens=3000, close_with="}")
         if result is not None:
             return result
         raise ValueError(f"rewrite_article failed: truncated and continuation failed.\n{e}")
