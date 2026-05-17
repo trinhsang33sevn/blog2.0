@@ -192,6 +192,8 @@
   "art_badge_writing": "Scrittura",
   "art_bulk_delete": "Elimina selezionati",
   "art_bulk_retry": "Riprova tutti i falliti",
+  "art_auto_retry_notice_title": "Riscrittura automatica:",
+  "art_auto_retry_notice_body": "Gli articoli con errori verranno automaticamente rimessi in coda per la riscrittura fino al completamento. Nessuna azione necessaria.",
   "art_clear_filter": "Rimuovi filtri",
   "art_col_actions": "Azioni",
   "art_col_date": "Data pubblicazione",

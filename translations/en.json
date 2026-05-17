@@ -192,6 +192,8 @@
   "art_badge_writing": "Writing",
   "art_bulk_delete": "Delete selected",
   "art_bulk_retry": "Retry all failed",
+  "art_auto_retry_notice_title": "Auto retry:",
+  "art_auto_retry_notice_body": "Failed articles will automatically be queued for rewriting until completed. No action needed from you.",
   "art_clear_filter": "Clear filters",
   "art_col_actions": "Actions",
   "art_col_date": "Published Date",

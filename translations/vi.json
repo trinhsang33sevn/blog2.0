@@ -192,6 +192,8 @@
   "art_badge_writing": "Đang viết",
   "art_bulk_delete": "Xóa đã chọn",
   "art_bulk_retry": "Viết lại tất cả lỗi",
+  "art_auto_retry_notice_title": "Tự động viết lại:",
+  "art_auto_retry_notice_body": "Các bài viết bị lỗi sẽ tự động được yêu cầu viết lại cho đến khi hoàn thành. Bạn không cần thao tác thêm.",
   "art_clear_filter": "Xóa bộ lọc",
   "art_col_actions": "Thao tác",
   "art_col_date": "Ngày đăng",
