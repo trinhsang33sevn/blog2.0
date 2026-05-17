@@ -1194,16 +1194,22 @@ def analyze_intent_and_write_article(
     current_year = now.year
 
     # ── Shared prompt fragments ───────────────────────────────────────────────
-    backlink_str = ""
+    backlink_lines = ""
+    backlink_step = ""
+    backlink_tech = ""
     if backlinks:
-        lines = "\n".join(
-            f'- <a href="{bl.get("url", "")}">{bl.get("anchor", "")}</a>'
+        raw_lines = "\n".join(
+            f'   - <a href="{bl.get("url", "")}">{bl.get("anchor", "")}</a>'
             for bl in backlinks
         )
-        backlink_str = (
-            f"\n## MANDATORY BACKLINKS\n"
-            f"You MUST insert ALL of the following links into the article body as HTML anchor tags exactly as shown. "
-            f"Place each one inside a relevant sentence — do NOT list them separately, do NOT skip any:\n{lines}"
+        backlink_lines = raw_lines
+        backlink_step = (
+            f"\n7. **EMBED BACKLINKS (NON-NEGOTIABLE)** — Copy-paste each anchor tag below verbatim "
+            f"into a body sentence. Every single one MUST appear in the final HTML. "
+            f"Do NOT skip any. Do NOT list them separately. Embed inside flowing sentences:\n{raw_lines}"
+        )
+        backlink_tech = (
+            f"\n- BACKLINKS REQUIRED: these exact anchor tags MUST be in the HTML body:\n{raw_lines}"
         )
 
     existing_str = ""
@@ -1266,7 +1272,6 @@ IMPORTANT: All content must reflect {current_year} as the current year.
 {existing_str}
 {angle_section}
 ## Write a Complete Article in {lang_name}
-{backlink_str}
 {internal_link_str}
 
 ### Article structure (MANDATORY):
@@ -1275,7 +1280,7 @@ IMPORTANT: All content must reflect {current_year} as the current year.
 3. **Introduction** — 2–3 paragraphs: relatable scenario or surprising fact, state what reader gains.
 4. **Body sections** — 4–6 `<h2>` sections with `<h3>` sub-points. Each section MUST include ≥1 specific fact/stat/number.
 5. **FAQ section** ⭐ AIO — 4–5 `<h3>` questions + `<p>` answers. Questions in exact phrasing users type. Answers: 2–3 self-contained sentences.
-6. **Conclusion** — Brief takeaways + clear CTA. End with `</p>`.
+6. **Conclusion** — Brief takeaways + clear CTA. End with `</p>`.{backlink_step}
 
 ### Writing style — CRITICAL:
 - Mix short (3–6 word) and long (20–30 word) sentences. Never 5 same-length in a row.
@@ -1288,7 +1293,7 @@ IMPORTANT: All content must reflect {current_year} as the current year.
 - 1200–2000 words total
 - Keyword "{kw_str}" woven in naturally
 - HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote
-- NO html/head/body/h1 tags — content only
+- NO html/head/body/h1 tags — content only{backlink_tech}
 
 ### GEO/AIO (MANDATORY):
 - Answer Box must be the FIRST `<p>` — before any `<h2>`
