@@ -990,10 +990,11 @@ IMPORTANT: All content must reflect {current_year} as the current year. Do NOT c
 
 ### Article structure (MANDATORY):
 1. **Title** — Specific, click-worthy. Include the primary keyword + a power element (number, "Guide", "Proven", "Step-by-Step"). Avoid generic titles.
-2. **Introduction (hook)** — Start with a relatable scenario, surprising fact, or bold statement that makes the reader feel understood. 2–3 paragraphs. State what they'll gain.
-3. **Body sections** — 4–6 H2 sections. Each covers one focused sub-topic. Use H3 for sub-points. Include at least one: numbered steps, comparison, checklist, or real example.
-4. **FAQ section** — 3–4 genuine questions users ask, with concise H3 + answer. Helps capture featured snippets.
-5. **Conclusion** — Brief takeaways + clear CTA.
+2. **Answer Box** ⭐ GEO/AIO — Immediately after the title, write a `<p>` paragraph of 50–60 words that directly answers the primary search query. No preamble. No "In this article...". Just the direct answer. Google uses this for AI Overviews; AI assistants use this as a citation snippet.
+3. **Introduction (hook)** — After the Answer Box, write 2–3 paragraphs with a relatable scenario or surprising fact. State what the reader will gain.
+4. **Body sections** — 4–6 H2 sections. Each covers one focused sub-topic. Use H3 for sub-points. Include at least one: numbered steps, comparison, checklist, or real example. **Each section MUST contain at least 1 specific fact, number, or statistic** (e.g. "studies show X%", "as of {current_year}, Y...") — vague generalities are not acceptable.
+5. **FAQ section** ⭐ AIO — 4–5 questions in the exact phrasing users type into Google or ask AI assistants. Each answer: 2–3 concise sentences, factual, self-contained (readable without context). Use `<h3>` for questions, `<p>` for answers. This section is critical for Google AI Overviews.
+6. **Conclusion** — Brief takeaways + clear CTA.
 
 ### Writing style — CRITICAL (human voice, bypass AI detectors):
 - **Sentence variety**: Mix very short sentences (3–6 words) with longer ones (20–30 words). Never write 5 sentences of the same length in a row.
@@ -1012,6 +1013,12 @@ IMPORTANT: All content must reflect {current_year} as the current year. Do NOT c
 - Keyword "{kw_str}" woven in naturally — never forced or repeated unnaturally
 - HTML tags only: h2, h3, p, ul, ol, li, strong, em, blockquote — NO html/head/body tags
 
+### GEO/AIO optimization (MANDATORY):
+- The Answer Box paragraph must be the FIRST `<p>` tag in the content — before any h2
+- Every factual claim should be specific: use exact numbers, years, percentages
+- FAQ answers must be self-contained: each answer must make sense when read alone, out of context
+- Avoid filler phrases like "great question", "it depends", "there are many factors" in FAQ answers
+
 ## STEP 3 — Image Suggestions (in English)
 - image_prompt: One VIVID, highly specific sentence for an AI image generator. CRITICAL RULES to avoid anatomy defects: (1) NEVER describe a full-body person — use "waist-up portrait", "head and shoulders close-up", or "face and chest only"; (2) PREFER scene/object/environment shots when possible — e.g., a product on a desk, a landscape, tools, food, technology devices; (3) If a person must appear, show them from the back, side, or very close-up face only. Describe setting, mood, lighting vividly. Example: "Waist-up portrait of a professional woman reviewing charts on a laptop screen, warm office lighting, shallow depth of field, photorealistic."
 - image_queries: 3–5 short English keyword phrases (2–4 words each) for stock photo searches, one per main H2 section. Make them concrete and visual — avoid abstract terms.
@@ -1021,6 +1028,12 @@ Generate 1–3 concise blog category labels in {lang_name}.
 Labels must be short broad topic words (e.g. "Sức khỏe", "Dinh dưỡng", "Thể thao").
 Do NOT use the article title as a label. Max 30 characters each.
 
+## STEP 5 — Structured Schema Markup (JSON-LD for GEO/AIO)
+Generate structured data so AI assistants (ChatGPT, Perplexity, Google AI Overviews) can cite this article accurately.
+Produce a JSON array with exactly 2 objects:
+1. FAQPage: extract every Q&A pair from the FAQ section
+2. Article: headline + description (use the Answer Box text) + date + language
+
 Return ONLY valid JSON — no markdown fences, no extra text, nothing before or after the JSON:
 {{
   "intent_analysis": "1–2 sentence summary of search intent and what the article delivers (in English)",
@@ -1028,7 +1041,11 @@ Return ONLY valid JSON — no markdown fences, no extra text, nothing before or 
   "content": "Complete HTML article in {lang_name} (all sections including FAQ and conclusion)",
   "image_prompt": "Vivid, specific English scene description for AI image generation",
   "image_queries": ["concrete visual query 1", "concrete visual query 2", "concrete visual query 3", "concrete visual query 4"],
-  "labels": ["Nhãn 1", "Nhãn 2"]
+  "labels": ["Nhãn 1", "Nhãn 2"],
+  "schema_markup": [
+    {{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{{"@type":"Question","name":"Câu hỏi 1?","acceptedAnswer":{{"@type":"Answer","text":"Câu trả lời 1."}}}}]}},
+    {{"@context":"https://schema.org","@type":"Article","headline":"Tiêu đề bài viết","description":"Đoạn Answer Box 50-60 chữ","datePublished":"{current_date_str}","inLanguage":"{language}"}}
+  ]
 }}"""
 
     content, used_model = smart_call(db, preferred, [{"role": "user", "content": prompt}], max_tokens=5000, user_id=user_id)

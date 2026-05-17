@@ -237,6 +237,7 @@ class Article(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    schema_markup = Column(Text)          # JSON-LD GEO/AIO schema (FAQPage + Article)
     retry_count = Column(Integer, default=0)
     author_id = Column(Integer, ForeignKey("authors.id"), nullable=True)
     content_angle_id = Column(Integer, ForeignKey("content_angles.id"), nullable=True)

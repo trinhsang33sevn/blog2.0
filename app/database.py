@@ -217,6 +217,7 @@ def _run_migrations_pg():
         ("users",          "reset_token",             "TEXT"),
         ("users",          "reset_token_expires",     "TIMESTAMP"),
         ("authors",        "language",                "TEXT DEFAULT 'vi'"),
+        ("articles",       "schema_markup",           "TEXT"),
     ]
     with engine.connect() as conn:
         for table, column, definition in new_columns:
@@ -266,6 +267,7 @@ def _run_migrations_sqlite():
         ("users",          "reset_token",             "TEXT"),
         ("users",          "reset_token_expires",     "DATETIME"),
         ("authors",        "language",                "TEXT DEFAULT 'vi'"),
+        ("articles",       "schema_markup",           "TEXT"),
     ]
     with engine.connect() as conn:
         for table, column, definition in new_columns:

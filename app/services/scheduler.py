@@ -48,6 +48,23 @@ def _release_project_lock(db: Session, lock_class: int, project_id: int) -> None
         pass
 
 
+def _inject_schema_markup(content: str, schema_markup_json: str) -> str:
+    """Prepend JSON-LD structured data script tag to article content for GEO/AIO."""
+    if not schema_markup_json:
+        return content
+    try:
+        schemas = json.loads(schema_markup_json)
+        if not isinstance(schemas, list):
+            schemas = [schemas]
+        scripts = "\n".join(
+            f'<script type="application/ld+json">{json.dumps(s, ensure_ascii=False)}</script>'
+            for s in schemas
+        )
+        return scripts + "\n" + content
+    except Exception:
+        return content
+
+
 def _spin(text: str) -> str:
     """Resolve {A|B|C} spin syntax — randomly picks one option per group."""
     import re
@@ -335,6 +352,15 @@ def _write_single_article(db: Session, article: Article) -> None:
     article.status       = "ready"
     article.retry_count  = 0
     article.error_message = None
+
+    # Lưu GEO/AIO schema markup nếu AI trả về
+    schema_markup = result.get("schema_markup")
+    if schema_markup:
+        try:
+            article.schema_markup = json.dumps(schema_markup, ensure_ascii=False)
+        except Exception:
+            article.schema_markup = None
+
     db.commit()
     logger.info(f"Article {article_id} written OK (attempt={attempts}): {title}")
 
@@ -448,47 +474,44 @@ def _publish_article(db: Session, project, ps, article) -> None:
     else:
         labels = None
 
+    # Inject GEO/AIO JSON-LD schema vào đầu content trước khi publish
+    publish_content = _inject_schema_markup(article.content, article.schema_markup)
+
     if platform == "blogspot":
         account = db.query(GoogleAccount).filter(GoogleAccount.id == site.account_id).first()
         if not account:
             raise ValueError(f"Google account cho site {site.id} không tìm thấy (đã bị xóa?)")
         post_data = blogger.publish_post(
             db=db, account=account, blog_id=site.blog_id,
-            title=article.title, content=article.content, labels=labels or None,
+            title=article.title, content=publish_content, labels=labels or None,
         )
     elif platform == "wordpress":
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"WordPress account cho site {site.id} không tìm thấy (đã bị xóa?)")
         content = image_service.rehost_images_for_platform(
-            article.content, "wordpress", access_token=pa.access_token, site_id=site.blog_id
+            publish_content, "wordpress", access_token=pa.access_token, site_id=site.blog_id
         )
-        if content != article.content:
-            article.content = content
-            db.commit()
         post_data = wordpress.publish_post(pa.access_token, site.blog_id, article.title, content, labels)
     elif platform == "tumblr":
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"Tumblr account cho site {site.id} không tìm thấy (đã bị xóa?)")
         token     = tumblr.refresh_access_token(db, pa)
-        post_data = tumblr.publish_post(token, site.blog_id, article.title, article.content, labels)
+        post_data = tumblr.publish_post(token, site.blog_id, article.title, publish_content, labels)
     elif platform == "hashnode":
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"Hashnode account cho site {site.id} không tìm thấy (đã bị xóa?)")
-        post_data = hashnode.publish_post(pa.access_token, site.blog_id, article.title, article.content, labels)
+        post_data = hashnode.publish_post(pa.access_token, site.blog_id, article.title, publish_content, labels)
     elif platform == "wordpress_selfhosted":
         pa = db.query(PlatformAccount).filter(PlatformAccount.id == site.platform_account_id).first()
         if not pa:
             raise ValueError(f"WP Self-hosted account cho site {site.id} không tìm thấy (đã bị xóa?)")
         content = image_service.rehost_images_for_platform(
-            article.content, "wordpress_selfhosted",
+            publish_content, "wordpress_selfhosted",
             site_url=pa.refresh_token, username=pa.name, app_password=pa.access_token,
         )
-        if content != article.content:
-            article.content = content
-            db.commit()
         post_data = wp_sh.publish_post(pa.refresh_token, pa.name, pa.access_token, article.title, content, labels)
     else:
         raise ValueError(f"Platform không được hỗ trợ: {platform}")
