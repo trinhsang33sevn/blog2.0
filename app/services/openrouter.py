@@ -473,12 +473,19 @@ def call_with_fallback(
                 if model_id != preferred_model:
                     logger.warning(f"[fallback] {preferred_model} → {model_id}")
                 return content, model_id
+            except (httpx.RemoteProtocolError, httpx.ReadError,
+                    httpx.ConnectError, httpx.PoolTimeout, httpx.ReadTimeout) as exc:
+                # Network-level errors (peer closed, incomplete chunked read, timeout)
+                # → try next model instead of raising
+                logger.warning(f"[fallback] {model_id} network error ({type(exc).__name__}: {exc}) — trying next model")
+                last_error = exc
+                continue
             except Exception as exc:
                 if _is_fallback_error(exc):
                     _on_model_failure(model_id)
                     last_error = exc
                     continue
-                raise  # lỗi khác (network, JSON parse…) → raise ngay
+                raise
 
     raise RuntimeError(
         f"Tất cả free models đều không khả dụng. Lỗi cuối: {last_error}"
@@ -721,10 +728,12 @@ def _extract_json(raw: str) -> dict | list:
     except json.JSONDecodeError:
         pass
 
-    # Xóa ký tự điều khiển không hợp lệ (giữ lại \n \r \t đã được escape)
+    # Xóa ký tự điều khiển không hợp lệ
     cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', text)
     # Thay literal newline/tab bên trong chuỗi JSON bằng escaped version
     cleaned = re.sub(r'(?<=: ")(.*?)(?="[,\n\}])', lambda m: m.group(0).replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t'), cleaned, flags=re.DOTALL)
+    # Xóa invalid JSON escape sequences như \B, \đ, \g (không phải " \ / b f n r t u)
+    cleaned = re.sub(r'\\(?!["\\/bfnrtu])', '', cleaned)
 
     try:
         return json.loads(cleaned)
@@ -1068,6 +1077,31 @@ def _write_article_html(
                 html = cleaned
                 break
 
+    _MIN_HTML = 1200
+
+    # Bài quá ngắn (model trả ít content) → retry toàn bộ lần 2
+    if len(html.strip()) < _MIN_HTML:
+        logger.warning(f"_write_article_html too short ({len(html.strip())} chars) — retrying")
+        retry_messages = messages + [{"role": "user", "content": (
+            "Your previous response was too short. Write the COMPLETE article this time — "
+            "minimum 1200 words with all required sections: Answer Box, Introduction, "
+            "4-6 body H2 sections, FAQ, and Conclusion. Do not stop early."
+        )}]
+        try:
+            html2, _ = smart_call(db, preferred, retry_messages, max_tokens=6000, user_id=user_id)
+            html2 = html2.strip()
+            if html2.startswith("```"):
+                for part in html2.split("```"):
+                    c = part.strip().lstrip("html").strip()
+                    if c.startswith("<"):
+                        html2 = c
+                        break
+            if len(html2) > len(html):
+                html = html2
+        except Exception as e:
+            logger.warning(f"_write_article_html retry failed: {e}")
+
+    # Bài bị cắt giữa chừng → continuation
     if not _is_html_complete(html):
         logger.warning(f"_write_article_html incomplete ({len(html)} chars) — trying continuation")
         cont_messages = messages + [
@@ -1349,50 +1383,58 @@ def rewrite_article(
     current_date_str = now.strftime("%B %Y")
     current_year = now.year
 
-    backlink_str = ""
+    backlink_step = ""
+    backlink_tech = ""
     if backlinks:
-        backlink_str = "\n".join(
-            f'- Anchor text: "{bl.get("anchor", "")}" -> URL: {bl.get("url", "")}'
+        raw_lines = "\n".join(
+            f'   - <a href="{bl.get("url", "")}">{bl.get("anchor", "")}</a>'
             for bl in backlinks
         )
+        backlink_step = (
+            f"\n8. **EMBED BACKLINKS (NON-NEGOTIABLE)** — Copy-paste each anchor tag verbatim "
+            f"into a body sentence. Every one MUST appear in the final HTML:\n{raw_lines}"
+        )
+        backlink_tech = f"\n- BACKLINKS REQUIRED: these exact anchor tags MUST be in the HTML:\n{raw_lines}"
 
-    prompt = f"""The article "{title}" targeting [{kw_str}] failed to get indexed by Google. You must rewrite it completely — different angle, stronger structure, more value.
+    phase1_prompt = f"""The article "{title}" targeting [{kw_str}] failed to get indexed by Google. Rewrite it completely — different angle, stronger structure, more value.
 
 TODAY'S DATE: {current_date_str}
-IMPORTANT: All content must reflect {current_year} as the current year. Do NOT reference 2025 as current — use {current_year} data and context.
+IMPORTANT: Reflect {current_year} as the current year throughout.
 
 Language: {lang_name}
 Target keywords: {kw_str}
-{f'Include these backlinks naturally:{chr(10)}{backlink_str}' if backlink_str else ''}
 
-Rewrite strategy — make it rank AND pass AI detection:
-1. **New title** — completely different angle, more specific, power word or number included
-2. **Stronger intro** — open with a relatable scenario or surprising fact, not a generic definition
-3. **Deeper content** — 1200–1800 words; cover the topic more thoroughly than competing pages
-4. **Better structure** — 4–5 H2 sections + FAQ (3 questions + answers) + conclusion with CTA
-5. **E-E-A-T signals** — specific tips, real examples, first-person observations, expert tone
-6. **Human writing style**:
-   - Mix short sentences (3–6 words) with longer ones — vary sentence length constantly
-   - NEVER use: "Furthermore", "Moreover", "In addition", "It is worth noting", "Delve into", "Leverage", "In conclusion"
-   - Use natural connectors: "Here's the thing.", "And that's why...", "Honestly,", "The good news?"
-   - Include 1–2 rhetorical questions and 1 first-person observation
-7. **HTML only**: h2, h3, p, ul, ol, li, strong — no html/head/body tags
+Rewrite strategy:
+1. **Title line** — First line: TITLE: [completely different angle, more specific title]
+2. **Answer Box** — First `<p>`: 50–60 word direct answer. No preamble.
+3. **Stronger intro** — relatable scenario or surprising fact, not a generic definition
+4. **Deeper content** — 1200–1800 words, 4–5 `<h2>` sections, cover topic thoroughly
+5. **FAQ** — 3–4 `<h3>` questions + `<p>` answers, self-contained sentences
+6. **Conclusion** — takeaways + CTA, end with `</p>`
+7. **Human style**: mix short/long sentences; avoid "Furthermore", "Moreover", "Delve into"{backlink_step}
 
-Return ONLY valid JSON (no markdown, no extra text):
-{{
-  "title": "New compelling title in {lang_name}",
-  "content": "Full rewritten HTML article in {lang_name}"
-}}"""
+Technical:
+- HTML tags only: h2, h3, p, ul, ol, li, strong — NO html/head/body/h1 tags
+- Keyword "{kw_str}" woven in naturally{backlink_tech}
 
-    rewrite_messages = [{"role": "user", "content": prompt}]
-    content, used_model = smart_call(db, preferred, rewrite_messages, max_tokens=6000, user_id=user_id)
-    logger.info(f"rewrite_article used model: {used_model}")
+Output format:
+- Line 1: TITLE: [new title in {lang_name}]
+- Line 2: blank
+- Lines 3+: full HTML starting with `<p>` (Answer Box)
+- NO JSON, NO markdown — just title line then HTML"""
 
-    try:
-        return _extract_json(content)
-    except TruncatedResponseError as e:
-        logger.warning(f"rewrite_article truncated — continuing with {used_model}")
-        result = _continue_truncated_response(db, rewrite_messages, e.partial_raw, preferred, user_id=user_id, max_tokens=3000, close_with="}")
-        if result is not None:
-            return result
-        raise ValueError(f"rewrite_article failed: truncated and continuation failed.\n{e}")
+    html_raw = _write_article_html(db, phase1_prompt, preferred, user_id=user_id)
+    title_hint, html_content = _parse_title_from_html(html_raw, fallback=title)
+
+    if not html_content or len(html_content) < 1200:
+        raise ValueError(f"rewrite_article HTML too short: {len(html_content or '')} chars")
+
+    meta = _extract_article_metadata(
+        db, html_content, title_hint, language, lang_name,
+        current_date_str, preferred, user_id=user_id,
+    )
+
+    return {
+        "title":   meta.get("title") or title_hint or title,
+        "content": html_content,
+    }
