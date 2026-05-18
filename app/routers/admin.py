@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db, engine
-from ..models import User, Subscription, Article
+from ..models import User, Subscription, Article, GoogleAccount, PlatformAccount, BlogspotSite
 from ..services.openrouter import set_setting, get_setting
 from ..services.auth_service import upgrade_plan
 from ..templates import templates, update_site_globals
@@ -267,6 +267,10 @@ def delete_user(uid: int, request: Request, db: Session = Depends(get_db)):
         return RedirectResponse("/admin?tab=members&error=Khong+the+xoa+chinh+minh", status_code=303)
     user = db.query(User).filter(User.id == uid).first()
     if user:
+        db.query(GoogleAccount).filter(GoogleAccount.user_id == uid).update({"user_id": None})
+        db.query(PlatformAccount).filter(PlatformAccount.user_id == uid).update({"user_id": None})
+        db.query(BlogspotSite).filter(BlogspotSite.user_id == uid).update({"user_id": None})
+        db.flush()
         db.delete(user)
         db.commit()
     return RedirectResponse("/admin?tab=members&success=Da+xoa+nguoi+dung", status_code=303)
