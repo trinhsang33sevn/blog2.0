@@ -208,13 +208,17 @@
             {% set group_idx = loop.index %}
             <div class="site-group mb-2">
               <!-- Group header -->
-              <div class="d-flex align-items-center justify-content-between rounded px-2 py-1 mb-1"
-                   style="background:#f0f2f5;border:1px solid #e0e3e7;">
+              <div class="d-flex align-items-center justify-content-between rounded px-2 py-1 mb-1 site-group-header"
+                   style="background:#f0f2f5;border:1px solid #e0e3e7;cursor:pointer;"
+                   data-target="grp-body-{{ group_idx }}"
+                   onclick="toggleGroupCollapse(this)">
                 <div class="d-flex align-items-center gap-2">
                   <input class="form-check-input group-select-all mt-0" type="checkbox"
                     id="grp{{ group_idx }}" data-group="{{ group_idx }}"
-                    onchange="toggleGroupAll(this)" title="Chọn tất cả trong nhóm">
-                  <label for="grp{{ group_idx }}" class="d-flex align-items-center gap-1 mb-0 fw-semibold small" style="cursor:pointer;">
+                    onchange="toggleGroupAll(this)" title="Chọn tất cả trong nhóm"
+                    onclick="event.stopPropagation()">
+                  <label for="grp{{ group_idx }}" class="d-flex align-items-center gap-1 mb-0 fw-semibold small" style="cursor:pointer;"
+                         onclick="event.stopPropagation()">
                     {% if group.icon == 'wordpress' %}<span class="badge bg-primary" style="font-size:0.62rem;">WP</span>
                     {% elif group.icon == 'tumblr' %}<span class="badge" style="background:#35465c;font-size:0.62rem;">T</span>
                     {% elif group.icon == 'hashnode' %}<span class="badge bg-warning text-dark" style="font-size:0.62rem;">H</span>
@@ -223,9 +227,13 @@
                     {% if group.sub_label %}<span class="text-muted fw-normal" style="font-size:0.73rem;">({{ group.sub_label }})</span>{% endif %}
                   </label>
                 </div>
-                <span class="badge bg-secondary" style="font-size:0.62rem;">{{ group.sites|length }} site{% if group.sites|length > 1 %}s{% endif %}</span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-secondary" style="font-size:0.62rem;">{{ group.sites|length }} site{% if group.sites|length > 1 %}s{% endif %}</span>
+                  <i class="bi bi-chevron-up site-group-chevron" style="font-size:0.75rem;transition:transform 0.2s;"></i>
+                </div>
               </div>
-              <!-- Sites in group -->
+              <!-- Sites in group (collapsible) -->
+              <div id="grp-body-{{ group_idx }}" class="site-group-body">
               {% for site in group.sites %}
               {% set is_selected = selected_site_ids is defined and site.id in selected_site_ids %}
               {% set lang_val = site_languages[site.id] if site_languages is defined and site.id in site_languages else site.default_language %}
@@ -259,6 +267,7 @@
                 </div>
               </div>
               {% endfor %}
+              </div><!-- /site-group-body -->
             </div>
             {% endfor %}
           </div>
@@ -356,6 +365,16 @@ function toggleLang(checkbox) {
     langDiv.classList.add('d-none');
   }
   updateSiteCount();
+}
+
+function toggleGroupCollapse(header) {
+  const bodyId = header.dataset.target;
+  const body = document.getElementById(bodyId);
+  const chevron = header.querySelector('.site-group-chevron');
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (chevron) chevron.style.transform = collapsed ? '' : 'rotate(180deg)';
 }
 
 function toggleGroupAll(groupCb) {
