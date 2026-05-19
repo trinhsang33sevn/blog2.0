@@ -229,11 +229,11 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <span class="badge bg-secondary" style="font-size:0.62rem;">{{ group.sites|length }} site{% if group.sites|length > 1 %}s{% endif %}</span>
-                  <i class="bi bi-chevron-up site-group-chevron" style="font-size:0.75rem;transition:transform 0.2s;"></i>
+                  <i class="bi bi-chevron-up site-group-chevron" style="font-size:0.75rem;transition:transform 0.2s;transform:rotate(180deg);"></i>
                 </div>
               </div>
               <!-- Sites in group (collapsible) -->
-              <div id="grp-body-{{ group_idx }}" class="site-group-body">
+              <div id="grp-body-{{ group_idx }}" class="site-group-body" style="display:none;">
               {% for site in group.sites %}
               {% set is_selected = selected_site_ids is defined and site.id in selected_site_ids %}
               {% set lang_val = site_languages[site.id] if site_languages is defined and site.id in site_languages else site.default_language %}
@@ -412,6 +412,16 @@ function updateSiteCount() {
 (function initSiteGroups() {
   document.querySelectorAll('.group-select-all').forEach(function(grpCb) {
     updateGroupCheck(grpCb.dataset.group);
+  });
+  // Auto-expand groups that have pre-selected sites (edit mode)
+  document.querySelectorAll('.site-group').forEach(function(grp) {
+    var hasChecked = grp.querySelector('.site-check:checked');
+    if (hasChecked) {
+      var body = grp.querySelector('.site-group-body');
+      var chevron = grp.querySelector('.site-group-chevron');
+      if (body) body.style.display = '';
+      if (chevron) chevron.style.transform = '';
+    }
   });
   updateSiteCount();
 
