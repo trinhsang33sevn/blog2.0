@@ -6,7 +6,7 @@
   <title>{{ article.title }} — AutoBlogspot Blog</title>
   <meta name="description" content="{{ article.description }}">
   <meta name="keywords" content="{{ article.keywords }}">
-  <meta name="robots" content="index, follow">
+  {% if lang != 'vi' %}<meta name="robots" content="noindex, follow">{% else %}<meta name="robots" content="index, follow">{% endif %}
   <link rel="canonical" href="https://autoblogspot.com/blog/{{ article.slug }}">
   <!-- hreflang multilingual SEO -->
   <link rel="alternate" hreflang="vi" href="https://autoblogspot.com/blog/{{ article.slug }}">
