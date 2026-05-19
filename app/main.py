@@ -288,21 +288,17 @@ def sitemap_xml():
     base = "https://autoblogspot.com"
     langs = ["vi", "en", "fr", "it"]
 
-    def _loc(path: str, lang: str) -> str:
-        return path if lang == "vi" else f"{path}?lang={lang}"
-
     def _hreflang_block(path: str) -> str:
-        """All xhtml:link alternate tags for a given path (all lang variants)."""
         lines = []
         for lng in langs:
-            lines.append(f'    <xhtml:link rel="alternate" hreflang="{lng}" href="{_loc(path, lng)}"/>')
+            href = path if lng == "vi" else f"{path}?lang={lng}"
+            lines.append(f'    <xhtml:link rel="alternate" hreflang="{lng}" href="{href}"/>')
         lines.append(f'    <xhtml:link rel="alternate" hreflang="x-default" href="{path}"/>')
         return "\n".join(lines)
 
-    def _url_entry(loc: str, path: str, lastmod: str = "", priority: str = "0.8",
+    def _url_entry(path: str, lastmod: str = "", priority: str = "0.8",
                    changefreq: str = "monthly") -> str:
-        """Build a single <url> entry with full hreflang block."""
-        parts = [f"  <url>", f"    <loc>{loc}</loc>", _hreflang_block(path)]
+        parts = ["  <url>", f"    <loc>{path}</loc>", _hreflang_block(path)]
         if lastmod:
             parts.append(f"    <lastmod>{lastmod}</lastmod>")
         parts.append(f"    <changefreq>{changefreq}</changefreq>")
@@ -312,26 +308,14 @@ def sitemap_xml():
 
     urls: list[str] = []
 
-    # ── Static pages — each language variant listed separately ──────────────
-    for path, priority, changefreq in [
-        (f"{base}/",     "1.0", "weekly"),
-        (f"{base}/blog", "0.9", "daily"),
-    ]:
-        for lang in langs:
-            loc = _loc(path, lang)
-            urls.append(_url_entry(loc, path, priority=priority, changefreq=changefreq))
+    # Static pages — only base URL as <loc>, hreflang for alternates
+    urls.append(_url_entry(f"{base}/",     priority="1.0", changefreq="weekly"))
+    urls.append(_url_entry(f"{base}/blog", priority="0.9", changefreq="daily"))
 
-    # login/register — no multilingual variants needed
-    urls.append(f'  <url><loc>{base}/register</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>')
-    urls.append(f'  <url><loc>{base}/login</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>')
-
-    # ── Article pages — each language variant listed separately ─────────────
+    # Article pages — only vi base URL as <loc>
     for a in ARTICLES:
         path = f"{base}/blog/{a['slug']}"
-        lastmod = a.get("date", "")
-        for lang in langs:
-            loc = _loc(path, lang)
-            urls.append(_url_entry(loc, path, lastmod=lastmod, priority="0.8", changefreq="monthly"))
+        urls.append(_url_entry(path, lastmod=a.get("date", ""), priority="0.8", changefreq="monthly"))
 
     content = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
