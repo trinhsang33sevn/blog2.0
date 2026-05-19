@@ -654,7 +654,7 @@
         <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">{{ get_lang()|upper }}</button>
         <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
           {% for code, label in LANGUAGE_LABELS.items() %}
-          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/">{{ label }}</a></li>
+          <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/" rel="nofollow">{{ label }}</a></li>
           {% endfor %}
         </ul>
       </div>
@@ -677,7 +677,7 @@
           <button class="lang-btn dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('lang_switcher') }}">{{ get_lang()|upper }}</button>
           <ul class="dropdown-menu dropdown-menu-end lang-dropdown">
             {% for code, label in LANGUAGE_LABELS.items() %}
-            <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/">{{ label }}</a></li>
+            <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next=/" rel="nofollow">{{ label }}</a></li>
             {% endfor %}
           </ul>
         </div>

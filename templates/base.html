@@ -94,7 +94,7 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
               {% for code, label in LANGUAGE_LABELS.items() %}
-              <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next={{ request.url.path }}">{{ label }}</a></li>
+              <li><a class="dropdown-item {% if get_lang() == code %}fw-bold{% endif %}" href="/set-lang?lang={{ code }}&next={{ request.url.path }}" rel="nofollow">{{ label }}</a></li>
               {% endfor %}
             </ul>
           </div>
