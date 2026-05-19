@@ -20,6 +20,9 @@
   <meta property="og:title" content="{{ article.title }}">
   <meta property="og:description" content="{{ article.description }}">
   <meta property="og:image" content="https://autoblogspot.com/blog/og/{{ article.slug }}">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="article:published_time" content="{{ article.date }}">
+  <meta property="article:section" content="{{ article.display_category }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ article.title }}">
   <meta name="twitter:description" content="{{ article.description }}">
@@ -28,13 +31,29 @@
   {
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": "{{ article.title }}",
-    "description": "{{ article.description }}",
-    "image": "https://autoblogspot.com/blog/og/{{ article.slug }}",
+    "headline": "{{ article.title | replace('"', '&quot;') }}",
+    "description": "{{ article.description | replace('"', '&quot;') }}",
+    "image": {"@type": "ImageObject", "url": "https://autoblogspot.com/blog/og/{{ article.slug }}", "width": 1200, "height": 630},
     "datePublished": "{{ article.date }}",
-    "author": {"@type": "Organization", "name": "AutoBlogspot"},
-    "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"},
+    "dateModified": "{{ article.date }}",
+    "articleSection": "{{ article.display_category }}",
+    "keywords": "{{ article.keywords | default('') | replace('"', '&quot;') }}",
+    "url": "https://autoblogspot.com/blog/{{ article.slug }}",
+    "inLanguage": "vi",
+    "author": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com"},
+    "publisher": {"@type": "Organization", "name": "AutoBlogspot", "url": "https://autoblogspot.com", "logo": {"@type": "ImageObject", "url": "https://autoblogspot.com/static/img/favicon.svg"}},
     "mainEntityOfPage": {"@type": "WebPage", "@id": "https://autoblogspot.com/blog/{{ article.slug }}"}
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://autoblogspot.com/"},
+      {"@type": "ListItem", "position": 2, "name": "Blog", "item": "https://autoblogspot.com/blog"},
+      {"@type": "ListItem", "position": 3, "name": "{{ article.title | replace('"', '&quot;') }}", "item": "https://autoblogspot.com/blog/{{ article.slug }}"}
+    ]
   }
   </script>
   {% if GA_ID %}

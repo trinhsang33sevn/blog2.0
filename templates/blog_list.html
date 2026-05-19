@@ -6,7 +6,7 @@
   <title>{{ _("blog_page_title") }}</title>
   <meta name="description" content="{{ _("blog_page_desc") }}">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://autoblogspot.com/blog{% if lang != 'vi' %}?lang={{ lang }}{% endif %}">
+  <link rel="canonical" href="https://autoblogspot.com/blog">
   <!-- hreflang multilingual SEO -->
   <link rel="alternate" hreflang="vi" href="https://autoblogspot.com/blog">
   <link rel="alternate" hreflang="en" href="https://autoblogspot.com/blog?lang=en">
@@ -18,6 +18,12 @@
   <meta property="og:url" content="https://autoblogspot.com/blog">
   <meta property="og:title" content="{{ _("blog_hero_title") }} — AutoBlogspot">
   <meta property="og:description" content="{{ _("blog_page_desc") }}">
+  <meta property="og:image" content="https://autoblogspot.com/static/img/og-default.png">
+  <meta property="og:locale" content="vi_VN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ _("blog_hero_title") }} — AutoBlogspot">
+  <meta name="twitter:description" content="{{ _("blog_page_desc") }}">
+  <meta name="twitter:image" content="https://autoblogspot.com/static/img/og-default.png">
   {% if GA_ID %}
   <script async src="https://www.googletagmanager.com/gtag/js?id={{ GA_ID }}"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ GA_ID }}');</script>
