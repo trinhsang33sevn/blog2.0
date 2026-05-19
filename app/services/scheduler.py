@@ -883,7 +883,8 @@ def check_index_status():
 
         for task in due_tasks:
             try:
-                is_indexed = index_checker.check_google_index(task.url)
+                proxy_url = openrouter.get_setting(db, "dataimpulse_proxy_url")
+                is_indexed = index_checker.check_google_index(task.url, proxy_url=proxy_url or None)
                 task.last_checked_at = datetime.utcnow()
 
                 if task.status == "submitted":

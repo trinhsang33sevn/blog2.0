@@ -164,6 +164,7 @@ def admin_dashboard(request: Request, tab: str = "overview", db: Session = Depen
             "cpu_alert_pct":  get_setting(db, "cpu_alert_pct")  or "90",
             "ram_alert_pct":  get_setting(db, "ram_alert_pct")  or "90",
         },
+        "dataimpulse_proxy_url": get_setting(db, "dataimpulse_proxy_url") or "",
     })
 
 
@@ -295,6 +296,19 @@ def save_alert_config(
     ]:
         set_setting(db, key, val)
     return RedirectResponse("/admin?tab=system&success=Da+luu+cau+hinh+canh+bao", status_code=303)
+
+
+@router.post("/admin/dataimpulse-config")
+def save_dataimpulse_config(
+    request: Request,
+    proxy_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    if not _require_admin(request, db):
+        return RedirectResponse("/")
+    from ..services.openrouter import set_setting
+    set_setting(db, "dataimpulse_proxy_url", proxy_url.strip())
+    return RedirectResponse("/admin?tab=system&success=Da+luu+cau+hinh+DataImpulse", status_code=303)
 
 
 @router.get("/admin/test-alert")

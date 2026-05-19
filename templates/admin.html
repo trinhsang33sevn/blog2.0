@@ -792,6 +792,42 @@
     </div>
   </div>
 
+  <!-- DataImpulse Proxy Config -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-shield-lock me-1 text-info"></i>DataImpulse Proxy — Kiểm tra Google Index</span>
+        {% if dataimpulse_proxy_url %}
+        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Đã cấu hình</span>
+        {% else %}
+        <span class="badge bg-secondary">Chưa cấu hình</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Hệ thống luôn thử check Google Index trực tiếp (miễn phí) trước. Chỉ kích hoạt proxy khi bị chặn (429 / CAPTCHA) để tiết kiệm chi phí.<br>
+          Format: <code>http://username:password@proxy.dataimpulse.com:port</code>
+        </p>
+        <form method="post" action="/admin/dataimpulse-config">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-9">
+              <label class="form-label fw-semibold">Proxy URL</label>
+              <input type="text" name="proxy_url" class="form-control font-monospace"
+                     placeholder="http://user:pass@proxy.dataimpulse.com:823"
+                     value="{{ dataimpulse_proxy_url }}">
+              <div class="form-text">Để trống để tắt DataImpulse, hệ thống chỉ dùng direct request.</div>
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-info w-100 text-white">
+                <i class="bi bi-floppy me-1"></i>Lưu cấu hình
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Refresh button -->
   <div class="col-12 text-end">
     <a href="/admin?tab=system" class="btn btn-sm btn-outline-secondary">
