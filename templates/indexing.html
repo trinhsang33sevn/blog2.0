@@ -3,7 +3,27 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <h1 class="fw-bold mb-0 h4"><i class="bi bi-search me-2"></i>{{ _("idx_title") }}</h1>
+  <div class="d-flex align-items-center gap-2">
+    <span class="text-muted small">{{ _("idx_total") }}: {{ counts.all }} {{ _("idx_items") }}</span>
+    <a href="/indexing/export{% if filter_status or filter_project_id or filter_site_id %}?{% endif %}{% if filter_status %}status={{ filter_status }}&{% endif %}{% if filter_project_id %}project_id={{ filter_project_id }}&{% endif %}{% if filter_site_id %}site_id={{ filter_site_id }}{% endif %}"
+       class="btn btn-sm btn-outline-secondary" title="{{ _('idx_export_csv') }}">
+      <i class="bi bi-download me-1"></i>CSV
+    </a>
+  </div>
 </div>
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+  <i class="bi bi-check-circle me-1"></i>{{ request.query_params.get('success')|replace('+', ' ') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if request.query_params.get('error') %}
+<div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+  <i class="bi bi-exclamation-triangle me-1"></i>{{ request.query_params.get('error')|replace('+', ' ') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
@@ -33,6 +53,45 @@
   </div>
 </div>
 
+<!-- Filters -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end" id="filterForm">
+      <div class="col-md-3">
+        <label class="form-label small mb-1">{{ _("idx_filter_project") }}</label>
+        <select name="project_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">{{ _("idx_all_projects") }}</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}" {{ 'selected' if filter_project_id == p.id }}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1">{{ _("idx_filter_site") }}</label>
+        <select name="site_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">{{ _("idx_all_sites") }}</option>
+          {% for s in sites %}
+          <option value="{{ s.id }}" {{ 'selected' if filter_site_id == s.id }}>{{ s.blog_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">{{ _("idx_filter_status") }}</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">{{ _("idx_all_status") }}</option>
+          <option value="pending"   {{ 'selected' if filter_status == 'pending' }}>{{ _("idx_badge_waiting") }}</option>
+          <option value="submitted" {{ 'selected' if filter_status == 'submitted' }}>{{ _("idx_badge_submitting") }}</option>
+          <option value="indexed"   {{ 'selected' if filter_status == 'indexed' }}>{{ _("idx_badge_indexed") }}</option>
+          <option value="failed"    {{ 'selected' if filter_status == 'failed' }}>{{ _("idx_badge_failed") }}</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <a href="/indexing" class="btn btn-sm btn-outline-secondary w-100">{{ _("idx_clear_filter") }}</a>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Index Tasks Table -->
 <div class="card shadow-sm">
   <div class="card-body p-0">
@@ -58,6 +117,12 @@
               </a>
               {% if task.article %}
               <div class="text-muted x-small text-truncate" style="max-width:300px">{{ task.article.title }}</div>
+              {% if task.article.project %}
+              <div class="text-muted x-small" style="font-size:0.7rem;">
+                <i class="bi bi-folder2 me-1"></i>{{ task.article.project.name }}
+                {% if task.article.site %}· {{ task.article.site.blog_name }}{% endif %}
+              </div>
+              {% endif %}
               {% endif %}
             </td>
             <td>
@@ -110,7 +175,7 @@
         <ul class="pagination pagination-sm mb-0">
           {% for p in range(1, total_pages + 1) %}
           <li class="page-item {{ 'active' if p == page }}">
-            <a class="page-link" href="?page={{ p }}{% if filter_status %}&status={{ filter_status }}{% endif %}">{{ p }}</a>
+            <a class="page-link" href="?page={{ p }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_project_id %}&project_id={{ filter_project_id }}{% endif %}{% if filter_site_id %}&site_id={{ filter_site_id }}{% endif %}">{{ p }}</a>
           </li>
           {% endfor %}
         </ul>
