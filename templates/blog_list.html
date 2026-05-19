@@ -163,6 +163,12 @@
 
 <main class="py-5">
   <div class="container">
+    <!-- Article count -->
+    <p class="mb-4" style="color:#6e7681;font-size:.88rem;">
+      {{ total_articles }} {{ _("blog_articles_count") }}
+      {% if total_pages > 1 %} &nbsp;·&nbsp; {{ _("blog_page") }} {{ page }}/{{ total_pages }}{% endif %}
+    </p>
+
     <div class="row g-4">
       {% for article in articles %}
       <div class="col-md-6 col-lg-4">
@@ -187,6 +193,73 @@
       <div class="col-12 text-center py-5 text-secondary">{{ _("blog_all") }}</div>
       {% endif %}
     </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    {% set base_url = "/blog?" ~ ("category=" ~ active_category ~ "&" if active_category else "") %}
+    <nav aria-label="Blog pagination" class="mt-5 d-flex justify-content-center">
+      <ul class="pagination" style="gap:4px;flex-wrap:wrap;">
+
+        <!-- Prev -->
+        {% if page > 1 %}
+        <li class="page-item">
+          <a class="page-link" href="{{ base_url }}page={{ page - 1 }}"
+             style="background:#161b22;border-color:#30363d;color:#8b949e;border-radius:6px;">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+        {% endif %}
+
+        <!-- Page numbers -->
+        {% set start_p = [1, page - 2] | max %}
+        {% set end_p   = [total_pages, page + 2] | min %}
+        {% if start_p > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="{{ base_url }}page=1"
+               style="background:#161b22;border-color:#30363d;color:#8b949e;border-radius:6px;">1</a>
+          </li>
+          {% if start_p > 2 %}
+          <li class="page-item disabled">
+            <span class="page-link" style="background:transparent;border-color:#30363d;color:#6e7681;border-radius:6px;">…</span>
+          </li>
+          {% endif %}
+        {% endif %}
+
+        {% for p in range(start_p, end_p + 1) %}
+        <li class="page-item {% if p == page %}active{% endif %}">
+          <a class="page-link" href="{{ base_url }}page={{ p }}"
+             style="{% if p == page %}background:#58a6ff;border-color:#58a6ff;color:#0d1117;{% else %}background:#161b22;border-color:#30363d;color:#8b949e;{% endif %}border-radius:6px;">
+            {{ p }}
+          </a>
+        </li>
+        {% endfor %}
+
+        {% if end_p < total_pages %}
+          {% if end_p < total_pages - 1 %}
+          <li class="page-item disabled">
+            <span class="page-link" style="background:transparent;border-color:#30363d;color:#6e7681;border-radius:6px;">…</span>
+          </li>
+          {% endif %}
+          <li class="page-item">
+            <a class="page-link" href="{{ base_url }}page={{ total_pages }}"
+               style="background:#161b22;border-color:#30363d;color:#8b949e;border-radius:6px;">{{ total_pages }}</a>
+          </li>
+        {% endif %}
+
+        <!-- Next -->
+        {% if page < total_pages %}
+        <li class="page-item">
+          <a class="page-link" href="{{ base_url }}page={{ page + 1 }}"
+             style="background:#161b22;border-color:#30363d;color:#8b949e;border-radius:6px;">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+        {% endif %}
+
+      </ul>
+    </nav>
+    {% endif %}
+
   </div>
 </main>
 

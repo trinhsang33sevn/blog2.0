@@ -373,7 +373,7 @@
   "idx_filter_site": "Website",
   "idx_filter_status": "Status",
   "idx_items": "tasks",
-  "idx_badge_failed":"Failed",
+  "idx_badge_failed": "Failed",
   "idx_badge_indexed": "Indexed",
   "idx_badge_submitting": "Submitting",
   "idx_badge_waiting": "Waiting",
@@ -393,7 +393,7 @@
   "idx_process_4": "Still not → AI rewrites article → resubmit → check after 7 days. Repeat until indexed.",
   "idx_process_title": "Automatic Indexing Process",
   "idx_skipped": "Skipped",
-  "idx_resubmit":"Resubmit to Sinbyte",
+  "idx_resubmit": "Resubmit to Sinbyte",
   "idx_submitting": "Submitting",
   "idx_title": "Google Index Tracking",
   "idx_total": "Total",
@@ -756,5 +756,7 @@
   "sett_wp_oauth": "WordPress.com OAuth",
   "topbar_billing": "Subscription",
   "topbar_logout": "Logout",
-  "topbar_version": "AutoBlogspot v1.0"
+  "topbar_version": "AutoBlogspot v1.0",
+  "blog_articles_count": "articles",
+  "blog_page": "Page"
 }

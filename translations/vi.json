@@ -756,5 +756,7 @@
   "sett_wp_oauth": "WordPress.com OAuth",
   "topbar_billing": "Gói dịch vụ",
   "topbar_logout": "Đăng xuất",
-  "topbar_version": "AutoBlogspot v1.0"
+  "topbar_version": "AutoBlogspot v1.0",
+  "blog_articles_count": "bài viết",
+  "blog_page": "Trang"
 }

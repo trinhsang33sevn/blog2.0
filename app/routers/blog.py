@@ -267,20 +267,34 @@ def blog_og_png(slug: str):
     )
 
 
+_PER_PAGE = 30
+
 @router.get("/blog", response_class=HTMLResponse)
-def blog_list(request: Request, category: str = ""):
+def blog_list(request: Request, category: str = "", page: int = 1):
     lang = get_lang()
     cmap = _cat_map(lang)
-    articles = ARTICLES if not category else [a for a in ARTICLES if a["category"] == category]
-    localized = [_localized(a, lang, cmap) for a in articles]
-    # Translated category list preserving VI key for filter links
+
+    # Filter by category, then sort newest first
+    filtered = ARTICLES if not category else [a for a in ARTICLES if a["category"] == category]
+    sorted_articles = sorted(filtered, key=lambda a: a.get("date", ""), reverse=True)
+
+    total = len(sorted_articles)
+    total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
+    page = max(1, min(page, total_pages))
+    offset = (page - 1) * _PER_PAGE
+    page_articles = sorted_articles[offset:offset + _PER_PAGE]
+
+    localized = [_localized(a, lang, cmap) for a in page_articles]
     cat_display = {vi: cmap.get(vi, vi) for vi in CATEGORIES}
     return templates.TemplateResponse(request, "blog_list.html", {
-        "articles": localized,
-        "categories": CATEGORIES,
-        "cat_display": cat_display,
+        "articles":       localized,
+        "categories":     CATEGORIES,
+        "cat_display":    cat_display,
         "active_category": category,
-        "lang": lang,
+        "lang":           lang,
+        "page":           page,
+        "total_pages":    total_pages,
+        "total_articles": total,
     })
 
 
