@@ -51,7 +51,7 @@ def indexing_page(
     tasks    = base.order_by(IndexTask.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
 
     counts = {}
-    for s in ("pending", "submitted", "indexed", "failed"):
+    for s in ("pending", "submitted", "indexed", "skipped", "failed"):
         counts[s] = (
             db.query(IndexTask).join(Article).join(Project)
             .filter(Project.user_id == current_user.id, IndexTask.status == s)

@@ -27,28 +27,40 @@
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <a href="/indexing" class="stat-card mini text-decoration-none {{ 'border-primary' if not filter_status }}">
       <div class="stat-value">{{ counts.all }}</div>
       <div class="stat-label">{{ _("idx_total") }}</div>
     </a>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
+    <a href="/indexing?status=pending" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'pending' }}">
+      <div class="stat-value text-secondary">{{ counts.pending }}</div>
+      <div class="stat-label">{{ _("idx_waiting") }}</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-2">
     <a href="/indexing?status=submitted" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'submitted' }}">
       <div class="stat-value text-warning">{{ counts.submitted }}</div>
       <div class="stat-label">{{ _("idx_submitting") }}</div>
     </a>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <a href="/indexing?status=indexed" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'indexed' }}">
       <div class="stat-value text-success">{{ counts.indexed }}</div>
       <div class="stat-label">{{ _("idx_indexed") }}</div>
     </a>
   </div>
-  <div class="col-6 col-md-3">
-    <a href="/indexing?status=pending" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'pending' }}">
-      <div class="stat-value text-secondary">{{ counts.pending }}</div>
-      <div class="stat-label">{{ _("idx_waiting") }}</div>
+  <div class="col-6 col-md-2">
+    <a href="/indexing?status=skipped" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'skipped' }}">
+      <div class="stat-value text-danger">{{ counts.skipped }}</div>
+      <div class="stat-label">{{ _("idx_skipped") }}</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-2">
+    <a href="/indexing?status=failed" class="stat-card mini text-decoration-none {{ 'border-primary' if filter_status == 'failed' }}">
+      <div class="stat-value text-danger">{{ counts.failed }}</div>
+      <div class="stat-label">{{ _("idx_badge_failed") }}</div>
     </a>
   </div>
 </div>
@@ -82,6 +94,7 @@
           <option value="pending"   {{ 'selected' if filter_status == 'pending' }}>{{ _("idx_badge_waiting") }}</option>
           <option value="submitted" {{ 'selected' if filter_status == 'submitted' }}>{{ _("idx_badge_submitting") }}</option>
           <option value="indexed"   {{ 'selected' if filter_status == 'indexed' }}>{{ _("idx_badge_indexed") }}</option>
+          <option value="skipped"   {{ 'selected' if filter_status == 'skipped' }}>{{ _("idx_skipped") }}</option>
           <option value="failed"    {{ 'selected' if filter_status == 'failed' }}>{{ _("idx_badge_failed") }}</option>
         </select>
       </div>
@@ -127,9 +140,17 @@
             </td>
             <td>
               {% if task.status == 'indexed' %}
-                <span class="badge bg-success">✓ {{ _("idx_badge_indexed") }}</span>
+                {% if task.next_check_at %}
+                  <span class="badge bg-success">✓ {{ _("idx_badge_indexed") }}</span>
+                  <span class="badge bg-info text-dark" style="font-size:0.6rem;">5d monitor</span>
+                {% else %}
+                  <span class="badge bg-success">✓ {{ _("idx_badge_indexed") }}</span>
+                {% endif %}
               {% elif task.status == 'submitted' %}
                 <span class="badge bg-warning text-dark">⚡ {{ _("idx_badge_submitting") }}</span>
+                {% if task.was_indexed %}<span class="badge bg-secondary" style="font-size:0.6rem;">recovery</span>{% endif %}
+              {% elif task.status == 'skipped' %}
+                <span class="badge bg-secondary">— {{ _("idx_skipped") }}</span>
               {% elif task.status == 'failed' %}
                 <span class="badge bg-danger">✗ {{ _("idx_badge_failed") }}</span>
               {% else %}

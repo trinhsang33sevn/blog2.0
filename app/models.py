@@ -256,7 +256,7 @@ class IndexTask(Base):
     id = Column(Integer, primary_key=True, index=True)
     article_id = Column(Integer, ForeignKey("articles.id"), unique=True, nullable=False)
     url = Column(String(1000), nullable=False)
-    # pending -> submitted -> indexed / failed
+    # pending → submitted → indexed → (5d monitoring) → skipped / confirmed
     status = Column(String(50), default="pending")
     submitted_at = Column(DateTime)
     last_checked_at = Column(DateTime)
@@ -264,6 +264,7 @@ class IndexTask(Base):
     check_count = Column(Integer, default=0)
     sinbyte_task_id = Column(String(200))
     sinbyte_submitted_count = Column(Integer, default=0)
+    was_indexed = Column(Boolean, default=False)   # True once confirmed indexed
     created_at = Column(DateTime, default=datetime.utcnow)
 
     article = relationship("Article", back_populates="index_task")

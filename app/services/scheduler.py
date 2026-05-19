@@ -532,7 +532,6 @@ def _publish_article(db: Session, project, ps, article) -> None:
         article_id=article.id,
         url=article.url,
         status="pending",
-        next_check_at=datetime.utcnow() + timedelta(days=7),
     ))
     db.commit()
     logger.info(f"Published article {article.id} [{platform}]: {article.url}")
@@ -766,6 +765,7 @@ def submit_new_urls_to_sinbyte():
             for task in user_tasks:
                 task.status = "submitted"
                 task.submitted_at = now
+                task.next_check_at = now + timedelta(hours=24)
                 if task_id:
                     task.sinbyte_task_id = task_id
                     task.sinbyte_submitted_count = 1
@@ -853,19 +853,31 @@ def check_system_health():
 
 
 # ─── Index Checking ───────────────────────────────────────────────────────────
+#
+# Flow:
+#   published → [submit Sinbyte] → submitted (next_check +24h)
+#     ├─ indexed → status=indexed (next_check +5d monitoring)
+#     │     ├─ still indexed → next_check=None (done)
+#     │     └─ lost index   → rewrite + resubmit → submitted (next_check +24h, was_indexed=True)
+#     │           ├─ indexed → status=indexed (continue monitoring)
+#     │           └─ not indexed → skipped
+#     └─ not indexed (check_count=1) → resubmit → submitted (next_check +24h)
+#           └─ not indexed (check_count=2) → rewrite + resubmit → submitted (next_check +24h)
+#                 └─ not indexed (check_count=3) → skipped
 
 def check_index_status():
-    """Check index status for articles due for checking."""
+    """Check index status — handles submitted (24h cycle) and indexed (5d monitoring)."""
     db = get_db()
     try:
         now = datetime.utcnow()
         due_tasks = (
             db.query(IndexTask)
             .filter(
-                IndexTask.status == "submitted",
+                IndexTask.status.in_(["submitted", "indexed"]),
                 IndexTask.next_check_at <= now,
+                IndexTask.next_check_at.isnot(None),
             )
-            .limit(10)  # Check max 10 per run to avoid Google blocking
+            .limit(10)  # max 10 per run to avoid Google blocking
             .all()
         )
 
@@ -873,18 +885,14 @@ def check_index_status():
             try:
                 is_indexed = index_checker.check_google_index(task.url)
                 task.last_checked_at = datetime.utcnow()
-                task.check_count += 1
 
-                if is_indexed:
-                    task.status = "indexed"
-                    logger.info(f"URL indexed: {task.url}")
-                    if task.article:
-                        agent_service.update_feedback(db, task.article, indexed=True)
-                else:
-                    _handle_not_indexed(db, task)
+                if task.status == "submitted":
+                    task.check_count = (task.check_count or 0) + 1
+                    _handle_submitted_check(db, task, is_indexed)
+                elif task.status == "indexed":
+                    _handle_indexed_monitoring(db, task, is_indexed)
 
                 db.commit()
-
             except Exception as e:
                 logger.error(f"Error checking index for {task.url}: {e}")
 
@@ -892,33 +900,65 @@ def check_index_status():
         db.close()
 
 
-def _handle_not_indexed(db: Session, task: IndexTask):
-    """Handle article not yet indexed according to retry logic."""
-    check_count = task.check_count
+def _handle_submitted_check(db: Session, task: IndexTask, is_indexed: bool):
+    """24h-cycle check for status='submitted'."""
+    if is_indexed:
+        task.status = "indexed"
+        task.was_indexed = True
+        task.next_check_at = datetime.utcnow() + timedelta(days=5)
+        task.check_count = 0  # reset counter for monitoring phase
+        logger.info(f"Indexed: {task.url}")
+        if task.article:
+            agent_service.update_feedback(db, task.article, indexed=True)
+        return
+
+    # Not indexed
+    check_count = task.check_count or 0
+
+    if task.was_indexed:
+        # Recovery attempt after losing index — only 1 chance
+        task.status = "skipped"
+        task.next_check_at = None
+        logger.info(f"Lost index — not recovered after retry, skipping: {task.url}")
+        return
 
     if check_count == 1:
-        # First check failed → re-submit to Sinbyte, check after 3 days
+        # 1st fail → resubmit, check again in 24h
         _resubmit_to_sinbyte(db, task)
-        task.next_check_at = datetime.utcnow() + timedelta(days=3)
-        logger.info(f"Not indexed after 7d, resubmitting: {task.url}")
+        task.next_check_at = datetime.utcnow() + timedelta(hours=24)
+        logger.info(f"Not indexed (check 1), resubmitting: {task.url}")
 
     elif check_count == 2:
-        # Second check failed → rewrite article, re-submit, check after 7 days
-        _resubmit_to_sinbyte(db, task)
-        task.next_check_at = datetime.utcnow() + timedelta(days=7)
+        # 2nd fail → rewrite article + resubmit, check again in 24h
         _rewrite_article_for_task(db, task)
+        _resubmit_to_sinbyte(db, task)
+        task.next_check_at = datetime.utcnow() + timedelta(hours=24)
         if task.article:
             agent_service.update_feedback(db, task.article, indexed=False)
-        logger.info(f"Not indexed after 3d retry, rewriting article: {task.url}")
+        logger.info(f"Not indexed (check 2), rewriting + resubmitting: {task.url}")
 
     else:
-        # Subsequent checks → alternate between resubmit (3d) and rewrite+resubmit (7d)
+        # 3rd fail → give up
+        task.status = "skipped"
+        task.next_check_at = None
+        logger.info(f"Not indexed after {check_count} checks, skipping: {task.url}")
+
+
+def _handle_indexed_monitoring(db: Session, task: IndexTask, is_indexed: bool):
+    """5-day monitoring check for status='indexed'."""
+    if is_indexed:
+        # Confirmed still indexed — monitoring complete, no more checks
+        task.next_check_at = None
+        logger.info(f"Still indexed at 5d monitoring: {task.url}")
+    else:
+        # Lost index → rewrite, resubmit, check again in 24h
+        task.was_indexed = True
+        task.check_count = 0  # reset for this recovery cycle
+        task.status = "submitted"
+        task.next_check_at = datetime.utcnow() + timedelta(hours=24)
+        _rewrite_article_for_task(db, task)
         _resubmit_to_sinbyte(db, task)
-        if check_count % 2 == 1:
-            task.next_check_at = datetime.utcnow() + timedelta(days=3)
-        else:
-            task.next_check_at = datetime.utcnow() + timedelta(days=7)
-            _rewrite_article_for_task(db, task)
+        logger.info(f"Lost index at 5d monitoring, rewriting + resubmitting: {task.url}")
 
 
 def _resubmit_to_sinbyte(db: Session, task: IndexTask):
@@ -1137,8 +1177,8 @@ def start_scheduler():
     # Submit new URLs to Sinbyte every 30 minutes
     _scheduler.add_job(submit_new_urls_to_sinbyte, IntervalTrigger(minutes=30), id="sinbyte_submit", replace_existing=True)
 
-    # Check index status every 6 hours (max 10 URLs per run to avoid blocks)
-    _scheduler.add_job(check_index_status, IntervalTrigger(hours=6), id="check_index", replace_existing=True)
+    # Check index status every 1 hour (max 10 URLs per run to avoid blocks)
+    _scheduler.add_job(check_index_status, IntervalTrigger(hours=1), id="check_index", replace_existing=True)
 
     # System health check every 30 minutes — sends email alert if thresholds exceeded
     _scheduler.add_job(check_system_health, IntervalTrigger(minutes=30), id="health_check", replace_existing=True)

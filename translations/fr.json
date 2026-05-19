@@ -392,6 +392,7 @@
   "idx_process_3": "Non indexé → renvoi à Sinbyte → vérification après 3 jours.",
   "idx_process_4": "Toujours non → réécriture IA → resoumettre → vérifier après 7 jours.",
   "idx_process_title": "Processus d'indexation automatique",
+  "idx_skipped": "Ignoré",
   "idx_resubmit": "Resoumettre à Sinbyte",
   "idx_submitting": "Soumission en cours",
   "idx_title": "Suivi d'indexation Google",
