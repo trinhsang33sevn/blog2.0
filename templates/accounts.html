@@ -76,18 +76,21 @@
 {% endif %}
 
 {% for account in accounts %}
-<div class="card shadow-sm mb-4 {% if account.token_error %}border-danger{% endif %}">
-  <div class="card-header d-flex align-items-center justify-content-between {% if account.token_error %}bg-danger-subtle{% endif %}">
+{% set acct_idx = loop.index %}
+<div class="card shadow-sm mb-3 {% if account.token_error %}border-danger{% endif %}">
+  <div class="card-header d-flex align-items-center justify-content-between {% if account.token_error %}bg-danger-subtle{% endif %}"
+       style="cursor:pointer;" onclick="toggleAccountBody(this, 'acct-body-{{ acct_idx }}')">
     <div class="d-flex align-items-center gap-2">
       <div class="avatar-circle">{{ account.name[0].upper() if account.name else 'G' }}</div>
       <div>
-        <div class="fw-semibold">
+        <div class="fw-semibold d-flex align-items-center gap-2">
           {{ account.name }}
           {% if account.token_error %}
-            <span class="badge bg-danger ms-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Token lỗi</span>
+            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Token lỗi</span>
           {% else %}
-            <span class="badge bg-success ms-1"><i class="bi bi-check-circle-fill me-1"></i>OK</span>
+            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>OK</span>
           {% endif %}
+          <span class="badge bg-secondary" style="font-size:0.6rem;">{{ account.sites|length }} site{% if account.sites|length != 1 %}s{% endif %}</span>
         </div>
         <div class="text-muted small">{{ account.email }}</div>
         {% if account.token_error %}
@@ -95,7 +98,8 @@
         {% endif %}
       </div>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex align-items-center gap-2">
+      <div class="d-flex gap-2 flex-wrap" onclick="event.stopPropagation()">
       <form method="post" action="/accounts/{{ account.id }}/test-token">
         <button type="submit" class="btn btn-sm {% if account.token_error %}btn-danger{% else %}btn-outline-secondary{% endif %}" title="Kiểm tra kết nối Google">
           <i class="bi bi-wifi me-1"></i>{% if account.token_error %}Kết nối lại{% else %}Kiểm tra{% endif %}
@@ -112,6 +116,8 @@
       <form method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm('{{ _("acct_confirm_delete") }}')">
         <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
       </form>
+      </div><!-- /action buttons -->
+      <i class="bi bi-chevron-down acct-chevron" style="font-size:0.85rem;transition:transform 0.2s;"></i>
     </div>
   </div>
 
@@ -141,7 +147,7 @@
     </div></div>
   </div>
 
-  <div class="card-body p-0">
+  <div class="card-body p-0" id="acct-body-{{ acct_idx }}" style="display:none;">
     {% if account.sites %}
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
@@ -809,7 +815,14 @@
 <!-- Blogspot tab: site table (reuse for Blogspot only) -->
 {% if tab == 'blogspot' %}
 <script>
-// Re-render Blogspot site tables inline
+function toggleAccountBody(header, bodyId) {
+  var body = document.getElementById(bodyId);
+  var chevron = header.querySelector('.acct-chevron');
+  if (!body) return;
+  var collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (chevron) chevron.style.transform = collapsed ? 'rotate(180deg)' : '';
+}
 </script>
 {% endif %}
 
