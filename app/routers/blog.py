@@ -263,7 +263,7 @@ def blog_og_png(slug: str):
     return Response(
         content=png,
         media_type="image/png",
-        headers={"Cache-Control": "public, max-age=86400"},
+        headers={"Cache-Control": "public, max-age=86400", "X-Robots-Tag": "noindex"},
     )
 
 

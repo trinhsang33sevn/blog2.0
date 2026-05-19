@@ -277,6 +277,7 @@ def robots_txt():
         "Disallow: /billing\n"
         "Disallow: /settings\n"
         "Disallow: /indexing\n"
+        "Disallow: /blog/og/\n"
         "Sitemap: https://autoblogspot.com/sitemap.xml\n"
     )
 
