@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, Response
 
 from ..blog_data import ARTICLES, ARTICLES_BY_SLUG, CATEGORIES, CATEGORY_TRANSLATIONS
 from ..content_translations import EN as _CT_EN, FR as _CT_FR, IT as _CT_IT
-from ..i18n import get_lang
+from ..i18n import get_lang, set_lang, SUPPORTED_LANGUAGES
 from ..templates import templates
 
 _CONTENT_TRANS: dict[str, dict[str, str]] = {"en": _CT_EN, "fr": _CT_FR, "it": _CT_IT}
@@ -322,7 +322,9 @@ def blog_article(request: Request, slug: str):
 
 
 @router.get("/terms", response_class=HTMLResponse)
-def terms_page(request: Request):
+def terms_page(request: Request, lang: str = ""):
+    if lang and lang in SUPPORTED_LANGUAGES:
+        set_lang(lang)
     return templates.TemplateResponse(request, "terms.html", {})
 
 

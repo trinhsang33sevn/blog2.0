@@ -157,7 +157,7 @@ def admin_dashboard(request: Request, tab: str = "overview", db: Session = Depen
         "payment_config":    _payment_config(db),
         "plan_prices":       PLAN_PRICES,
         "telegram_username": get_setting(db, "telegram_username"),
-        "contact_email":     get_setting(db, "contact_email") or "hoangvandonglx@gmail.com",
+        "contact_email":     get_setting(db, "contact_email") or "admin@autoblogspot.com",
         "alert_config": {
             "alert_email":    get_setting(db, "alert_email") or "",
             "disk_alert_pct": get_setting(db, "disk_alert_pct") or "80",

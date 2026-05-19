@@ -112,7 +112,7 @@ async def lifespan(_app: FastAPI):
     db = SessionLocal()
     try:
         seed_agents(db)
-        ensure_superadmin(db, "hoangvandonglx@gmail.com", "AdminPass2026!", "Hoàng Đồng")
+        ensure_superadmin(db, "admin@autoblogspot.com", "AdminPass2026!", "Hoàng Đồng")
         update_site_globals(TELEGRAM_USERNAME=get_app_setting(db, "telegram_username"))
     finally:
         db.close()
